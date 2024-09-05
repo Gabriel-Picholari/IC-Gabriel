@@ -428,7 +428,7 @@ void read_wdecayTTree(const char* fileName)
   //---------------------------------------------------------------------------------------------------------
   
   TCanvas *c3 = new TCanvas("c3", "Cumulative histograms", 2500, 2500);
-  c3->Divide(2, 3);
+  c3->Divide(3, 2);
 
   c3->cd(1);
   cJet_pT_cumulative->SetTitle("c quark jet's cumulative p_{T} (signal)");
