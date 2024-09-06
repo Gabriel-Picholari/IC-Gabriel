@@ -33,16 +33,21 @@ void cutsApplication(const char* fileName)
     // Criacao dos TLorentzVector
 
     TLorentzVector vec_unfiltered(0,0,0,0);
+    
     TLorentzVector vec_pTCut(0,0,0,0);
+    TLorentzVector vec_nConstCut(0,0,0,0);
+    TLorentzVector vec_second_pTCut(0,0,0,0);
+    TLorentzVector vec_pT_and_nConstCut(0,0,0,0);
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacao dos histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F *unfiltered_Jets_InvariantMass = new TH1F("h1", "Massa invariante de jatos não filtrados em [GeV/c^{2}]", 100, 0, 100);
-    TH1F *cutPt_Jets_InvariantMass = new TH1F("h2", "Massa invariante de jatos com corte de pT de 1.5 [GeV/c] em [GeV/c^{2}]", 100, 0, 100);
-    TH1F *arbitraryPtCut_Jets_InvariantMass = new TH1F("h2", "Massa invariante de jatos com corte de pT [GeV/c] arbitrário em [GeV/c^{2}]", 100, 0, 100);
-
+    TH1F *noCut_IMS = new TH1F("h1", "Unfiltered Jet's Invariant Mass Spectrum", 100, 0, 100);
+    TH1F *pTCut_IMS = new TH1F("h2", "Jet's Invariant Mass Sprectrum with cut in p_{T}", 100, 0, 100);
+    TH1F *nConstCut_IMS = new TH1F("h3", "Jet's Invariant Mass Sprectrum with a cut in the number of constituents", 100, 0, 100);
+    TH1F *second_pTCut_IMS = new TH1F("h4", "Jet's Invariant Mass Sprectrum with an arbitrary cut in p_{T}", 100, 0, 100);
+    TH1F *pT_and_nConstCut_IMS = new TH1F("h5", "Jet's Invariant Mass Sprectrum with cuts both in the number of constituents and p_{T}", 100, 0, 100);
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacoes e configuracoes do FastJet:
@@ -78,8 +83,12 @@ void cutsApplication(const char* fileName)
     {
         ttree->GetEntry(ni);
 
-        vec_unfiltered.SetPtEtaPhiM(0,0,0,0);
-        vec_pTCut.SetPtEtaPhiM(0,0,0,0);
+        vec_unfiltered.SetPtEtaPhiM(10,0,0,(3.141592));
+
+        vec_pTCut.SetPtEtaPhiM(10,0,0,(3.141592));
+        vec_nConstCut.SetPtEtaPhiM(10,0,0,(3.141592));
+        vec_second_pTCut.SetPtEtaPhiM(10,0,0,(3.141592));
+        vec_pT_and_nConstCut.SetPtEtaPhiM(10,0,0,(3.141592));
         
 
         //---------------------------------------------------------------------------------------------------------
@@ -127,13 +136,53 @@ void cutsApplication(const char* fileName)
             //---------------------------------------------------------------------------------------------------------
             
             vec_unfiltered = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-            if ( jetPt < 1.5 /* && jetNConst < 2.5 && pT_LeadConst < 0.5 */ ) continue;
+            
+            if ( jetNConst > 2.5 )
+            {
+                vec_nConstCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+            }
+
+            if ( jetPt < 1.5 ) continue;
             vec_pTCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+            
+            if ( jetNConst > 2.5 )
+            {
+                vec_pT_and_nConstCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+            }
+
+            if (jetPt < 10 ) continue;
+            vec_second_pTCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+
 
         } // End of individual jets creation
         
-        unfiltered_Jets_InvariantMass->Fill(vec_unfiltered.M());
-        cutPt_Jets_InvariantMass->Fill(vec_pTCut.M());
+        const Float_t tolerance = 1e-5; // IMS stands for Invariant Mass Spectrum
+
+        if ( fabs( vec_unfiltered.M() - 3.141592) > tolerance ) 
+        {
+        noCut_IMS->Fill( vec_unfiltered.M() ); 
+        }
+
+        if ( fabs( vec_nConstCut.M() - 3.141592) > tolerance ) 
+        {
+        nConstCut_IMS->Fill( vec_nConstCut.M() ); 
+        }
+
+        if ( fabs( vec_pTCut.M() - 3.141592) > tolerance ) 
+        {
+        pTCut_IMS->Fill( vec_pTCut.M() ); 
+        }
+
+        if ( fabs( vec_pT_and_nConstCut.M() - 3.141592) > tolerance ) 
+        {
+        pT_and_nConstCut_IMS->Fill( vec_pT_and_nConstCut.M() ); 
+        }
+
+        if ( fabs( vec_second_pTCut.M() - 3.141592) > tolerance ) 
+        {
+        second_pTCut_IMS->Fill( vec_second_pTCut.M() ); 
+        }
+
 
         particles_fastjet.clear();
         jets.clear();
@@ -141,19 +190,40 @@ void cutsApplication(const char* fileName)
         quarks->Clear();
     }
 
-    TCanvas *c1 = new TCanvas("c1", "Histograms and distributions", 2500, 2500);
-    c1->Divide(1, 2);
+    TCanvas *c1 = new TCanvas("c1", "Invariant Mass Spectrum", 2500, 2500);
+    c1->Divide(1, 1);
 
     c1->cd(1);
-    unfiltered_Jets_InvariantMass->SetTitle("Unfiltered jets invariant mass [GeV/c^{2}]");
-    unfiltered_Jets_InvariantMass->GetXaxis()->SetTitle("Transverse Momentum [GeV/c]");
-    unfiltered_Jets_InvariantMass->GetYaxis()->SetTitle("Frequency");
-    unfiltered_Jets_InvariantMass->Draw();
+    noCut_IMS->SetTitle("Unfiltered Jet's Invariant Mass Spectrum");
+    noCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    noCut_IMS->GetYaxis()->SetTitle("Frequency");
+    noCut_IMS->Draw();
 
-    c1->cd(2);
-    cutPt_Jets_InvariantMass->SetTitle("Jets invariant mass with cut in p_{T} [GeV/c^{2}]");
-    cutPt_Jets_InvariantMass->GetXaxis()->SetTitle("Transverse Momentum [GeV/c]");
-    cutPt_Jets_InvariantMass->GetYaxis()->SetTitle("Frequency");
-    cutPt_Jets_InvariantMass->Draw();
+    TCanvas *c2 = new TCanvas("c2", "Invariant Mass Spectrum variants", 2500, 2500);
+    c2->Divide(2, 2);
 
+    c2->cd(1);
+    pTCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with cut in p_{T}");
+    pTCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    pTCut_IMS->GetYaxis()->SetTitle("Frequency");
+    pTCut_IMS->Draw();
+
+    c2->cd(2);
+    nConstCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with a cut in the number of constituents");
+    nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
+    nConstCut_IMS->Draw();
+
+    c2->cd(3);
+    second_pTCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with an arbitrary cut in p_{T}");
+    second_pTCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    second_pTCut_IMS->GetYaxis()->SetTitle("Frequency");
+    second_pTCut_IMS->Draw();
+
+    c2->cd(4);
+    pT_and_nConstCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with cuts both in the number of constituents and p_{T}");
+    pT_and_nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    pT_and_nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
+    pT_and_nConstCut_IMS->Draw();
 }
+
