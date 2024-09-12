@@ -30,15 +30,6 @@ void cutsApplication(const char* fileName)
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
     Float_t match_R = 0.1;
 
-    // Criacao dos TLorentzVector
-
-    TLorentzVector vec_unfiltered(0,0,0,0);
-    
-    TLorentzVector vec_pTCut(0,0,0,0);
-    TLorentzVector vec_nConstCut(0,0,0,0);
-    TLorentzVector vec_second_pTCut(0,0,0,0);
-    TLorentzVector vec_pT_and_nConstCut(0,0,0,0);
-
     //---------------------------------------------------------------------------------------------------------
     // Inicializacao dos histogramas
     //---------------------------------------------------------------------------------------------------------
@@ -83,14 +74,6 @@ void cutsApplication(const char* fileName)
     {
         ttree->GetEntry(ni);
 
-        vec_unfiltered.SetPtEtaPhiM(10,0,0,(3.141592));
-
-        vec_pTCut.SetPtEtaPhiM(10,0,0,(3.141592));
-        vec_nConstCut.SetPtEtaPhiM(10,0,0,(3.141592));
-        vec_second_pTCut.SetPtEtaPhiM(10,0,0,(3.141592));
-        vec_pT_and_nConstCut.SetPtEtaPhiM(10,0,0,(3.141592));
-        
-
         //---------------------------------------------------------------------------------------------------------
         // Loop equivalente ao loop de eventos
         //---------------------------------------------------------------------------------------------------------
@@ -111,79 +94,63 @@ void cutsApplication(const char* fileName)
         fastjet::ClusterSequence clusterSeq(particles_fastjet, jet_def);
         jets = clusterSeq.inclusive_jets();
 
-        for (const fastjet::PseudoJet& jet : jets)
+        for (Int_t m = 0; m < jets.size(); m++)
         {
-        jetPt = jet.pt();
-        jetEta = jet.eta();
-        jetPhi = jet.phi();
-        jetMass = jet.m();
-        jetPx = jet.px();
-        jetPy = jet.py();
-        jetPz = jet.pz();
-        jetE = jet.E();
-        jetNConst = jet.constituents().size();
-        pT_LeadConst = 0.0;
-        for (const fastjet::PseudoJet &constituent : jet.constituents())
-        {
-            if (constituent.pt() > pT_LeadConst)
+            for (Int_t k = m+1; k < jets.size(); k++)
             {
-            pT_LeadConst = constituent.pt();
+
+                fastjet::PseudoJet jet_m = jets[m];
+                fastjet::PseudoJet jet_k = jets[k];
+                
+                TLorentzVector vec_m(0,0,0,0);
+                vec_m.SetPxPyPzE(jet_m.px(), jet_m.py(), jet_m.pz(), jet_m.e());
+
+                TLorentzVector vec_k(0,0,0,0);
+                vec_k.SetPxPyPzE(jet_k.px(), jet_k.py(), jet_k.pz(), jet_k.e());
+
+                TLorentzVector vec_mom = vec_m + vec_k;
+
+                jetPt = vec_mom.Pt();
+                jetEta = vec_mom.Eta();
+                jetPhi = vec_mom.Phi();
+                jetMass = vec_mom.M();
+                jetPx = vec_mom.Px();
+                jetPy = vec_mom.Py();
+                jetPz = vec_mom.Pz();
+                jetE = vec_mom.E();
+                
+                jetNConst = jet_m.constituents().size() + jet_k.constituents().size();
+                
+                /* 
+                pT_LeadConst = 0.0;
+                for (const fastjet::PseudoJet &constituent : jet_m.constituents())
+                {
+                    if (constituent.pt() > pT_LeadConst)
+                    {
+                        pT_LeadConst = constituent.pt();
+                    }
+                }
+                */
+
+                //---------------------------------------------------------------------------------------------------------
+                // Preenchimento dos TLorentzVectors dos jatos do evento
+                //---------------------------------------------------------------------------------------------------------
+                
+                noCut_IMS->Fill( vec_mom.M() ); 
+
+                if ( jetNConst > 2.5 ) nConstCut_IMS->Fill( vec_mom.M() );
+
+                if ( jetPt < 1.5 ) continue;
+                pTCut_IMS->Fill( vec_mom.M() ); 
+                
+                if ( jetNConst > 2.5 ) pT_and_nConstCut_IMS->Fill( vec_mom.M() ); 
+
+                if (jetPt < 10 ) continue;
+                second_pTCut_IMS->Fill( vec_mom.M() );
+                
             }
-        }
-
-            //---------------------------------------------------------------------------------------------------------
-            // Preenchimento dos TLorentzVectors dos jatos do evento
-            //---------------------------------------------------------------------------------------------------------
-            
-            vec_unfiltered = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-            
-            if ( jetNConst > 2.5 )
-            {
-                vec_nConstCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-            }
-
-            if ( jetPt < 1.5 ) continue;
-            vec_pTCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-            
-            if ( jetNConst > 2.5 )
-            {
-                vec_pT_and_nConstCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-            }
-
-            if (jetPt < 10 ) continue;
-            vec_second_pTCut = TLorentzVector(jetPx, jetPy, jetPz, jetE);
-
-
         } // End of individual jets creation
-        
-        const Float_t tolerance = 1e-5; // IMS stands for Invariant Mass Spectrum
-
-        if ( fabs( vec_unfiltered.M() - 3.141592) > tolerance ) 
-        {
-        noCut_IMS->Fill( vec_unfiltered.M() ); 
-        }
-
-        if ( fabs( vec_nConstCut.M() - 3.141592) > tolerance ) 
-        {
-        nConstCut_IMS->Fill( vec_nConstCut.M() ); 
-        }
-
-        if ( fabs( vec_pTCut.M() - 3.141592) > tolerance ) 
-        {
-        pTCut_IMS->Fill( vec_pTCut.M() ); 
-        }
-
-        if ( fabs( vec_pT_and_nConstCut.M() - 3.141592) > tolerance ) 
-        {
-        pT_and_nConstCut_IMS->Fill( vec_pT_and_nConstCut.M() ); 
-        }
-
-        if ( fabs( vec_second_pTCut.M() - 3.141592) > tolerance ) 
-        {
-        second_pTCut_IMS->Fill( vec_second_pTCut.M() ); 
-        }
-
-
+ 
         particles_fastjet.clear();
         jets.clear();
         jets_array->Clear();
