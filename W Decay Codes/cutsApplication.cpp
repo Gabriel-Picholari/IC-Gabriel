@@ -34,6 +34,9 @@ void cutsApplication(const char* fileName)
     // Inicializacao dos histogramas
     //---------------------------------------------------------------------------------------------------------
 
+    
+    TH1F *jetSize = new TH1F("h0", "Jet Size", 100, 0, 100);
+
     TH1F *noCut_IMS = new TH1F("h1", "Unfiltered Jet's Invariant Mass Spectrum", 100, 0, 100);
     TH1F *pTCut_IMS = new TH1F("h2", "Jet's Invariant Mass Sprectrum with cut in p_{T}", 100, 0, 100);
     TH1F *nConstCut_IMS = new TH1F("h3", "Jet's Invariant Mass Sprectrum with a cut in the number of constituents", 100, 0, 100);
@@ -94,13 +97,17 @@ void cutsApplication(const char* fileName)
         fastjet::ClusterSequence clusterSeq(particles_fastjet, jet_def);
         jets = clusterSeq.inclusive_jets();
 
-        for (Int_t m = 0; m < jets.size(); m++)
+        jetSize->Fill(jets.size());
+
+        for (Int_t m = 0; m < jets.size() - 1; m++)
         {
             for (Int_t k = m+1; k < jets.size(); k++)
             {
 
                 fastjet::PseudoJet jet_m = jets[m];
                 fastjet::PseudoJet jet_k = jets[k];
+
+                fastjet::PseudoJet jet_mom = jet_m + jet_k;
                 
                 TLorentzVector vec_m(0,0,0,0);
                 vec_m.SetPxPyPzE(jet_m.px(), jet_m.py(), jet_m.pz(), jet_m.e());
@@ -136,17 +143,17 @@ void cutsApplication(const char* fileName)
                 // Preenchimento dos TLorentzVectors dos jatos do evento
                 //---------------------------------------------------------------------------------------------------------
                 
-                noCut_IMS->Fill( vec_mom.M() ); 
+                noCut_IMS->Fill( jetMass ); 
 
-                if ( jetNConst > 2.5 ) nConstCut_IMS->Fill( vec_mom.M() );
+                if ( jetNConst > 6 ) nConstCut_IMS->Fill( jetMass );
 
-                if ( jetPt < 1.5 ) continue;
-                pTCut_IMS->Fill( vec_mom.M() ); 
+                if ( jetPt < 20 ) continue;
+                pTCut_IMS->Fill( jetMass ); 
                 
-                if ( jetNConst > 2.5 ) pT_and_nConstCut_IMS->Fill( vec_mom.M() ); 
+                if ( jetNConst > 6 ) pT_and_nConstCut_IMS->Fill( jetMass ); 
 
-                if (jetPt < 10 ) continue;
-                second_pTCut_IMS->Fill( vec_mom.M() );
+                if (jetPt < 25 ) continue;
+                second_pTCut_IMS->Fill( jetMass );
                 
             }
         } // End of individual jets creation
@@ -192,5 +199,11 @@ void cutsApplication(const char* fileName)
     pT_and_nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     pT_and_nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
     pT_and_nConstCut_IMS->Draw();
+
+    TFile fout("Invariant_Mass.root", "recreate");
+    jetSize->Write();
+    fout.Close();
+
+    file->Close();
 }
 

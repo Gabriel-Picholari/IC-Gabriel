@@ -93,6 +93,8 @@ void read_wdecayTTree(const char* fileName)
   //---------------------------------------------------------------------------------------------------------
   // Inicializacao dos histogramas
   //---------------------------------------------------------------------------------------------------------
+  
+  TH1F *jetSize = new TH1F("h0", "Jet Size", 100, 0, 100);
 
   TH1F *ratioHist_pT_c = new TH1F("h1", "Razão cumulativa de p_{T} do sinal pelo fundo", 100, 0, 100);
   TH1F *ratioHist_nConst_c = new TH1F("h2", "Razão cumulativa de número de constituintes do sinal pelo fundo", 100, 0, 100);
@@ -113,8 +115,6 @@ void read_wdecayTTree(const char* fileName)
   TH1F *invariantMass_cbar_s = new TH1F("h14", "Espectro de massa invariante dos jatos provenientes dos quarks anti-c e s [GeV/c^{2}]", 100, 0, 100);
   TH1F *invariantMass_c_sbar = new TH1F("h15", "Espectro de massa invariante dos jatos provenientes dos quarks c e anti-s [GeV/c^{2}]", 100, 0, 100);
   
-
-
   //---------------------------------------------------------------------------------------------------------
   // Inicializacoes e configuracoes do FastJet:
   //---------------------------------------------------------------------------------------------------------
@@ -154,7 +154,6 @@ void read_wdecayTTree(const char* fileName)
     vec_sbar.SetPtEtaPhiM(10,0,0,(3.141592));
     vec_cbar.SetPtEtaPhiM(10,0,0,(3.141592));
 
-
     //---------------------------------------------------------------------------------------------------------
     // Loop equivalente ao loop de eventos
     //---------------------------------------------------------------------------------------------------------
@@ -175,17 +174,20 @@ void read_wdecayTTree(const char* fileName)
     fastjet::ClusterSequence clusterSeq(particles_fastjet, jet_def);
     jets = clusterSeq.inclusive_jets();
 
+    jetSize->Fill(jets.size());
+
     for (const fastjet::PseudoJet& jet : jets)
     {
       jetPt = jet.pt();
       jetEta = jet.eta();
       jetPhi = jet.phi();
-      jetMass = jet.m(); // Invariant mass
+      jetMass = jet.m();
       jetPx = jet.px();
       jetPy = jet.py();
       jetPz = jet.pz();
       jetE = jet.E();
       jetNConst = jet.constituents().size();
+
       pT_LeadConst = 0.0;
       for (const fastjet::PseudoJet &constituent : jet.constituents())
       {
@@ -233,7 +235,7 @@ void read_wdecayTTree(const char* fileName)
 
           Float_t distancia_s = TMath::Sqrt(TMath::Power(jetPhi - s_Phi, 2) + TMath::Power(jetEta - s_Eta, 2));
 
-          if (distancia_s <= match_R && jetPt)
+          if (distancia_s <= match_R)
           {
             sJet_pT->Fill(jetPt);
             //cout << "sJet: " << jetPt << ", " << jetMass << endl;
@@ -434,37 +436,37 @@ void read_wdecayTTree(const char* fileName)
   cJet_pT_cumulative->SetTitle("c quark jet's cumulative p_{T} (signal)");
   cJet_pT_cumulative->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   cJet_pT_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_pT_cumulative->Draw();
+  cJet_pT_cumulative->DrawCopy();
 
   c3->cd(2);
   cJet_nConst_cumulative->SetTitle("c quark jet's cumulative numeber of constituents (signal)");
   cJet_nConst_cumulative->GetXaxis()->SetTitle("Number of Constituents");
   cJet_nConst_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_nConst_cumulative->Draw();
+  cJet_nConst_cumulative->DrawCopy();
   
   c3->cd(3);
   cJet_leadConst_pT_cumulative->SetTitle("c quark jet's cumulative lead constituent p_{T} (signal)");
   cJet_leadConst_pT_cumulative->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   cJet_leadConst_pT_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_leadConst_pT_cumulative->Draw();
+  cJet_leadConst_pT_cumulative->DrawCopy();
 
   c3->cd(4);
   cJet_pT_cumulative_bkg->SetTitle("c quark jet's cumulative p_{T} (background)");
   cJet_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   cJet_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_pT_cumulative_bkg->Draw();
+  cJet_pT_cumulative_bkg->DrawCopy();
 
   c3->cd(5);
   cJet_nConst_cumulative_bkg->SetTitle("c quark jet's cumulative numeber of constituents (background)");
   cJet_nConst_cumulative_bkg->GetXaxis()->SetTitle("Number of Constituents");
   cJet_nConst_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_nConst_cumulative_bkg->Draw();
+  cJet_nConst_cumulative_bkg->DrawCopy();
   
   c3->cd(6);
   cJet_leadConst_pT_cumulative_bkg->SetTitle("c quark jet's cumulative lead constituent p_{T} (background)");
   cJet_leadConst_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   cJet_leadConst_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_leadConst_pT_cumulative_bkg->Draw();
+  cJet_leadConst_pT_cumulative_bkg->DrawCopy();
 
   //---------------------------------------------------------------------------------------------------------
 
@@ -475,21 +477,23 @@ void read_wdecayTTree(const char* fileName)
   ratioHist_pT_c->SetTitle("c Quark Jet's p_{T} Cumulative Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Frequency");
-  ratioHist_pT_c->Draw();
+  ratioHist_pT_c->DrawCopy();
 
   c4->cd(2);
   ratioHist_nConst_c->SetTitle("c Quark Jet's Number of Constituents Cumulative Ratio");
   ratioHist_nConst_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_nConst_c->GetXaxis()->SetTitle("Frequency");
-  ratioHist_nConst_c->Draw();
+  ratioHist_nConst_c->DrawCopy();
 
   c4->cd(3);
   ratioHist_pT_c->SetTitle("c Quark Jet's Lead Constituent p_{T} Cumulative Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Frequency");
-  ratioHist_pT_c->Draw();
+  ratioHist_pT_c->DrawCopy();
 
-  //---------------------------------------------------------------------------------------------------------
+  TFile fout("cumulativeHists.root", "recreate");
+  jetSize->Write();
+  fout.Close();
 
-  //file->Close();
+  file->Close();
 }
