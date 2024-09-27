@@ -94,27 +94,37 @@ void read_wdecayTTree(const char* fileName)
   // Inicializacao dos histogramas
   //---------------------------------------------------------------------------------------------------------
 
-  TH1F *ratioHist_pT_c = new TH1F("h1", "Razão cumulativa de p_{T} do sinal pelo fundo", 100, 0, 100);
-  TH1F *ratioHist_nConst_c = new TH1F("h2", "Razão cumulativa de número de constituintes do sinal pelo fundo", 100, 0, 100);
-  TH1F *ratioHist_pTLead_c = new TH1F("h3", "Razão cumulativa de pT do lead do sinal pelo fundo", 100, 0, 100);
+  TH1F *ratioHist_pT_c = new TH1F("h1", "Cumulative ratio of signal c p_{T} to background", 100, 0, 100);
+  TH1F *ratioHist_nConst_c = new TH1F("h2", "Cumulative ratio of c signal number of constituents to background", 100, 0, 100);
+  TH1F *ratioHist_pTLead_c = new TH1F("h3", "Cumulative ratio of c signal lead constituent p_{T} to background", 100, 0, 100);
 
-  TH1F *cJet_pT = new TH1F("h4", "p_{T} do jato proveniente do quark c [GeV/c] (sinal)", 100, 0, 100);
-  TH1F *cJet_nConst = new TH1F("h5", "Numero de constituintes do jato proveniente do quark c (sinal)", 100, 0, 100);
-  TH1F *cJet_leadConst_pT = new TH1F("h6", "p_{T} do lead constituent do jato proveniente do quark c [GeV/c] (sinal)", 100, 0, 100);
+  TH1F *ratioHist_pT_sbar = new TH1F("h4", "Cumulative ratio of anti-s signal p_{T} to background", 100, 0, 100);
+  TH1F *ratioHist_nConst_sbar = new TH1F("h5", "Cumulative ratio of anti-s signal number of constituents to background", 100, 0, 100);
+  TH1F *ratioHist_pTLead_sbar = new TH1F("h6", "Cumulative ratio of anti-s signal lead constituent p_{T} to background", 100, 0, 100);
 
-  TH1F *cJet_pT_bkg = new TH1F("h7", "p_{T} do jato proveniente do quark c [GeV/c] (fundo)", 100, 0, 100);
-  TH1F *cJet_nConst_bkg = new TH1F("h8", "Numero de constituintes do jato proveniente do quark c (fundo)", 100, 0, 100);
-  TH1F *cJet_leadConst_pT_bkg = new TH1F("h9", "p_{T} do lead constituent do jato proveniente do quark c [GeV/c] (fundo)", 100, 0, 100);
+  TH1F *cJet_pT = new TH1F("h7", "p_{T} of jet from c quark [GeV/c] (signal)", 100, 0, 100);
+  TH1F *cJet_nConst = new TH1F("h8", "Number of constituents of jet from c quark (signal)", 100, 0, 100);
+  TH1F *cJet_leadConst_pT = new TH1F("h9", "p_{T} of lead constituent of jet from c quark [GeV/c] (signal)", 100, 0, 100);
 
-  TH1F *sJet_pT = new TH1F("h10", "p_{T} do jato proveniente do quark s [GeV/c]", 100, 0, 100);
-  TH1F *cbarJet_pT = new TH1F("h12", "p_{T} do jato proveniente do quark anti-c [GeV/c]", 100, 0, 100);
-  TH1F *sbarJet_pT = new TH1F("h13", "p_{T} do jato proveniente do quark anti-s [GeV/c]", 100, 0, 100);
+  TH1F *sbarJet_pT = new TH1F("h10", "p_{T} of jet from anti-s quark [GeV/c] (signal)", 100, 0, 100);
+  TH1F *sbarJet_nConst = new TH1F("h11", "Number of constituents of jet from anti-s quark (signal)", 100, 0, 100);
+  TH1F *sbarJet_leadConst_pT = new TH1F("h12", "p_{T} of lead constituent of jet from anti-s quark [GeV/c] (signal)", 100, 0, 100);
 
-  TH1F *invariantMass_cbar_s = new TH1F("h14", "Espectro de massa invariante dos jatos provenientes dos quarks anti-c e s [GeV/c^{2}]", 100, 0, 100);
-  TH1F *invariantMass_c_sbar = new TH1F("h15", "Espectro de massa invariante dos jatos provenientes dos quarks c e anti-s [GeV/c^{2}]", 100, 0, 100);
+  TH1F *cJet_pT_bkg = new TH1F("h13", "p_{T} of jet from c quark [GeV/c] (background)", 100, 0, 100);
+  TH1F *cJet_nConst_bkg = new TH1F("h14", "Number of constituents of jet from c quark (background)", 100, 0, 100);
+  TH1F *cJet_leadConst_pT_bkg = new TH1F("h15", "p_{T} of lead constituent of jet from c quark [GeV/c] (background)", 100, 0, 100);
+
+  TH1F *sbarJet_pT_bkg = new TH1F("h16", "p_{T} of jet from anti-s quark [GeV/c] (background)", 100, 0, 100);
+  TH1F *sbarJet_nConst_bkg = new TH1F("h17", "Number of constituents of jet from anti-s quark (background)", 100, 0, 100);
+  TH1F *sbarJet_leadConst_pT_bkg = new TH1F("h18", "p_{T} of lead constituent of jet from anti-s quark [GeV/c] (background)", 100, 0, 100);
+
+  TH1F *sJet_pT = new TH1F("h19", "p_{T} of jet from s quark [GeV/c]", 100, 0, 100);
+  TH1F *cbarJet_pT = new TH1F("h20", "p_{T} of jet from anti-c quark [GeV/c]", 100, 0, 100);
+
+  TH1F *invariantMass_cbar_s = new TH1F("h21", "Invariant mass spectrum of jets from anti-c and s quarks [GeV/c^{2}]", 100, 0, 100);
+  TH1F *invariantMass_c_sbar = new TH1F("h22", "Invariant mass spectrum of jets from c and anti-s quarks [GeV/c^{2}]", 100, 0, 100);
+
   
-
-
   //---------------------------------------------------------------------------------------------------------
   // Inicializacoes e configuracoes do FastJet:
   //---------------------------------------------------------------------------------------------------------
@@ -241,6 +251,10 @@ void read_wdecayTTree(const char* fileName)
           }
         }
 
+        //---------------------------------------------------------------------------------------------------------
+        // QUARK ANTI-S
+        //---------------------------------------------------------------------------------------------------------
+
         if (nj2Pdg == -3)
         {
           MyQuark *sbarq = static_cast<MyQuark *>(quarks->At(nj2));
@@ -254,12 +268,20 @@ void read_wdecayTTree(const char* fileName)
           if (distancia_sbar <= match_R)
           {
             sbarJet_pT->Fill(jetPt);
-            //cout << "sbarJet: " << jetPt << ", " << jetMass << endl;
+            sbarJet_nConst->Fill(jetNConst);
+            sbarJet_leadConst_pT->Fill(pT_LeadConst);
+
             vec_sbar = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+          }
+          else
+          {
+            sbarJet_pT_bkg->Fill(jetPt);
+            sbarJet_nConst_bkg->Fill(jetNConst);
+            sbarJet_leadConst_pT_bkg->Fill(pT_LeadConst);
           }
         }
         //---------------------------------------------------------------------------------------------------------
-        // QUARK C ---> Classical analysis interest object
+        // QUARK C
         //---------------------------------------------------------------------------------------------------------
 
         if (nj2Pdg == 4)
@@ -274,12 +296,10 @@ void read_wdecayTTree(const char* fileName)
 
           if (distancia_c <= match_R)
           {
-            //std::cout << jetPt << ", " << jetNConst << ", " << pT_LeadConst << std::endl;
             cJet_pT->Fill(jetPt);
             cJet_nConst->Fill(jetNConst);
             cJet_leadConst_pT->Fill(pT_LeadConst);
 
-            //cout << "cJet " << jetPt << ", " << jetMass << endl;
             vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE);
           }
           else
@@ -362,8 +382,35 @@ void read_wdecayTTree(const char* fileName)
   cJet_leadConst_pT_cumulative_bkg->Scale(1.0/cJet_leadConst_pT_cumulative_bkg->GetMaximum());
 
   //---------------------------------------------------------------------------------------------------------
+  //---------------------------------------------------------------------------------------------------------
+
+  TH1F *sbarJet_pT_cumulative = (TH1F *)sbarJet_pT->GetCumulative();
+  sbarJet_pT_cumulative->Scale(1.0/sbarJet_pT_cumulative->GetMaximum());
+
+  TH1F *sbarJet_pT_cumulative_bkg = (TH1F *)sbarJet_pT_bkg->GetCumulative();
+  sbarJet_pT_cumulative_bkg->Scale(1.0/sbarJet_pT_cumulative_bkg->GetMaximum());
+
+  //---------------------------------------------------------------------------------------------------------
+
+  TH1F *sbarJet_nConst_cumulative = (TH1F *)sbarJet_nConst->GetCumulative();
+  sbarJet_nConst_cumulative->Scale(1.0/sbarJet_nConst_cumulative->GetMaximum());
+
+  TH1F *sbarJet_nConst_cumulative_bkg = (TH1F *)sbarJet_nConst_bkg->GetCumulative();
+  sbarJet_nConst_cumulative_bkg->Scale(1.0/sbarJet_nConst_cumulative_bkg->GetMaximum());
+
+  //---------------------------------------------------------------------------------------------------------
+
+  TH1F *sbarJet_leadConst_pT_cumulative = (TH1F *)sbarJet_leadConst_pT->GetCumulative();
+  sbarJet_leadConst_pT_cumulative->Scale(1.0/sbarJet_leadConst_pT_cumulative->GetMaximum());
+
+  TH1F *sbarJet_leadConst_pT_cumulative_bkg = (TH1F *)sbarJet_leadConst_pT_bkg->GetCumulative();
+  sbarJet_leadConst_pT_cumulative_bkg->Scale(1.0/sbarJet_leadConst_pT_cumulative_bkg->GetMaximum());
+
+  //---------------------------------------------------------------------------------------------------------
   // Determination of cuts
   //---------------------------------------------------------------------------------------------------------
+
+  std::cout << "Jets from c quark" << std::endl;
 
   Float_t cut_pT_c = cut_binCalculation(cJet_pT_cumulative, cJet_pT_cumulative_bkg);
   ratioHistBuildUp(cJet_pT_cumulative, cJet_pT_cumulative_bkg, ratioHist_pT_c);
@@ -377,9 +424,26 @@ void read_wdecayTTree(const char* fileName)
   ratioHistBuildUp(cJet_leadConst_pT_cumulative, cJet_leadConst_pT_cumulative_bkg, ratioHist_pTLead_c);
   std::cout << "Lead constituent transverse momentum cut: " << cut_pTLead_c << "." << std::endl;
 
+  std::cout << "========================================================================" << std::endl;
+
+  std::cout << "Jets from sbar quark" << std::endl;
+
+  Float_t cut_pT_sbar = cut_binCalculation(sbarJet_pT_cumulative, sbarJet_pT_cumulative_bkg);
+  ratioHistBuildUp(sbarJet_pT_cumulative, sbarJet_pT_cumulative_bkg, ratioHist_pT_sbar);
+  std::cout << "Transverse momentum cut: " << cut_pT_sbar << "." << std::endl;
+
+  Float_t cut_nConst_sbar = cut_binCalculation(sbarJet_nConst_cumulative, sbarJet_nConst_cumulative_bkg);
+  ratioHistBuildUp(sbarJet_nConst_cumulative, sbarJet_nConst_cumulative_bkg, ratioHist_nConst_sbar);
+  std::cout << "Number of constituents cut: " << cut_nConst_sbar << "." << std::endl;
+
+  Float_t cut_pTLead_sbar = cut_binCalculation(sbarJet_leadConst_pT_cumulative, sbarJet_leadConst_pT_cumulative_bkg);
+  ratioHistBuildUp(sbarJet_leadConst_pT_cumulative, sbarJet_leadConst_pT_cumulative_bkg, ratioHist_pTLead_sbar);
+  std::cout << "Lead constituent transverse momentum cut: " << cut_pTLead_sbar << "." << std::endl;
+
   //---------------------------------------------------------------------------------------------------------
   // Canvas creation and plotting
   //------------------------------------------------------------------------------------------------------
+  
   TCanvas *c1 = new TCanvas("c1", "Quark's pT histograms", 2500, 2500);
   c1->Divide(2, 2);
 
@@ -427,63 +491,97 @@ void read_wdecayTTree(const char* fileName)
 
   //---------------------------------------------------------------------------------------------------------
   
-  TCanvas *c3 = new TCanvas("c3", "Cumulative histograms", 2500, 2500);
-  c3->Divide(3, 2);
+  TCanvas *c3 = new TCanvas("c3", "Discriminatory variables cumulative histograms for c quark", 2500, 2500);
+  c3->Divide(2, 2);
 
   c3->cd(1);
-  cJet_pT_cumulative->SetTitle("c quark jet's cumulative p_{T} (signal)");
+  cJet_pT_cumulative->SetTitle("Cumulative p_{T} of c-quark jets (signal)");
   cJet_pT_cumulative->GetXaxis()->SetTitle("p_{T} [GeV/c]");
-  cJet_pT_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_pT_cumulative->Draw();
+  cJet_pT_cumulative->GetYaxis()->SetTitle("Cumulative Frequency");
+  cJet_pT_cumulative->DrawCopy();
 
   c3->cd(2);
-  cJet_nConst_cumulative->SetTitle("c quark jet's cumulative numeber of constituents (signal)");
+  cJet_nConst_cumulative->SetTitle("Cumulative number of constituents of c-quark jets (signal)");
   cJet_nConst_cumulative->GetXaxis()->SetTitle("Number of Constituents");
-  cJet_nConst_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_nConst_cumulative->Draw();
-  
+  cJet_nConst_cumulative->GetYaxis()->SetTitle("Cumulative Frequency");
+  cJet_nConst_cumulative->DrawCopy();
+
+  /* 
   c3->cd(3);
-  cJet_leadConst_pT_cumulative->SetTitle("c quark jet's cumulative lead constituent p_{T} (signal)");
+  cJet_leadConst_pT_cumulative->SetTitle("Cumulative p_{T} of leading constituent of c-quark jets (signal)");
   cJet_leadConst_pT_cumulative->GetXaxis()->SetTitle("p_{T} [GeV/c]");
-  cJet_leadConst_pT_cumulative->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_leadConst_pT_cumulative->Draw();
+  cJet_leadConst_pT_cumulative->GetYaxis()->SetTitle("Cumulative Frequency");
+  cJet_leadConst_pT_cumulative->DrawCopy();
+  */
+
+  c3->cd(3);
+  cJet_pT_cumulative_bkg->SetTitle("Cumulative p_{T} of c-quark jets (background)");
+  cJet_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  cJet_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulative Frequency");
+  cJet_pT_cumulative_bkg->DrawCopy();
 
   c3->cd(4);
-  cJet_pT_cumulative_bkg->SetTitle("c quark jet's cumulative p_{T} (background)");
-  cJet_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
-  cJet_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_pT_cumulative_bkg->Draw();
-
-  c3->cd(5);
-  cJet_nConst_cumulative_bkg->SetTitle("c quark jet's cumulative numeber of constituents (background)");
+  cJet_nConst_cumulative_bkg->SetTitle("Cumulative number of constituents of c-quark jets (background)");
   cJet_nConst_cumulative_bkg->GetXaxis()->SetTitle("Number of Constituents");
-  cJet_nConst_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_nConst_cumulative_bkg->Draw();
-  
+  cJet_nConst_cumulative_bkg->GetYaxis()->SetTitle("Cumulative Frequency");
+  cJet_nConst_cumulative_bkg->DrawCopy();
+
+  /* 
   c3->cd(6);
   cJet_leadConst_pT_cumulative_bkg->SetTitle("c quark jet's cumulative lead constituent p_{T} (background)");
   cJet_leadConst_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
   cJet_leadConst_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulated Frequency");
-  cJet_leadConst_pT_cumulative_bkg->Draw();
+  cJet_leadConst_pT_cumulative_bkg->DrawCopy();
+  */
 
   //---------------------------------------------------------------------------------------------------------
 
-  TCanvas *c4 = new TCanvas("c4", "Cumulative ratio histograms", 2500, 2500); // "Ratio" refers to the division of signal data by bkg data
-  c4->Divide(1,3);
+  TCanvas *c4 = new TCanvas("c4", "Discriminatory variables cumulative histograms for anti-s quark", 2500, 2500);
+  c4->Divide(2, 2);
 
   c4->cd(1);
+  sbarJet_pT_cumulative->SetTitle("Cumulative p_{T} of anti-s quark jets (signal)");
+  sbarJet_pT_cumulative->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  sbarJet_pT_cumulative->GetYaxis()->SetTitle("Cumulative Frequency");
+  sbarJet_pT_cumulative->DrawCopy();
+
+  c4->cd(2);
+  sbarJet_nConst_cumulative->SetTitle("Cumulative number of constituents of anti-s quark jets (signal)");
+  sbarJet_nConst_cumulative->GetXaxis()->SetTitle("Number of Constituents");
+  sbarJet_nConst_cumulative->GetYaxis()->SetTitle("Cumulative Frequency");
+  sbarJet_nConst_cumulative->DrawCopy();
+
+  c4->cd(3);
+  sbarJet_pT_cumulative_bkg->SetTitle("Cumulative p_{T} of anti-s quark jets (background)");
+  sbarJet_pT_cumulative_bkg->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  sbarJet_pT_cumulative_bkg->GetYaxis()->SetTitle("Cumulative Frequency");
+  sbarJet_pT_cumulative_bkg->DrawCopy();
+
+  c4->cd(4);
+  sbarJet_nConst_cumulative_bkg->SetTitle("Cumulative number of constituents of anti-s quark jets (background)");
+  sbarJet_nConst_cumulative_bkg->GetXaxis()->SetTitle("Number of Constituents");
+  sbarJet_nConst_cumulative_bkg->GetYaxis()->SetTitle("Cumulative Frequency");
+  sbarJet_nConst_cumulative_bkg->DrawCopy();
+
+
+  //---------------------------------------------------------------------------------------------------------
+
+  TCanvas *c5 = new TCanvas("c5", "Cumulative ratio histograms", 2500, 2500); // "Ratio" refers to the division of signal data by bkg data
+  c5->Divide(1,3);
+
+  c5->cd(1);
   ratioHist_pT_c->SetTitle("c Quark Jet's p_{T} Cumulative Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Frequency");
   ratioHist_pT_c->Draw();
 
-  c4->cd(2);
+  c5->cd(2);
   ratioHist_nConst_c->SetTitle("c Quark Jet's Number of Constituents Cumulative Ratio");
   ratioHist_nConst_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_nConst_c->GetXaxis()->SetTitle("Frequency");
   ratioHist_nConst_c->Draw();
 
-  c4->cd(3);
+  c5->cd(3);
   ratioHist_pT_c->SetTitle("c Quark Jet's Lead Constituent p_{T} Cumulative Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Ratio");
   ratioHist_pT_c->GetXaxis()->SetTitle("Frequency");
@@ -491,5 +589,5 @@ void read_wdecayTTree(const char* fileName)
 
   //---------------------------------------------------------------------------------------------------------
 
-  //file->Close();
+  file->Close();
 }

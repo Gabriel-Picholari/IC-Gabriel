@@ -28,7 +28,6 @@ void cutsApplication(const char* fileName)
     
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t match_R = 0.1;
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacao dos histogramas
@@ -39,6 +38,10 @@ void cutsApplication(const char* fileName)
     TH1F *nConstCut_IMS = new TH1F("h3", "Jet's Invariant Mass Sprectrum with a cut in the number of constituents", 100, 0, 100);
     TH1F *second_pTCut_IMS = new TH1F("h4", "Jet's Invariant Mass Sprectrum with an arbitrary cut in p_{T}", 100, 0, 100);
     TH1F *pT_and_nConstCut_IMS = new TH1F("h5", "Jet's Invariant Mass Sprectrum with cuts both in the number of constituents and p_{T}", 100, 0, 100);
+    TH1F *second_pTCut_and_nConst_IMS = new TH1F("h6", "Jet's Invariant Mass Sprectrum with secondary cuts both in the number of constituents and p_{T}", 100, 0, 100);
+
+    TH1F *hist_jetPt = new TH1F("h7","Jet p_{T}", 100, 0, 100);
+    TH1F *hist_jetNConst = new TH1F("h8","Jet number of constituents", 100, 0, 100);
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacoes e configuracoes do FastJet:
@@ -93,17 +96,25 @@ void cutsApplication(const char* fileName)
 
         fastjet::ClusterSequence clusterSeq(particles_fastjet, jet_def);
         jets = clusterSeq.inclusive_jets();
+    
 
-        for (Int_t m = 0; m < jets.size(); m++)
+        for (Int_t m = 0; m < jets.size() - 1; m++)
         {
+
             for (Int_t k = m+1; k < jets.size(); k++)
             {
 
                 fastjet::PseudoJet jet_m = jets[m];
                 fastjet::PseudoJet jet_k = jets[k];
-                
+
                 TLorentzVector vec_m(0,0,0,0);
                 vec_m.SetPxPyPzE(jet_m.px(), jet_m.py(), jet_m.pz(), jet_m.e());
+                
+                Float_t mpT = vec_m.Pt();
+                Float_t mNConst = jet_m.constituents().size();
+
+                hist_jetPt->Fill(mpT);
+                hist_jetNConst->Fill(mNConst);
 
                 TLorentzVector vec_k(0,0,0,0);
                 vec_k.SetPxPyPzE(jet_k.px(), jet_k.py(), jet_k.pz(), jet_k.e());
@@ -131,66 +142,89 @@ void cutsApplication(const char* fileName)
                     }
                 }
                 */
-
-                //---------------------------------------------------------------------------------------------------------
-                // Preenchimento dos TLorentzVectors dos jatos do evento
-                //---------------------------------------------------------------------------------------------------------
                 
-                noCut_IMS->Fill( vec_mom.M() ); 
+                noCut_IMS->Fill( vec_mom.M() );
 
-                if ( jetNConst > 2.5 ) nConstCut_IMS->Fill( vec_mom.M() );
+                if ( jetNConst > 3 ) nConstCut_IMS->Fill( vec_mom.M() );
 
                 if ( jetPt < 1.5 ) continue;
                 pTCut_IMS->Fill( vec_mom.M() ); 
                 
-                if ( jetNConst > 2.5 ) pT_and_nConstCut_IMS->Fill( vec_mom.M() ); 
+                if ( jetNConst > 3 ) pT_and_nConstCut_IMS->Fill( vec_mom.M() ); 
 
                 if (jetPt < 10 ) continue;
                 second_pTCut_IMS->Fill( vec_mom.M() );
+
+                if ( jetNConst > 3 ) second_pTCut_and_nConst_IMS->Fill( vec_mom.M() );
                 
             }
-        } // End of individual jets creation
+        }
  
         particles_fastjet.clear();
         jets.clear();
         jets_array->Clear();
         quarks->Clear();
     }
-
+    /* 
     TCanvas *c1 = new TCanvas("c1", "Invariant Mass Spectrum", 2500, 2500);
-    c1->Divide(1, 1);
+    c1->Divide(1, 2);
 
     c1->cd(1);
-    noCut_IMS->SetTitle("Unfiltered Jet's Invariant Mass Spectrum");
+    noCut_IMS->SetTitle("Invariant Mass Spectrum of Unfiltered Jets");
+    noCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    noCut_IMS->GetYaxis()->SetTitle("Frequency");
+    noCut_IMS->Draw();
+    */
+
+    TCanvas *c2 = new TCanvas("c2", "Variants of Invariant Mass Spectrum", 2500, 2500);
+    c2->Divide(2, 2);
+
+    c2->cd(1);
+    noCut_IMS->SetTitle("Invariant Mass Spectrum of Unfiltered Jets");
     noCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     noCut_IMS->GetYaxis()->SetTitle("Frequency");
     noCut_IMS->Draw();
 
-    TCanvas *c2 = new TCanvas("c2", "Invariant Mass Spectrum variants", 2500, 2500);
-    c2->Divide(2, 2);
-
-    c2->cd(1);
-    pTCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with cut in p_{T}");
+    c2->cd(2);
+    pTCut_IMS->SetTitle("Invariant Mass Spectrum of Jets with p_{T} Cut");
     pTCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     pTCut_IMS->GetYaxis()->SetTitle("Frequency");
     pTCut_IMS->Draw();
 
-    c2->cd(2);
-    nConstCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with a cut in the number of constituents");
+    c2->cd(3);
+    nConstCut_IMS->SetTitle("Invariant Mass Spectrum of Jets with Cut on Number of Constituents");
     nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
     nConstCut_IMS->Draw();
 
+    /* 
     c2->cd(3);
-    second_pTCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with an arbitrary cut in p_{T}");
+    second_pTCut_IMS->SetTitle("Invariant Mass Spectrum of Jets with Arbitrary p_{T} Cut");
     second_pTCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     second_pTCut_IMS->GetYaxis()->SetTitle("Frequency");
     second_pTCut_IMS->Draw();
+    */
 
     c2->cd(4);
-    pT_and_nConstCut_IMS->SetTitle("Jet's Invariant Mass Sprectrum with cuts both in the number of constituents and p_{T}");
+    pT_and_nConstCut_IMS->SetTitle("Invariant Mass Spectrum of Jets with Cuts on Number of Constituents and p_{T}");
     pT_and_nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     pT_and_nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
     pT_and_nConstCut_IMS->Draw();
+
+    TCanvas *c3 = new TCanvas("c3", "Simple histograms", 2500, 2500);
+    c3->Divide(1, 2);
+
+    c3->cd(1);
+    hist_jetPt->SetTitle("Jet p_{T}");
+    hist_jetPt->GetXaxis()->SetTitle("Pt [GeV/c]");
+    hist_jetPt->GetYaxis()->SetTitle("Frequency");
+    hist_jetPt->Draw();
+
+    c3->cd(2);
+    hist_jetNConst->SetTitle("Jet Number of Constituents");
+    hist_jetNConst->GetXaxis()->SetTitle("Number of Constituents");
+    hist_jetNConst->GetYaxis()->SetTitle("Frequency");
+    hist_jetNConst->Draw();
+
 }
 

@@ -28,7 +28,7 @@ void modelTrainment(const char *fileName) {
 
     loader.AddVariable("pT_c", 'F');
     loader.AddVariable("nConst_c", 'F');
-    loader.AddVariable("pT_lConst_c", 'F');
+    //loader.AddVariable("pT_lConst_c", 'F');
 
     loader.AddSpectator("label_c", "F");
 

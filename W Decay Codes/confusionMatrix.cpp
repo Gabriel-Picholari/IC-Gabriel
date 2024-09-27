@@ -34,7 +34,7 @@ void confusionMatrix(const char *fileName)
 
     reader.AddVariable("pT_c", &pT_c);
     reader.AddVariable("nConst_c", &nConst_c);
-    reader.AddVariable("pT_lConst_c", &pT_lConst_c);
+    //reader.AddVariable("pT_lConst_c", &pT_lConst_c);
 
     reader.AddSpectator("label_c", &label_c);
 
@@ -50,7 +50,7 @@ void confusionMatrix(const char *fileName)
     testTree->SetBranchAddress("pT_c", &pT_c);
     testTree->SetBranchAddress("label_c", &label_c);
     testTree->SetBranchAddress("nConst_c", &nConst_c);
-    testTree->SetBranchAddress("pT_lConst_c", &pT_lConst_c);
+    //testTree->SetBranchAddress("pT_lConst_c", &pT_lConst_c);
 
     Long64_t nEntries = testTree->GetEntries();
 
