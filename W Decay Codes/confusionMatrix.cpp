@@ -30,11 +30,16 @@ void confusionMatrix(const char *fileName)
 
     TMVA::Reader reader;
 
-    Float_t pT_c, nConst_c, pT_lConst_c, label_c;
+    Float_t pT_c, pT_lConst_c, label_c, nConst_c, averageAng_c, sigmaKT_c, eta_c, phi_c, energy_c;
 
-    reader.AddVariable("pT_c", &pT_c);
-    reader.AddVariable("nConst_c", &nConst_c);
-    //reader.AddVariable("pT_lConst_c", &pT_lConst_c);
+    //reader.AddVariable("pT_c", &pT_c);
+    //reader.AddVariable("eta_c", &eta_c);
+    //reader.AddVariable("phi_c", &phi_c);
+    //reader.AddVariable("energy_c", &energy_c);
+    //reader.AddVariable("nConst_c", &nConst_c);
+    reader.AddVariable("sigmaKT_c", &sigmaKT_c);
+    reader.AddVariable("pT_lConst_c", &pT_lConst_c);
+    //reader.AddVariable("averageAng_c", &averageAng_c);
 
     reader.AddSpectator("label_c", &label_c);
 
@@ -47,10 +52,16 @@ void confusionMatrix(const char *fileName)
 
     int TP = 0, TN = 0, FP = 0, FN = 0;
 
-    testTree->SetBranchAddress("pT_c", &pT_c);
     testTree->SetBranchAddress("label_c", &label_c);
-    testTree->SetBranchAddress("nConst_c", &nConst_c);
-    //testTree->SetBranchAddress("pT_lConst_c", &pT_lConst_c);
+
+    //testTree->SetBranchAddress("pT_c", &pT_c);
+    //testTree->SetBranchAddress("eta_c", &eta_c);
+    //testTree->SetBranchAddress("phi_c", &phi_c);
+    //testTree->SetBranchAddress("energy_c", &energy_c);
+    //testTree->SetBranchAddress("nConst_c", &nConst_c);
+    testTree->SetBranchAddress("sigmaKT_c", &sigmaKT_c);
+    testTree->SetBranchAddress("pT_lConst_c", &pT_lConst_c);
+    //testTree->SetBranchAddress("averageAng_c", &averageAng_c);
 
     Long64_t nEntries = testTree->GetEntries();
 
@@ -93,8 +104,8 @@ void confusionMatrix(const char *fileName)
     //---------------------------------------------------------------------------------------------------------
     
     std::cout << "Confusion Matrix:" << std::endl;
-    std::cout << "TP: " << TP << "  FP: " << FP << std::endl;
-    std::cout << "FN: " << FN << "  TN: " << TN << std::endl;
+    std::cout << "TP: " << TP << "  FN: " << FN << std::endl;
+    std::cout << "FP: " << FP << "  TN: " << TN << std::endl;
 
     inputFile->Close();
 }
