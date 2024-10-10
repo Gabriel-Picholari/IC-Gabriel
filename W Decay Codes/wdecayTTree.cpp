@@ -1,31 +1,31 @@
-//---------------------------------------------------------------------------------------------------------//
-//                                                                                                         //
-// Macro with the main objective of creating a TTree containing specific data from a pp collision that     //
-// necessarily results in the formation of a W boson. Note that the collected data is filtered to include  //
-// only the final particles (necessary for jet reconstruction) and the last quark (refer to the function   //
-// "findLastQuark" for further details) of the showering process resulting from the specified decay of the //
-// W boson. The specific decay mode is either s-cbar or c-sbar.                                            //
-//                                                                                                         //
-//---------------------------------------------------------------------------------------------------------//
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+/* 
 
-#include "TSystem.h"
+  Macro with the main objective of creating a TTree containing specific data from a pp collision that necessarily results in the formation of a W boson. Note that the collected data is filtered to 
+include only the final particles (necessary for jet reconstruction) and the last quark (refer to the function "findLastQuark" for further details) of the showering process resulting from the 
+specified decay of the W boson. The specific decay mode is either s-cbar or c-sbar.                                            
+
+*/                                                                                                  
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 #include "TH1F.h"
-#include "TClonesArray.h"
+#include "MyJet.h"
+#include "TMath.h"
+#include "TFile.h"
+#include "TSystem.h"
+#include "TCanvas.h"
+#include "MyQuark.h"
 #include "TPythia8.h"
 #include "TParticle.h"
-#include "TDatabasePDG.h"
-#include "TCanvas.h"
-#include "TMath.h"
 #include "TClonesArray.h"
-#include "MyJet.h"
-#include "MyQuark.h"
-#include "TFile.h"
+#include "TDatabasePDG.h"
+#include "TClonesArray.h"
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
 Int_t findLastQuark(TClonesArray* particles, Int_t index = -1);
 
-void wdecayTTree(Int_t nev = 100000, Int_t ndeb = 1 /* Listagem */ )
+void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
 {
 
   gSystem->Load("libEg");
@@ -38,7 +38,7 @@ void wdecayTTree(Int_t nev = 100000, Int_t ndeb = 1 /* Listagem */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay100K.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay10K_QCD_ON.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -49,20 +49,19 @@ void wdecayTTree(Int_t nev = 100000, Int_t ndeb = 1 /* Listagem */ )
   //---------------------------------------------------------------------------------------------------------
 
   TPythia8 *pythia8 = new TPythia8();
-  pythia8->ReadString("HardQCD:all = off");
+  pythia8->ReadString("HardQCD:all = on");
   pythia8->ReadString("Random:setSeed = on");
-  pythia8->ReadString("Random:seed = 1");
+  pythia8->ReadString("Random:seed = 2");
 
   pythia8->ReadString("WeakSingleBoson:ffbar2W = on");
-  pythia8->ReadString("24:onMode = off");
-  pythia8->ReadString("24:onIfMatch = 3 -4");
-  pythia8->ReadString("24:onIfMatch = -3 4");
   
-  pythia8->ReadString("-24:onMode = off");
-  pythia8->ReadString("-24:onIfMatch = 3 -4");
-  pythia8->ReadString("-24:onIfMatch = -3 4");
-
-
+  //pythia8->ReadString("24:onMode = off");
+  //pythia8->ReadString("24:onIfMatch = 3 -4");
+  //pythia8->ReadString("24:onIfMatch = -3 4");
+  
+  //pythia8->ReadString("-24:onMode = off");
+  //pythia8->ReadString("-24:onIfMatch = 3 -4");
+  //pythia8->ReadString("-24:onIfMatch = -3 4");
 
   pythia8->Initialize(2212 /* Proton */, 2212 /* Proton */, 14000 /* TeV */); /* 14000 TeV = 14000000 GeV */
 
