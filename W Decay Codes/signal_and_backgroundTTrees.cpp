@@ -36,7 +36,7 @@ void signal_and_backgroundTTrees(const char *fileName)
   Float_t c_pT, c_Eta, c_Phi = 0;
   Float_t sbar_pT, sbar_Eta, sbar_Phi = 0;
   Float_t cbar_pT, cbar_Eta, cbar_Phi = 0;
-  Float_t match_R = 0.1;
+  Float_t match_R = 0.5;
 
   //---------------------------------------------------------------------------------------------------------
   // Inicializacoes e configuracoes do FastJet:
@@ -54,7 +54,7 @@ void signal_and_backgroundTTrees(const char *fileName)
   //---------------------------------------------------------------------------------------------------------
 
   TFile *file = new TFile(fileName, "READ");
-  TTree *ttree = dynamic_cast<TTree *>(file->Get("W decay TTree"));
+  TTree *ttree = dynamic_cast<TTree *>(file->Get("W decay TTree 2"));
 
   TClonesArray *jets_array = new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
@@ -68,27 +68,33 @@ void signal_and_backgroundTTrees(const char *fileName)
   // Inicializacao das TTrees TMVA
   //---------------------------------------------------------------------------------------------------------
 
-  Float_t pT_c, pT_lConst_c, label_c, nConst_c, averageAng_c, sigmaKT_c = 0;
+  Float_t pT_c, pT_lConst_c, label_c, nConst_c, averageAng_c, sigmaKT_c, eta_c, phi_c, energy_c = 0;
 
   TFile *filteredDataFile = new TFile("filteredOutput_3var.root", "RECREATE");
 
   TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
   
-  signalTree_c->Branch("pT_c", &pT_c);
+  //signalTree_c->Branch("pT_c", &pT_c);
+  //signalTree_c->Branch("eta_c", &eta_c);
+  //signalTree_c->Branch("phi_c", &phi_c);
   signalTree_c->Branch("label_c", &label_c);
-  signalTree_c->Branch("nConst_c", &nConst_c);
+  //signalTree_c->Branch("energy_c", &energy_c);
+  //signalTree_c->Branch("nConst_c", &nConst_c);
   signalTree_c->Branch("sigmaKT_c", &sigmaKT_c);
   signalTree_c->Branch("pT_lConst_c", &pT_lConst_c);
-  signalTree_c->Branch("averageAng_c", &averageAng_c);
+  //signalTree_c->Branch("averageAng_c", &averageAng_c);
 
 
   TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
-  backgroundTree_c->Branch("pT_c", &pT_c);
+  //backgroundTree_c->Branch("pT_c", &pT_c);
+  //backgroundTree_c->Branch("eta_c", &eta_c);
+  //backgroundTree_c->Branch("phi_c", &phi_c);
   backgroundTree_c->Branch("label_c", &label_c);
-  backgroundTree_c->Branch("nConst_c", &nConst_c);
+  //backgroundTree_c->Branch("nConst_c", &nConst_c);
+  //backgroundTree_c->Branch("energy_c", &energy_c);
   backgroundTree_c->Branch("sigmaKT_c", &sigmaKT_c);
   backgroundTree_c->Branch("pT_lConst_c", &pT_lConst_c);
-  backgroundTree_c->Branch("averageAng_c", &averageAng_c);
+  //backgroundTree_c->Branch("averageAng_c", &averageAng_c);
 
 
   //---------------------------------------------------------------------------------------------------------
@@ -182,6 +188,9 @@ void signal_and_backgroundTTrees(const char *fileName)
           {
             label_c = 1;
             pT_c = jetPt;
+            eta_c = jetE;
+            phi_c = jetPhi;
+            energy_c = jetEta;
             sigmaKT_c = sigmaKT;
             nConst_c = jetNConst;
             averageAng_c = averAng;
@@ -190,10 +199,13 @@ void signal_and_backgroundTTrees(const char *fileName)
             signalTree_c->Fill();
           }
 
-          else// Not matched ---> BACKGROUND
+          else // Not matched ---> BACKGROUND
           {
             label_c = 0;
             pT_c = jetPt;
+            eta_c = jetE;
+            phi_c = jetPhi;
+            energy_c = jetEta;
             sigmaKT_c = sigmaKT;
             nConst_c = jetNConst;
             averageAng_c = averAng;
@@ -219,8 +231,4 @@ void signal_and_backgroundTTrees(const char *fileName)
 
   file->Close();
   filteredDataFile->Close();
-
-  delete jets_array;
-  delete quarks;
-
 }
