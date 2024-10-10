@@ -26,9 +26,14 @@ void modelTrainment(const char *fileName) {
     TMVA::Factory factory("TMVARegression", outputFile, "AnalysisType=Classification");
     TMVA::DataLoader loader("dataset");
 
-    loader.AddVariable("pT_c", 'F');
-    loader.AddVariable("nConst_c", 'F');
-    //loader.AddVariable("pT_lConst_c", 'F');
+    //loader.AddVariable("pT_c", 'F');
+    //loader.AddVariable("eta_c", 'F');
+    //loader.AddVariable("phi_c", 'F');
+    //loader.AddVariable("energy_c", 'F');
+    //loader.AddVariable("nConst_c", 'F');
+    loader.AddVariable("sigmaKT_c", 'F');
+    loader.AddVariable("pT_lConst_c", 'F');
+    //loader.AddVariable("averageAng_c", 'F');
 
     loader.AddSpectator("label_c", "F");
 
