@@ -1,4 +1,4 @@
-# IC Gabriel
+# Iniciação Científica
  Projetos da IC
 
 
