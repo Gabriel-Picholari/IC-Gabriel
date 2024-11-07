@@ -19,16 +19,15 @@ specified decay of the W boson. The specific decay mode is either s-cbar or c-sb
 #include "TParticle.h"
 #include "TClonesArray.h"
 #include "TDatabasePDG.h"
-#include "TClonesArray.h"
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
 Int_t findLastQuark(TClonesArray* particles, Int_t index = -1);
 
-void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
+void wdecayTTree(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
 {
 
-  gSystem->Load("libEg");
+  gSystem->Load("libEG");
   gSystem->Load("libEGPythia8");
 
   //---------------------------------------------------------------------------------------------------------
@@ -38,7 +37,7 @@ void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay10K_QCD_ON.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay1K_QCD_OFF.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -49,19 +48,17 @@ void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
   //---------------------------------------------------------------------------------------------------------
 
   TPythia8 *pythia8 = new TPythia8();
-  pythia8->ReadString("HardQCD:all = on");
+  pythia8->ReadString("HardQCD:all = off");
   pythia8->ReadString("Random:setSeed = on");
-  pythia8->ReadString("Random:seed = 2");
+  pythia8->ReadString("Random:seed = 1");
 
   pythia8->ReadString("WeakSingleBoson:ffbar2W = on");
   
-  //pythia8->ReadString("24:onMode = off");
-  //pythia8->ReadString("24:onIfMatch = 3 -4");
-  //pythia8->ReadString("24:onIfMatch = -3 4");
+  pythia8->ReadString("24:onMode = off");
+  pythia8->ReadString("24:onIfMatch = 3 -4");
   
-  //pythia8->ReadString("-24:onMode = off");
-  //pythia8->ReadString("-24:onIfMatch = 3 -4");
-  //pythia8->ReadString("-24:onIfMatch = -3 4");
+  pythia8->ReadString("-24:onMode = off");
+  pythia8->ReadString("-24:onIfMatch = -3 4");
 
   pythia8->Initialize(2212 /* Proton */, 2212 /* Proton */, 14000 /* TeV */); /* 14000 TeV = 14000000 GeV */
 
@@ -106,7 +103,7 @@ void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
         }
       }
 
-      if (ist > 0)
+      if (ist == 1)
       {
         TParticle *fpart = (TParticle*) particles->At(ip);
         MyJet *fp = static_cast<MyJet*>(jets_array->New(nfp2++));
@@ -135,18 +132,6 @@ void wdecayTTree(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
   pythia8->PrintStatistics();
   ttree->Write();
   outfile->Close();
-
-  delete pythia8;
-  delete jets_array;
-  delete quarks;
-  delete particles;
-
-  if (outfile->IsOpen()) {
-    std::cerr << "Error closing file wdecay.root" << std::endl;
-  }
-
-  delete outfile;
-
 }
 
 Int_t findLastQuark(TClonesArray* particles, Int_t index=-1)

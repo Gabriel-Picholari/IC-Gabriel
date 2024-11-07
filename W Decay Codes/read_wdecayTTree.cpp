@@ -81,7 +81,7 @@ void read_wdecayTTree(const char* fileName)
   Float_t s_pT, s_Eta, s_Phi, c_pT, c_Eta, c_Phi = 0;
   Float_t sbar_pT, sbar_Eta, sbar_Phi = 0;
   Float_t cbar_pT, cbar_Eta, cbar_Phi = 0;
-  Float_t match_R = 0.1;
+  Float_t match_R = 0.5;
 
   // Criacao dos TLorentzVector
 
