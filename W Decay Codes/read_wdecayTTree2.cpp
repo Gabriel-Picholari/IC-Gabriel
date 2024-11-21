@@ -130,13 +130,15 @@ void read_wdecayTTree2(const char* fileName)
 
     TH1F *invariantMass_cbar_s = new TH1F("h43", "Invariant mass spectrum of jets from anti-c and s quarks [GeV/c^{2}]", 100, 0, 100);
     TH1F *invariantMass_c_sbar = new TH1F("h44", "Invariant mass spectrum of jets from c and anti-s quarks [GeV/c^{2}]", 100, 0, 100);
+    TH1F *invariantMass = new TH1F("h45", "Invariant mass spectrum [GeV/c^{2}]", 98, 2, 100);
+
 
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacoes e configuracoes do FastJet:
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t jetR = 0.5;
+    Float_t jetR = 0.4;
 
     fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, jetR);
 
@@ -371,17 +373,22 @@ void read_wdecayTTree2(const char* fileName)
         } // End of individual jet creation
 
         const Float_t tolerance = 1e-5;
+        TLorentzVector totalVector;
 
         if ( fabs(vec_cbar.M() - 3.141592) > tolerance && fabs(vec_s.M() - 3.141592) > tolerance ) 
         {
             TLorentzVector vec_cbar_s_event = vec_cbar + vec_s;
-            invariantMass_cbar_s->Fill( vec_cbar_s_event.M() ); 
+            invariantMass_cbar_s->Fill( vec_cbar_s_event.M() );
+            totalVector = totalVector + vec_cbar_s_event;
         }
         if ( fabs(vec_sbar.M() - 3.141592) > tolerance && fabs(vec_c.M() - 3.141592) > tolerance )
         {
             TLorentzVector vec_c_sbar_event = vec_c + vec_sbar;
             invariantMass_c_sbar->Fill( vec_c_sbar_event.M() );
+            totalVector = totalVector + vec_c_sbar_event;
         }
+
+        invariantMass->Fill(totalVector.M());
 
         particles_fastjet.clear();
         jets.clear();
@@ -625,7 +632,7 @@ void read_wdecayTTree2(const char* fileName)
     //---------------------------------------------------------------------------------------------------------
 
     TCanvas *c2 = new TCanvas("c2", "Invariant mass distributions", 2500, 2500);
-    c2->Divide(1, 2);
+    c2->Divide(1, 3);
 
     c2->cd(1);
     invariantMass_cbar_s->SetTitle("Jet's invariant mass spectrum - anti-c and s");
@@ -639,9 +646,15 @@ void read_wdecayTTree2(const char* fileName)
     invariantMass_c_sbar->GetYaxis()->SetTitle("Frequency");
     invariantMass_c_sbar->Draw();
 
+    c2->cd(3);
+    invariantMass->SetTitle("Jet's invariant mass spectrum");
+    invariantMass->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    invariantMass->GetYaxis()->SetTitle("Frequency");
+    invariantMass->Draw();
+
 
     //---------------------------------------------------------------------------------------------------------
-
+    /* 
     TCanvas *c3 = new TCanvas("c3", "Cumulative Histograms for c quark - Part I", 2500, 2500);
     c3->Divide(3, 2);
 
@@ -953,6 +966,8 @@ void read_wdecayTTree2(const char* fileName)
     sbarJet_vertex_cumulative_bkg->SetEntries(100);
     sbarJet_vertex_cumulative_bkg->DrawCopy();
     
+    */
+
     //---------------------------------------------------------------------------------------------------------
     // Saving histograms
     //---------------------------------------------------------------------------------------------------------
