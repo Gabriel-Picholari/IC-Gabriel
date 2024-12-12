@@ -22,50 +22,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-/* 
-bool findQuarkOrigin(TParticle* particle, TClonesArray* particles, MyJet* fp, MyQuark* mq) {
-  
-  Int_t ipPdg = particle->GetPdgCode();            // PDG atual
-
-  if (abs(ipPdg) == 3 || abs(ipPdg) == 4) 
-  {
-      Int_t motherIdx = particle->GetFirstMother();     // Índice da mãe
-      if (motherIdx < 0) return false;                  // Não há mãe, fim do caminho
-
-      TParticle* motherPart = (TParticle*)particles->At(motherIdx);
-
-      Int_t motherPdg = abs(motherPart->GetPdgCode());
-
-      if (motherPdg == 24) {
-
-        //std::cout << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx << "; " << "Mother PDG: " << motherPdg << std::endl;
-        //std::cout << "Quark encontrado: " << ipPdg << " ; Partícula final associada: " << ipPdg << std::endl;
-        //std::cout << "==========================================================================================================================" << std::endl;
-
-        mq->qPdg  = ipPdg;
-        mq->qpT = particle->Pt();
-        mq->qEta = particle->Eta();
-        mq->qPhi = particle->Phi();
-
-        if (abs(ipPdg) == 3) fp->signalType = "s";
-        if (abs(ipPdg) == 4) fp->signalType = "c";
-        return true;
-
-      }
-
-      return findQuarkOrigin(motherPart, particles, fp, mq);
-  }
-
-  // Continua a busca se não encontrou quark s ou c
-  Int_t motherIdx = particle->GetFirstMother();
-  if (motherIdx < 0) return false;
-  TParticle* motherPart = (TParticle*)particles->At(motherIdx);
-
-  return findQuarkOrigin(motherPart, particles, fp, mq);
-}
-*/
-
-void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
+void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -88,36 +45,38 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
   // Inicializacoes e configuracoes do Pythia:
   //---------------------------------------------------------------------------------------------------------
 
-  TPythia8 *pythia8 = new TPythia8();
-  pythia8->ReadString("HardQCD:all = off");
-  pythia8->ReadString("Random:setSeed = on");
-  pythia8->ReadString("Random:seed = 3");
+  TPythia8 pythia8 = new TPythia8();
+  pythia8.ReadString("HardQCD:all = off");
+  pythia8.ReadString("Random:setSeed = on");
+  pythia8.ReadString("Random:seed = 3");
 
-  pythia8->ReadString("WeakSingleBoson:ffbar2W = on");
+  pythia8.ReadString("WeakSingleBoson:ffbar2W = on");
 
-  pythia8->ReadString("24:onMode = off");
-  pythia8->ReadString("24:onIfMatch = 3 -4");
+  pythia8.ReadString("24:onMode = off");
+  pythia8.ReadString("24:onIfMatch = 3 -4");
   
-  pythia8->ReadString("-24:onMode = off");
-  pythia8->ReadString("-24:onIfMatch = -3 4");
+  pythia8.ReadString("-24:onMode = off");
+  pythia8.ReadString("-24:onIfMatch = -3 4");
 
-  pythia8->Initialize(2212 /* Proton */, 2212 /* Proton */, 14000 /* TeV */); /* 14000 TeV = 14000000 GeV */
+  pythia8.Initialize(2212 /* Proton */, 2212 /* Proton */, 14000 /* TeV */); /* 14000 TeV = 14000000 GeV */
 
   TClonesArray *particles = new TClonesArray("TParticle", 1000);
 
   //Loop de eventos
   for ( Int_t iev = 0; iev < nev; iev++)
   {
-    pythia8->GenerateEvent();
-    if (iev < ndeb) pythia8->EventListing();
-    pythia8->ImportParticles(particles, "All");
+    pythia8.GenerateEvent();
+    if (iev == 0) pythia8.EventListing();
+    pythia8.ImportParticles(particles, "All");
+
+
     Int_t np = particles->GetEntriesFast();
     Int_t nfp = 0;
     Int_t nfp2 = 0;
     
-    //std::cout << std::endl;
-    //std::cout << "NEW EVENT ITERATION" << std::endl;
-    //std::cout << std::endl;
+    std::cout << std::endl;
+    std::cout << "NEW EVENT ITERATION" << std::endl;
+    std::cout << std::endl;
 
 
     //Loop de particulas
@@ -126,22 +85,23 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
       TParticle *part = (TParticle*) particles->At(ip);
       Int_t ist = part->GetStatusCode();
       Int_t partPdg = part->GetPdgCode();
-      Int_t fd = 0, ld = 0;
 
+      /*
+      std::cout << "ip = " << ip << "\t PDG = " << partPdg << "\t firstDaughter = " << part->GetFirstDaughter() << std::endl;
+      Int_t fd = 0, ld = 0;
       if (abs(partPdg) == 24) 
       {
         fd = part->GetFirstDaughter();
         ld = part->GetLastDaughter();
         TParticle *partFD = (TParticle*) particles->At(fd);
         TParticle *partLD = (TParticle*) particles->At(ld);
-        //std::cout << "Stack number: " << ip << " ; First daughter: " << fd << " ; Last daughter: " << ld << std::endl;
-        //std::cout << "PDG first daughter: " << partFD->GetPdgCode() << "; PDG last daughter: " << partLD->GetPdgCode() << std::endl;
-        //std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
-
+        std::cout << "Stack number: " << ip << " ; First daughter: " << fd << " ; Last daughter: " << ld << std::endl;
+        std::cout << "PDG first daughter: " << partFD->GetPdgCode() << "; PDG last daughter: " << partLD->GetPdgCode() << std::endl;
+        std::cout << "------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
       }
+      */
 
       Float_t eta = part->Eta();
-
       //if (eta < -2 || eta > 2) continue;
 
       if (ist > 0)
@@ -158,55 +118,85 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
         fp->fPz   = part->Pz();
         fp->fE    = part->Energy();
 
-        //MyQuark *mq = static_cast<MyQuark*>(quarks->New(nfp2++));
-        //findQuarkOrigin(part, particles, fp, mq);
+        Int_t index = ip;
 
-        while (index > 1)                                                    // O loop continua até que a partícula 
+        while (index > 1)                                                      // O loop continua até que a partícula chegue ao próton
         {
           TParticle *ipPart = (TParticle*)particles->At(index);
-          Int_t ipPdg = ipPart->GetPdgCode();                                // Toma o pdg da particula atual 
-          Int_t motherIdx = ipPart->GetFirstMother();                        // Toma o índice da mãe da particula
-          TParticle *motherPart = (TParticle*)particles->At(motherIdx);      // Cria um ponteiro na mãe
-          Int_t motherPdg= motherPart->GetPdgCode();                         // Toma o pdg da mãe
+          Int_t ipPdg = ipPart->GetPdgCode();                                  // Toma o pdg da particula atual 
+          Int_t motherIdx1st = ipPart->GetFirstMother();                       // Toma o índice da mãe da particula
+          TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Cria um ponteiro na mãe
+          Int_t motherPdg= motherPart->GetPdgCode();                           // Toma o pdg da mãe
 
-          if (abs(ipPdg) == 4 || abs(ipPdg) == 3)                          // Verifica se a particula atual é tipo sinal
+          //std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
+          //std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx1st << "; " << "Mother PDG: " << motherPdg << std::endl;                   
+
+          Double_t deltaR_s, deltaR_c = 0;
+          Double_t daughterEta, daughterPhi = 0;
+
+          if(abs(motherPdg) == 24)          // Verifica se chegamos a um bóson W
           {
-            if(abs(motherPdg) == 24)                                       // Verifica se a particula é de fato sinal
+            Int_t fd = motherPart->GetFirstDaughter();
+            Int_t ld = motherPart->GetLastDaughter();
+
+            for (Int_t id = fd; id <= ld; id++)
             {
-              MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
+              TParticle *daughterPart = (TParticle*)particles->At(id);
+              Int_t daughterPdg = daughterPart->GetPdgCode();
 
-              mq->qPdg  = ipPdg;
-              mq->qpT = ipPart->Pt();
-              mq->qEta = ipPart->Eta();
-              mq->qPhi = ipPart->Phi();
+              if (abs(daughterPdg) == 4 || abs(daughterPdg) == 3)         // Apenas para teste
+              {
+                MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
 
-              count++;
+                mq->qPdg  = ipPdg;
+                mq->qpT = ipPart->Pt();
+                mq->qEta = ipPart->Eta();
+                mq->qPhi = ipPart->Phi();
+              }
+              if (abs(daughterPdg) == 4)          // Match geométrico para o c
+              {
+                daughterEta = daughterPart->Eta();
+                daughterPhi = daughterPart->Phi();
 
-              //std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx << "; " << "Mother PDG: " << motherPdg << std::endl;
-              //std::cout << "Contador: " << count << " ; Quark encontrado: " << ipPdg << " ; Índice do quark: " << index << " ; Partícula final associada: " << partPdg << std::endl;
-              //std::cout << "==========================================================================================================================" << std::endl;
+                deltaR_c = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta, 2) + TMath::Power(part->Phi() - daughterPhi, 2) );
+              }
+              else if (abs(daughterPdg) == 3)         // Match geométrico para o s
+              {
+                daughterEta = daughterPart->Eta();
+                daughterPhi = daughterPart->Phi();
 
-            
-              if (abs(ipPdg) == 3) fp->signalType = "strange";
-              if (abs(ipPdg) == 4) fp->signalType = "charm";
-              break;
+                deltaR_s = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta, 2) + TMath::Power(part->Phi() - daughterPhi, 2) );
+              }
+              else
+              {
+                index = motherIdx1st;
+              }
+            }
+            std::cout << deltaR_c << std::endl;
+            std::cout << deltaR_s << std::endl;
+
+            if ( deltaR_c > deltaR_s)
+            {
+              fp->signalType = "charm";
+              std::cout << "Salvamos um charm" << std::endl;
             }
             else
             {
-              index = motherIdx;
+              fp->signalType = "strange";
+              std::cout << "Salvamos um strange" << std::endl;
             }
+
+            
+            break;
+
           }
           else
           {
-            index = motherIdx;
-          }              
+            index = motherIdx1st;
+          }
         }
-        
       }
     }
-
-    //cout << count_c << " e " << count_sbar << endl;
-    //Com os jatos criados, podemos colher suas informacoes
 
     ttree->Fill();
 
@@ -216,7 +206,7 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
 
   }
 
-  pythia8->PrintStatistics();
+  pythia8.PrintStatistics();
   ttree->Write();
   outfile->Close();
 }
@@ -227,41 +217,93 @@ while (index > 1)                                                    // O loop c
 {
   TParticle *ipPart = (TParticle*)particles->At(index);
   Int_t ipPdg = ipPart->GetPdgCode();                                // Toma o pdg da particula atual 
-  Int_t motherIdx = ipPart->GetFirstMother();                        // Toma o índice da mãe da particula
-  TParticle *motherPart = (TParticle*)particles->At(motherIdx);      // Cria um ponteiro na mãe
+  Int_t motherIdx1st = ipPart->GetFirstMother();                     // Toma o índice da mãe da particula
+  TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);   // Cria um ponteiro na mãe
   Int_t motherPdg= motherPart->GetPdgCode();                         // Toma o pdg da mãe
 
-  if (abs(ipPdg) == 4 || abs(ipPdg) == 3)                          // Verifica se a particula atual é tipo sinal
+  std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
+  std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx1st << "; " << "Mother PDG: " << motherPdg << std::endl;
+
+  if (abs(ipPdg) != 4 && abs(ipPdg) != 3)                          // Verifica se a particula atual é tipo sinal
   {
-    if(abs(motherPdg) == 24)                                       // Verifica se a particula é de fato sinal
-    {
-      MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
+    index = motherIdx1st;
+    continue;
+  }                         
 
-      mq->qPdg  = ipPdg;
-      mq->qpT = ipPart->Pt();
-      mq->qEta = ipPart->Eta();
-      mq->qPhi = ipPart->Phi();
+  if(abs(motherPdg) == 24)                                         // Verifica se a particula é de fato sinal
+  {
+    MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
 
-      count++;
+    mq->qPdg  = ipPdg;
+    mq->qpT = ipPart->Pt();
+    mq->qEta = ipPart->Eta();
+    mq->qPhi = ipPart->Phi();
 
-      //std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx << "; " << "Mother PDG: " << motherPdg << std::endl;
-      //std::cout << "Contador: " << count << " ; Quark encontrado: " << ipPdg << " ; Índice do quark: " << index << " ; Partícula final associada: " << partPdg << std::endl;
-      //std::cout << "==========================================================================================================================" << std::endl;
-
-    
-      if (abs(ipPdg) == 3) fp->signalType = "strange";
-      if (abs(ipPdg) == 4) fp->signalType = "charm";
-      break;
-    }
-    else
-    {
-      index = motherIdx;
-    }
+    count++;
+  
+    if (abs(ipPdg) == 3) fp->signalType = "strange";
+    if (abs(ipPdg) == 4) fp->signalType = "charm";
   }
   else
   {
-    index = motherIdx;
-  }              
+    index = motherIdx1st;
+  }
 }
 
+*/
+
+/*
+while (index > 1) 
+{
+
+  TParticle *ipPart = (TParticle*)particles->At(index);
+  Int_t ipPdg = ipPart->GetPdgCode();
+
+  std::vector<int> motherList = pythia8.event[index]->motherList();      // Vetor das partículas mães
+  Int_t bestMotherIdx = -1;                                             // Inicialização da mãe sinal            
+  Double_t minDeltaR = std::numeric_limits<double>::max();              // Inicialização do Delta
+
+  for (Int_t motherIdx : motherList) 
+  {
+    TParticle *motherPart = (TParticle*)particles->At(motherIdx);
+    Int_t motherPdg = motherPart->GetPdgCode();
+
+    Int_t grandmotherIdx = motherPart->GetFirstMother();                        //Verifica se a mãe do quark de interesse é um bóson W (o que configura o quark como sinal)
+    TParticle *grandmotherPart = (TParticle*)particles->At(grandmotherIdx);
+    Int_t grandmotherPdg = grandmotherPart->GetPdgCode();
+
+    if ( (abs(motherPdg) == 4 || abs(motherPdg) == 3) && abs(grandmotherPdg) == 24 )
+    {
+      Double_t deltaR = sqrt( pow(ipPart->Eta() - motherPart->Eta(), 2) + pow(ipPart->Phi() - motherPart->Phi(), 2) );        // Matching geométrico
+
+      if (deltaR < minDeltaR) 
+      {
+        minDeltaR = deltaR;
+        bestMotherIdx = motherIdx;
+      }
+    }
+  }
+
+  if (bestMotherIdx != -1)          // Se a partícula passou pela verificação e é sinal, então fazemos o tagging
+  {
+    TParticle *bestMother = (TParticle*)particles->At(bestMotherIdx);
+    Int_t bestMotherPdg = bestMother->GetPdgCode();
+
+    MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
+    mq->qPdg  = bestMotherPdg;
+    mq->qpT = bestMother->Pt();
+    mq->qEta = bestMother->Eta();
+    mq->qPhi = bestMother->Phi();
+
+    if (abs(bestMotherPdg) == 3) fp->signalType = "strange";
+    if (abs(bestMotherPdg) == 4) fp->signalType = "charm";
+    break;
+
+  } 
+  else          // Se o índice da mãe não foi modificado (permanece -1, como foi inicializado) então a partícula não é sinal e devemos subir
+  {
+    Int_t motherIdx1st = ipPart->GetFirstMother();
+    index = motherIdx1st;
+  }
+}
 */
