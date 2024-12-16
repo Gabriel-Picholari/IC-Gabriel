@@ -22,7 +22,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
+void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -74,9 +74,9 @@ void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
     Int_t nfp = 0;
     Int_t nfp2 = 0;
     
-    std::cout << std::endl;
-    std::cout << "NEW EVENT ITERATION" << std::endl;
-    std::cout << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "NEW EVENT ITERATION" << std::endl;
+    //std::cout << std::endl;
 
 
     //Loop de particulas
@@ -118,6 +118,13 @@ void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
         fp->fPz   = part->Pz();
         fp->fE    = part->Energy();
 
+        fp->finalParticlePdg = partPdg;
+        Int_t motherIndex = part->GetFirstMother();
+        TParticle *motherPart = (TParticle*)particles->At(motherIndex);
+        Int_t partMotherPdg = motherPart->GetPdgCode();
+        fp->finalParticleMotherPdg = partMotherPdg;
+        
+
         Int_t index = ip;
 
         while (index > 1)                                                      // O loop continua até que a partícula chegue ao próton
@@ -144,15 +151,6 @@ void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
               TParticle *daughterPart = (TParticle*)particles->At(id);
               Int_t daughterPdg = daughterPart->GetPdgCode();
 
-              if (abs(daughterPdg) == 4 || abs(daughterPdg) == 3)         // Apenas para teste
-              {
-                MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
-
-                mq->qPdg  = ipPdg;
-                mq->qpT = ipPart->Pt();
-                mq->qEta = ipPart->Eta();
-                mq->qPhi = ipPart->Phi();
-              }
               if (abs(daughterPdg) == 4)          // Match geométrico para o c
               {
                 daughterEta = daughterPart->Eta();
@@ -175,18 +173,16 @@ void wdecayTTree2(Int_t nev = 1, Int_t ndeb = 1 /* Listagem */ )
             std::cout << deltaR_c << std::endl;
             std::cout << deltaR_s << std::endl;
 
-            if ( deltaR_c > deltaR_s)
+            if ( deltaR_c < deltaR_s)
             {
               fp->signalType = "charm";
-              std::cout << "Salvamos um charm" << std::endl;
+              //std::cout << "Salvamos um charm" << std::endl;
             }
             else
             {
               fp->signalType = "strange";
-              std::cout << "Salvamos um strange" << std::endl;
+              //std::cout << "Salvamos um strange" << std::endl;
             }
-
-            
             break;
 
           }
