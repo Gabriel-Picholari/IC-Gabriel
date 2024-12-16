@@ -20,13 +20,21 @@
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
-        JetInfo(const TString& type = "") : signalType(type) {}
+        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg) {}
 
         void setSignalType(const TString& type) { signalType = type; }
         TString getSignalType() const { return signalType; }
 
+        void setFinalParticlePdg(Int_t pdg) { finalParticlePdg = pdg; }
+        Int_t getFinalParticlePdg() const { return finalParticlePdg; }
+
+        void setFinalParticleMotherPdg(Int_t motherPdg) { finalParticleMotherPdg = motherPdg; }
+        Int_t getFinalParticleMotherPdg() const { return finalParticleMotherPdg; }
+
     private:
-    TString signalType;
+        TString signalType;
+        Int_t finalParticlePdg;
+        Int_t finalParticleMotherPdg;
 };
 
 void jetClassification1(const char* fileName)
@@ -43,6 +51,8 @@ void jetClassification1(const char* fileName)
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
     Float_t maxRho, nVert;
     TString signalType = "";
+    Int_t finalParticlePdg = 0;
+    Int_t finalParticleMotherPdg = 0;
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
@@ -95,8 +105,8 @@ void jetClassification1(const char* fileName)
         vec_s.SetPtEtaPhiM(10,0,0,(3.141592));
         vec_c.SetPtEtaPhiM(10,0,0,(3.141592));
 
-        std::vector<TLorentzVector> tagged_c_jets;
-        std::vector<TLorentzVector> tagged_s_jets;
+        std::vector<fastjet::PseudoJet> tagged_c_jets;
+        std::vector<fastjet::PseudoJet>tagged_s_jets;
 
         Int_t count = 0;
 
@@ -112,11 +122,14 @@ void jetClassification1(const char* fileName)
             fpPy = fp->fPy;
             fpPz = fp->fPz;
             fpE = fp->fE;
-            signalType = fp->signalType; // Retrieving the string label
+            signalType = fp->signalType;
+            finalParticlePdg = fp->finalParticlePdg;
+            finalParticleMotherPdg = fp->finalParticleMotherPdg;
 
             fastjet::PseudoJet particle(fpPx, fpPy, fpPz, fpE);
             
-            particle.set_user_info(new JetInfo(signalType));
+            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg);
+            particle.set_user_info(jetInfo);
 
             particles_fastjet.push_back(particle);
         }
@@ -130,7 +143,7 @@ void jetClassification1(const char* fileName)
             // Collecting jet's general information
             //---------------------------------------------------------------------------------------------------------
 
-            std::cout << "Jet number: " << count << std::endl;
+            //std::cout << "Jet number: " << count << std::endl;
             count++;
 
             jetPt = jet.pt();
@@ -185,16 +198,16 @@ void jetClassification1(const char* fileName)
 
                 if (signalType_jet == "charm" && !isCharmTagged) // Then one of the final particles that is part of this jet has a distant mother in a c quark
                 {   
-                    tagged_c_jets.push_back(currentJet);
+                    tagged_c_jets.push_back(jet);
                     vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
-                    std::cout << "Added charm jet with mass: " << currentJet.M() << std::endl;
+                    //std::cout << "Added charm jet with mass: " << currentJet.M() << std::endl;
                     isCharmTagged = true;
                 }
                 else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
-                    tagged_s_jets.push_back(currentJet);
+                    tagged_s_jets.push_back(jet);
                     vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
-                    std::cout << "Added strange jet with mass: " << currentJet.M() << std::endl;
+                    //std::cout << "Added strange jet with mass: " << currentJet.M() << std::endl;
                     isStrangeTagged = true;
                 }
             }
@@ -202,15 +215,32 @@ void jetClassification1(const char* fileName)
         } // End of individual jet creation
 
         std::cout << "\n--- c-tagged Jets ---" << std::endl;
-        for (const TLorentzVector &jet : tagged_c_jets)
+        for (const fastjet::PseudoJet  &jet : tagged_c_jets)
         {
-            std::cout << "Mass: " << jet.M() << " | Pt: " << jet.Pt() << " | Eta: " << jet.Eta() << std::endl;
+            std::cout << "New Jet" << std::endl;
+            TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
+            std::cout << "Jet Mass: " << cJet.M() << std::endl;
+            std::cout << "Jet pT: " << cJet.Pt() << std::endl;
+            for (const fastjet::PseudoJet &constituent : jet.constituents())
+            {
+                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                std::cout << constituentPdg << std::endl;
+            }
         }
 
         std::cout << "\n--- s-tagged Jets ---" << std::endl;
-        for (const TLorentzVector &jet : tagged_s_jets)
+        for (const fastjet::PseudoJet &jet : tagged_s_jets)
         {
-            std::cout << "Mass: " << jet.M() << " | Pt: " << jet.Pt() << " | Eta: " << jet.Eta() << std::endl;
+            std::cout << "----- New Jet -----" << std::endl;
+            TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
+            std::cout << "Jet Mass: " << sJet.M() << std::endl;
+            std::cout << "Jet pT: " << sJet.Pt() << std::endl;
+
+            for (const fastjet::PseudoJet &constituent : jet.constituents())
+            {
+                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                std::cout << constituentPdg << std::endl;
+            }
         }
 
         const Float_t tolerance = 1e-5;
