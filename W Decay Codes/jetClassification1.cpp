@@ -1,12 +1,3 @@
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-/*
-
-  This code determines the cuts for multiple potential discriminating variables through cumulative histograms. The differences from the previous version include the addition of a new discriminating 
-variable and the creation of cumulative histograms for each of them. This macro is intended to be used in conjunction with wdecayTTree2.cpp.
-
-*/
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 #include <cmath>
 #include <string>
 #include "TH1.h"
@@ -45,29 +36,25 @@ void jetClassification1(const char* fileName)
     gSystem->Load("libEGPythia8");
 
     //---------------------------------------------------------------------------------------------------------
-    //Inicializacao das variaveis
+    // Initialization of variables
     //---------------------------------------------------------------------------------------------------------
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
     Float_t maxRho, nVert;
     TString signalType = "";
-
-    // Criacao dos TLorentzVector
-
+    
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
-    //TLorentzVector vec_sbar(0,0,0,0); MAY BE USED LATER, FOR NOW, WE DO NOT NEED TO DISTINGUISH BETWEEN C AND CBAR or S AND SBAR
-    //TLorentzVector vec_cbar(0,0,0,0);
 
     //---------------------------------------------------------------------------------------------------------
-    // Inicializacao dos histogramas
+    // Initialization of histograms
     //---------------------------------------------------------------------------------------------------------
 
     TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 100, 0, 100);
 
     //---------------------------------------------------------------------------------------------------------
-    // Inicializacoes e configuracoes do FastJet:
+    // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
 
     Float_t jetR = 0.4;
@@ -78,7 +65,7 @@ void jetClassification1(const char* fileName)
     std::vector<fastjet::PseudoJet> jets;
 
     //---------------------------------------------------------------------------------------------------------
-    // Inicializacao do arquivo.root e das TTrees
+    // Initialization of the .root file and TTrees
     //---------------------------------------------------------------------------------------------------------
 
     TFile *file = TFile::Open(fileName, "READ");
@@ -93,21 +80,28 @@ void jetClassification1(const char* fileName)
     Long64_t ne = ttree->GetEntries();
 
     //---------------------------------------------------------------------------------------------------------
-    // Loop equivalente ao loop de eventos
+    // Event loop equivalent
     //---------------------------------------------------------------------------------------------------------
 
     for ( Long64_t ni = 0; ni < ne; ni++)
     {
+
+        std::cout << std::endl;
+        std::cout << "NEW EVENT ITERATION" << std::endl;
+        std::cout << std::endl;
+
         ttree->GetEntry(ni);
 
         vec_s.SetPtEtaPhiM(10,0,0,(3.141592));
         vec_c.SetPtEtaPhiM(10,0,0,(3.141592));
-        //vec_sbar.SetPtEtaPhiM(10,0,0,(3.141592)); REASON FOR COMMENT ABOVE
-        //vec_cbar.SetPtEtaPhiM(10,0,0,(3.141592));
 
+        std::vector<TLorentzVector> tagged_c_jets;
+        std::vector<TLorentzVector> tagged_s_jets;
+
+        Int_t count = 0;
 
         //---------------------------------------------------------------------------------------------------------
-        // Loop equivalente ao loop de eventos
+        // Particle loop equivalent
         //---------------------------------------------------------------------------------------------------------
 
         for (Int_t nj = 0; nj < jets_array->GetEntries(); nj++)
@@ -132,10 +126,17 @@ void jetClassification1(const char* fileName)
 
         for (const fastjet::PseudoJet& jet : jets)
         {
+            //---------------------------------------------------------------------------------------------------------
+            // Collecting jet's general information
+            //---------------------------------------------------------------------------------------------------------
+
+            std::cout << "Jet number: " << count << std::endl;
+            count++;
+
             jetPt = jet.pt();
             jetEta = jet.eta();
             jetPhi = jet.phi();
-            jetMass = jet.m();  // Jet individual invariant mass
+            jetMass = jet.m();
             jetPx = jet.px();
             jetPy = jet.py();
             jetPz = jet.pz();
@@ -172,23 +173,45 @@ void jetClassification1(const char* fileName)
             // Jet classification block (based on constituents info)
             //---------------------------------------------------------------------------------------------------------
 
+            TLorentzVector currentJet(jetPx, jetPy, jetPz, jetE);
+            if (currentJet.M() < 0) continue;
+            
+            Bool_t isCharmTagged = false;
+            Bool_t isStrangeTagged = false;
+
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 TString signalType_jet = constituent.user_info<JetInfo>().getSignalType();
 
-                if (signalType_jet == "charm") // Then one of the final particles that is part of this jet has a distant mother in a c quark
-                {
-                    vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+                if (signalType_jet == "charm" && !isCharmTagged) // Then one of the final particles that is part of this jet has a distant mother in a c quark
+                {   
+                    tagged_c_jets.push_back(currentJet);
+                    vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
+                    std::cout << "Added charm jet with mass: " << currentJet.M() << std::endl;
+                    isCharmTagged = true;
                 }
-                else if (signalType_jet == "strange") // Then it's a strange jet
+                else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
-                    vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE);
+                    tagged_s_jets.push_back(currentJet);
+                    vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
+                    std::cout << "Added strange jet with mass: " << currentJet.M() << std::endl;
+                    isStrangeTagged = true;
                 }
             }
-        
-            //---------------------------------------------------------------------------------------------------------
 
         } // End of individual jet creation
+
+        std::cout << "\n--- c-tagged Jets ---" << std::endl;
+        for (const TLorentzVector &jet : tagged_c_jets)
+        {
+            std::cout << "Mass: " << jet.M() << " | Pt: " << jet.Pt() << " | Eta: " << jet.Eta() << std::endl;
+        }
+
+        std::cout << "\n--- s-tagged Jets ---" << std::endl;
+        for (const TLorentzVector &jet : tagged_s_jets)
+        {
+            std::cout << "Mass: " << jet.M() << " | Pt: " << jet.Pt() << " | Eta: " << jet.Eta() << std::endl;
+        }
 
         const Float_t tolerance = 1e-5;
         
@@ -202,15 +225,10 @@ void jetClassification1(const char* fileName)
         jets.clear();
         jets_array->Clear();
         quarks->Clear();
+        
 
     
     } // End of event loop equivalent
-
-    //---------------------------------------------------------------------------------------------------------
-    // Creation of the cumulative histograms regarding the classical analysis target object
-    //---------------------------------------------------------------------------------------------------------
-
-    // MISSING
     
     //---------------------------------------------------------------------------------------------------------
     // Plotting histograms
