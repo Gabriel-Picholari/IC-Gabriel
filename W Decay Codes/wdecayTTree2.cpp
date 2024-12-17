@@ -1,11 +1,13 @@
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 /*
 
 The primary difference between this macro and its predecessor is that, in this version, data from all quarks—c, c̅, s, and s̅—are being saved, whereas previously we were only interested in the 
 quarks from the appropriate W boson decay channel.
 
  */
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #include "TH1F.h"
 #include "MyJet.h"
@@ -22,14 +24,14 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
+void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
   gSystem->Load("libEGPythia8");
 
   //---------------------------------------------------------------------------------------------------------
-  // Inicializacoes e configuracoes da TTrees
+  // TTree initializations and configurations
   //---------------------------------------------------------------------------------------------------------
 
   TClonesArray *jets_array =  new TClonesArray("MyJet");
@@ -42,7 +44,13 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
   ttree->Branch("quarks", &quarks);
 
   //---------------------------------------------------------------------------------------------------------
-  // Inicializacoes e configuracoes do Pythia:
+  // Initialization of histograms
+  //---------------------------------------------------------------------------------------------------------
+
+  TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
+
+  //---------------------------------------------------------------------------------------------------------
+  // Pythia initializations and configurations:
   //---------------------------------------------------------------------------------------------------------
 
   TPythia8 pythia8 = new TPythia8();
@@ -62,7 +70,7 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
 
   TClonesArray *particles = new TClonesArray("TParticle", 1000);
 
-  //Loop de eventos
+  // Event loop
   for ( Int_t iev = 0; iev < nev; iev++)
   {
     pythia8.GenerateEvent();
@@ -79,7 +87,7 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
     //std::cout << std::endl;
 
 
-    //Loop de particulas
+    // Particle loop
     for (Int_t ip = 0; ip < np; ip++)
     {
       TParticle *part = (TParticle*) particles->At(ip);
@@ -108,6 +116,7 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
       {
         
         MyJet *fp = static_cast<MyJet*>(jets_array->New(nfp++));
+        MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
 
         fp->fPt   = part->Pt();
         fp->fEta  = part->Eta();
@@ -124,24 +133,24 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
         Int_t partMotherPdg = motherPart->GetPdgCode();
         fp->finalParticleMotherPdg = partMotherPdg;
         
-
         Int_t index = ip;
 
-        while (index > 1)                                                      // O loop continua até que a partícula chegue ao próton
+        while (index > 1)                                                      // The loop continues until the particle reaches the proton
         {
           TParticle *ipPart = (TParticle*)particles->At(index);
-          Int_t ipPdg = ipPart->GetPdgCode();                                  // Toma o pdg da particula atual 
-          Int_t motherIdx1st = ipPart->GetFirstMother();                       // Toma o índice da mãe da particula
-          TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Cria um ponteiro na mãe
-          Int_t motherPdg= motherPart->GetPdgCode();                           // Toma o pdg da mãe
+          Int_t ipPdg = ipPart->GetPdgCode();                                  // Takes the pdg of the current particle 
+          Int_t motherIdx1st = ipPart->GetFirstMother();                       // Takes the index of the particle's mother
+          TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Creates a pointer to the mother
+          Int_t motherPdg= motherPart->GetPdgCode();                           // Takes the pdg of the mother
 
           //std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
           //std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx1st << "; " << "Mother PDG: " << motherPdg << std::endl;                   
 
           Double_t deltaR_s, deltaR_c = 0;
-          Double_t daughterEta, daughterPhi = 0;
+          Double_t daughterEta_c, daughterPhi_c = 0;
+          Double_t daughterEta_s, daughterPhi_s = 0;
 
-          if(abs(motherPdg) == 24)          // Verifica se chegamos a um bóson W
+          if(abs(motherPdg) == 24)          // Checks if we have reached a W boson
           {
             Int_t fd = motherPart->GetFirstDaughter();
             Int_t ld = motherPart->GetLastDaughter();
@@ -150,38 +159,51 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
             {
               TParticle *daughterPart = (TParticle*)particles->At(id);
               Int_t daughterPdg = daughterPart->GetPdgCode();
-
-              if (abs(daughterPdg) == 4)          // Match geométrico para o c
+              
+              if (abs(daughterPdg) == 4 || abs(daughterPdg) == 3)         // Obtaining quark raw data
               {
-                daughterEta = daughterPart->Eta();
-                daughterPhi = daughterPart->Phi();
-
-                deltaR_c = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta, 2) + TMath::Power(part->Phi() - daughterPhi, 2) );
+                MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
+          
+                mq->qPdg  = daughterPdg;
+                mq->qpT = daughterPart->Pt();
+                mq->qEta = daughterPart->Eta();
+                mq->qPhi = daughterPart->Phi();
               }
-              else if (abs(daughterPdg) == 3)         // Match geométrico para o s
-              {
-                daughterEta = daughterPart->Eta();
-                daughterPhi = daughterPart->Phi();
 
-                deltaR_s = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta, 2) + TMath::Power(part->Phi() - daughterPhi, 2) );
+              if (abs(daughterPdg) == 4)          // Geometric match for c
+              {
+                daughterEta_c = daughterPart->Eta();
+                daughterPhi_c = daughterPart->Phi();
+
+                deltaR_c = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta_c, 2) + TMath::Power(part->Phi() - daughterPhi_c, 2) );
+              }
+              else if (abs(daughterPdg) == 3)         // Geometric match for s
+              {
+                daughterEta_s = daughterPart->Eta();
+                daughterPhi_s = daughterPart->Phi();
+
+                deltaR_s = TMath::Sqrt( TMath::Power(part->Eta() - daughterEta_s, 2) + TMath::Power(part->Phi() - daughterPhi_s, 2) );
               }
               else
               {
                 index = motherIdx1st;
               }
             }
-            std::cout << deltaR_c << std::endl;
-            std::cout << deltaR_s << std::endl;
+
+            Float_t R_quarks = TMath::Sqrt( TMath::Power(daughterEta_c - daughterEta_s, 2) + TMath::Power(daughterPhi_c - daughterPhi_s, 2) );
+            distanciaAngular->Fill(R_quarks);
+            //std::cout << deltaR_c << std::endl;
+            //std::cout << deltaR_s << std::endl;
 
             if ( deltaR_c < deltaR_s)
             {
               fp->signalType = "charm";
-              //std::cout << "Salvamos um charm" << std::endl;
+              //std::cout << "Saved a charm" << std::endl;
             }
             else
             {
               fp->signalType = "strange";
-              //std::cout << "Salvamos um strange" << std::endl;
+              //std::cout << "Saved a strange" << std::endl;
             }
             break;
 
@@ -202,8 +224,19 @@ void wdecayTTree2(Int_t nev = 10, Int_t ndeb = 1 /* Listagem */ )
 
   }
 
+
   pythia8.PrintStatistics();
   ttree->Write();
+
+  TCanvas *c1 = new TCanvas("c1", "Angular distance distribution", 2500, 2500);
+  c1->Divide(1, 1);
+
+  c1->cd(1);
+  distanciaAngular->SetTitle("Quarks angular distance distribution");
+  distanciaAngular->GetXaxis()->SetTitle("Angular distance");
+  distanciaAngular->GetYaxis()->SetTitle("Frequency");
+  distanciaAngular->DrawCopy();
+
   outfile->Close();
 }
 

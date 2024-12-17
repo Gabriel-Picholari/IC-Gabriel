@@ -62,6 +62,11 @@ void jetClassification1(const char* fileName)
     //---------------------------------------------------------------------------------------------------------
 
     TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 100, 0, 100);
+    TH1F *primary_CharmRatioHist = new TH1F("primaryCharmRatio", "Charm: Ratio between tagged jets (with correct hadron) and quark p_{T}", 50, 0, 2);
+    TH1F *secondary_CharmRatioHist = new TH1F("secondaryCharmRatio", "Charm: Ratio between tagged jets (whitout correct hadron) and quark p_{T}", 50, 0, 2);
+
+    TH1F *primary_StrangeRatioHist = new TH1F("primaryStrangeRatio", "Strange: Ratio between tagged jets (with correct hadron) and quark p_{T}", 50, 0, 2);
+    TH1F *secondary_StrangeRatioHist = new TH1F("secondaryStrangeRatio", "Strange: Ratio between tagged jets (whitout correct hadron) and quark p_{T}", 50, 0, 2);
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -96,9 +101,9 @@ void jetClassification1(const char* fileName)
     for ( Long64_t ni = 0; ni < ne; ni++)
     {
 
-        std::cout << std::endl;
-        std::cout << "NEW EVENT ITERATION" << std::endl;
-        std::cout << std::endl;
+        //std::cout << std::endl;
+        //std::cout << "NEW EVENT ITERATION" << std::endl;
+        //std::cout << std::endl;
 
         ttree->GetEntry(ni);
 
@@ -109,6 +114,26 @@ void jetClassification1(const char* fileName)
         std::vector<fastjet::PseudoJet>tagged_s_jets;
 
         Int_t count = 0;
+
+        //---------------------------------------------------------------------------------------------------------
+        // Quark information ( it's unique per event - a single pair of cbar(c) - s(sbar) quarks )
+        //---------------------------------------------------------------------------------------------------------
+
+        Float_t charmPt = 0;
+        Float_t strangePt = 0;
+
+        //std::cout << quarks->GetEntries() << std::endl;
+        for (Int_t nk = 0; nk < quarks->GetEntries(); nk++)
+        {
+            MyQuark *mq = static_cast<MyQuark *>(quarks->At(nk));
+            Int_t quarkPdg = mq->qPdg;
+            
+            if ( abs(quarkPdg) == 4) charmPt = mq->qpT;
+            //std::cout << charmPt << std::endl;
+            if ( abs(quarkPdg) == 3) strangePt = mq->qpT;
+            //std::cout << strangePt << std::endl;                  // Check over that later (not a serious problem I suppose)
+
+        }
 
         //---------------------------------------------------------------------------------------------------------
         // Particle loop equivalent
@@ -217,13 +242,28 @@ void jetClassification1(const char* fileName)
         std::cout << "\n--- c-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets)
         {
-            std::cout << "New Jet" << std::endl;
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
+
+            std::cout << "New Jet" << std::endl;
             std::cout << "Jet Mass: " << cJet.M() << std::endl;
             std::cout << "Jet pT: " << cJet.Pt() << std::endl;
+            Float_t charmRatio = jet.pt() / charmPt;
+            std::cout << "Charm ratio: " << charmRatio << std::endl;
+
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t abs_constituentPdg = abs(constituentPdg);
+
+                if (abs_constituentPdg == 130 || abs_constituentPdg == 310 || abs_constituentPdg == 311 || abs_constituentPdg == 321 || abs_constituentPdg == 313 || abs_constituentPdg ==323 || abs_constituentPdg == 315 || abs_constituentPdg == 325 || abs_constituentPdg == 317 || abs_constituentPdg == 327 || abs_constituentPdg == 319 || abs_constituentPdg == 329 )
+                {
+                    primary_CharmRatioHist->Fill(charmRatio);
+                }
+                else
+                {
+                    secondary_CharmRatioHist->Fill(charmRatio);
+                }
+
                 std::cout << constituentPdg << std::endl;
             }
         }
@@ -231,14 +271,29 @@ void jetClassification1(const char* fileName)
         std::cout << "\n--- s-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet &jet : tagged_s_jets)
         {
-            std::cout << "----- New Jet -----" << std::endl;
             TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
+
+            std::cout << "----- New Jet -----" << std::endl;
             std::cout << "Jet Mass: " << sJet.M() << std::endl;
             std::cout << "Jet pT: " << sJet.Pt() << std::endl;
+
+            Float_t strangeRatio = jet.pt() / strangePt;
+            std::cout << "Stange ratio: " << strangeRatio << std::endl;
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t abs_constituentPdg = abs(constituentPdg);
+
+                if (abs_constituentPdg == 130 || abs_constituentPdg == 310 || abs_constituentPdg == 311 || abs_constituentPdg == 321 || abs_constituentPdg == 313 || abs_constituentPdg == 323 || abs_constituentPdg == 315 || abs_constituentPdg == 325 || abs_constituentPdg == 317 || abs_constituentPdg == 327 || abs_constituentPdg == 319 || abs_constituentPdg == 329 )
+                {
+                    primary_StrangeRatioHist->Fill(strangeRatio);
+                }
+                else
+                {
+                    secondary_StrangeRatioHist->Fill(strangeRatio);
+                }
+                
                 std::cout << constituentPdg << std::endl;
             }
         }
@@ -265,7 +320,7 @@ void jetClassification1(const char* fileName)
     //---------------------------------------------------------------------------------------------------------
 
     TCanvas *c1 = new TCanvas("c1", "Invariant mass distribution", 2500, 2500);
-    c1->Divide(1, 2);
+    c1->Divide(1, 1);
 
     c1->cd(1);
     invariantMass->SetTitle("Jet's invariant mass spectrum");
@@ -273,7 +328,31 @@ void jetClassification1(const char* fileName)
     invariantMass->GetYaxis()->SetTitle("Frequency");
     invariantMass->Draw();
 
+    TCanvas *c2 = new TCanvas("c2", "Charm", 2500, 2500);
+    c2->Divide(1, 1);
 
+    c2->cd(1);
+    primary_CharmRatioHist->SetTitle("Charm jet and quark p_{T} ratio");
+    primary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
+    primary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
+    primary_CharmRatioHist->SetLineColor(kRed);
+    primary_CharmRatioHist->Draw();
+
+    secondary_CharmRatioHist->SetLineColor(kBlue);
+    secondary_CharmRatioHist->Draw("same");
+
+    TCanvas *c3 = new TCanvas("c3", "Strange", 2500, 2500);
+    c3->Divide(1, 1);
+
+    c3->cd(1);
+    primary_StrangeRatioHist->SetTitle("Strange jet and quark p_{T} ratio");
+    primary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
+    primary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
+    primary_StrangeRatioHist->SetLineColor(kRed);
+    primary_StrangeRatioHist->Draw();
+    
+    secondary_StrangeRatioHist->SetLineColor(kBlue);
+    secondary_StrangeRatioHist->Draw("same");
 
     file->Close();
 }
