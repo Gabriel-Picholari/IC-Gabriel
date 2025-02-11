@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<MethodSetup Method="LD::LogisticRegression">
+  <GeneralInfo>
+    <Info name="TMVA Release" value="4.2.1 [262657]"/>
+    <Info name="ROOT Release" value="6.32/04 [401412]"/>
+    <Info name="Creator" value="gabriel-picholari"/>
+    <Info name="Date" value="Wed Oct  9 23:56:37 2024"/>
+    <Info name="Host" value="Linux gabriel-picholari-VirtualBox 6.8.0-36-generic #36-Ubuntu SMP PREEMPT_DYNAMIC Mon Jun 10 10:49:14 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux"/>
+    <Info name="Dir" value="/home/gabriel-picholari/IC/IC-Gabriel/W Decay Codes"/>
+    <Info name="Training events" value="13924"/>
+    <Info name="TrainingTime" value="7.46417046e-03"/>
+    <Info name="AnalysisType" value="Classification"/>
+  </GeneralInfo>
+  <Options>
+    <Option name="V" modified="No">False</Option>
+    <Option name="VerbosityLevel" modified="No">Default</Option>
+    <Option name="VarTransform" modified="No">None</Option>
+    <Option name="H" modified="No">False</Option>
+    <Option name="CreateMVAPdfs" modified="No">False</Option>
+    <Option name="IgnoreNegWeightsInTraining" modified="No">False</Option>
+  </Options>
+  <Variables NVar="2">
+    <Variable VarIndex="0" Expression="sigmaKT_c" Label="sigmaKT_c" Title="sigmaKT_c" Unit="" Internal="sigmaKT_c" Type="F" Min="0.00000000e+00" Max="2.82631969e+00"/>
+    <Variable VarIndex="1" Expression="pT_lConst_c" Label="pT_lConst_c" Title="pT_lConst_c" Unit="" Internal="pT_lConst_c" Type="F" Min="2.12696777e-03" Max="5.56174946e+00"/>
+  </Variables>
+  <Spectators NSpec="1">
+    <Spectator SpecIndex="0" Expression="label_c" Label="label_c" Title="F" Unit="" Internal="label_c" Type="F" Min="0.00000000e+00" Max="1.00000000e+00"/>
+  </Spectators>
+  <Classes NClass="2">
+    <Class Name="Signal" Index="0"/>
+    <Class Name="Background" Index="1"/>
+  </Classes>
+  <Transformations NTransformations="0"/>
+  <MVAPdfs/>
+  <Weights NOut="1" NCoeff="3">
+    <Coefficient IndexOut="0" IndexCoeff="0" Value="-5.9939430671769054e-03"/>
+    <Coefficient IndexOut="0" IndexCoeff="1" Value="-3.7587954643230115e-02"/>
+    <Coefficient IndexOut="0" IndexCoeff="2" Value="2.3548806241074804e-02"/>
+  </Weights>
+</MethodSetup>
