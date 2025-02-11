@@ -56,7 +56,6 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "typeinfo": "cpp",
-        "valarray": "cpp",
-        "TMVARegression_LogisticRegression.class.C": "cpp"
+        "valarray": "cpp"
     }
 }

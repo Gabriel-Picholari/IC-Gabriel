@@ -10,10 +10,10 @@ class MyQuark: public TObject
 
  public:
 
-    Int_t         qPdg;
-    Float_t       qpT;
-    Float_t       qEta;
-    Float_t       qPhi;
+    Int_t qPdg;
+    Float_t qpT;
+    Float_t qEta;
+    Float_t qPhi;
 
   ClassDef(MyQuark, 1)
 };

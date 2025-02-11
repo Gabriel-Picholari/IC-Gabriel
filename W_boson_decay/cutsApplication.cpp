@@ -110,6 +110,11 @@ void cutsApplication(const char* fileName)
                 TLorentzVector vec_m(0,0,0,0);
                 vec_m.SetPxPyPzE(jet_m.px(), jet_m.py(), jet_m.pz(), jet_m.e());
                 
+                Float_t mpT = vec_m.Pt();
+                Float_t mNConst = jet_m.constituents().size();
+
+                hist_jetPt->Fill(mpT);
+                hist_jetNConst->Fill(mNConst);
 
                 TLorentzVector vec_k(0,0,0,0);
                 vec_k.SetPxPyPzE(jet_k.px(), jet_k.py(), jet_k.pz(), jet_k.e());
@@ -127,7 +132,7 @@ void cutsApplication(const char* fileName)
                 
                 jetNConst = jet_m.constituents().size() + jet_k.constituents().size();
                 
-                
+                /* 
                 pT_LeadConst = 0.0;
                 for (const fastjet::PseudoJet &constituent : jet_m.constituents())
                 {
@@ -136,13 +141,13 @@ void cutsApplication(const char* fileName)
                         pT_LeadConst = constituent.pt();
                     }
                 }
-                
+                */
                 
                 noCut_IMS->Fill( vec_mom.M() );
 
                 if ( jetNConst > 3 ) nConstCut_IMS->Fill( vec_mom.M() );
 
-                if ( jetPt < 0.5 ) continue;
+                if ( jetPt < 1.5 ) continue;
                 pTCut_IMS->Fill( vec_mom.M() ); 
                 
                 if ( jetNConst > 3 ) pT_and_nConstCut_IMS->Fill( vec_mom.M() ); 
@@ -205,8 +210,7 @@ void cutsApplication(const char* fileName)
     pT_and_nConstCut_IMS->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     pT_and_nConstCut_IMS->GetYaxis()->SetTitle("Frequency");
     pT_and_nConstCut_IMS->Draw();
-    
-    /* 
+
     TCanvas *c3 = new TCanvas("c3", "Simple histograms", 2500, 2500);
     c3->Divide(1, 2);
 
@@ -221,7 +225,6 @@ void cutsApplication(const char* fileName)
     hist_jetNConst->GetXaxis()->SetTitle("Number of Constituents");
     hist_jetNConst->GetYaxis()->SetTitle("Frequency");
     hist_jetNConst->Draw();
-    */
 
 }
 

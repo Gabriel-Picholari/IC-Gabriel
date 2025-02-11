@@ -116,6 +116,7 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
       {
         
         MyJet *fp = static_cast<MyJet*>(jets_array->New(nfp++));
+        MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
 
         fp->fPt   = part->Pt();
         fp->fEta  = part->Eta();

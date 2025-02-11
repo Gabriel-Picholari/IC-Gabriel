@@ -238,8 +238,8 @@ void read_wdecayTTree2(const char* fileName)
             for (Int_t nj2 = 0; nj2 < quarks->GetEntries(); nj2++)
             {
 
-                MyQuark *quarkPart = static_cast<MyQuark *>(quarks->At(nj2));
-                Int_t nj2Pdg = quarkPart->qPdg;
+                MyQuark *quarkPdg = static_cast<MyQuark *>(quarks->At(nj2));
+                Int_t nj2Pdg = quarkPdg->qPdg;
 
                 
                 if (nj2Pdg == 3)
