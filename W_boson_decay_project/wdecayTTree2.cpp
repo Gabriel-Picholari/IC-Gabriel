@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_DebugFile.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -126,11 +126,18 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
         fp->fPz   = part->Pz();
         fp->fE    = part->Energy();
 
-        fp->finalParticlePdg = partPdg;
+        fp->finalParticlePdg = partPdg; 
         Int_t motherIndex = part->GetFirstMother();
         TParticle *motherPart = (TParticle*)particles->At(motherIndex);
         Int_t partMotherPdg = motherPart->GetPdgCode();
-        fp->finalParticleMotherPdg = partMotherPdg;
+        fp->finalParticleMotherPdg = partMotherPdg; // Final particle mother PDG
+
+        Int_t secondMotherIndex = motherPart->GetFirstMother();
+        TParticle *secondMotherPart = (TParticle*)particles->At(secondMotherIndex);
+        Int_t secondMotherPdg = secondMotherPart->GetPdgCode();
+        fp->finalParticleSecondMotherPdg = secondMotherPdg; // Final particle second mother PDG
+
+
         
         Int_t index = ip;
 

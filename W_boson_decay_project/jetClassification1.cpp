@@ -20,7 +20,7 @@
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
-        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg) {}
+        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg) {}
 
         void setSignalType(const TString& type) { signalType = type; }
         TString getSignalType() const { return signalType; }
@@ -31,10 +31,14 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         void setFinalParticleMotherPdg(Int_t motherPdg) { finalParticleMotherPdg = motherPdg; }
         Int_t getFinalParticleMotherPdg() const { return finalParticleMotherPdg; }
 
+        void setFinalParticleSecondMotherPdg(Int_t secondMotherPdg) { finalParticleSecondMotherPdg = secondMotherPdg; }
+        Int_t getFinalParticleSecondMotherPdg() const { return finalParticleSecondMotherPdg; }
+
     private:
         TString signalType;
         Int_t finalParticlePdg;
         Int_t finalParticleMotherPdg;
+        Int_t finalParticleSecondMotherPdg;
 };
 
 void jetClassification1(const char* fileName)
@@ -53,6 +57,7 @@ void jetClassification1(const char* fileName)
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
+    Int_t finalParticleSecondMotherPdg = 0;
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
@@ -150,10 +155,11 @@ void jetClassification1(const char* fileName)
             signalType = fp->signalType;
             finalParticlePdg = fp->finalParticlePdg;
             finalParticleMotherPdg = fp->finalParticleMotherPdg;
+            finalParticleSecondMotherPdg = fp->finalParticleSecondMotherPdg;
 
             fastjet::PseudoJet particle(fpPx, fpPy, fpPz, fpE);
             
-            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg);
+            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg, finalParticleSecondMotherPdg);
             particle.set_user_info(jetInfo);
 
             particles_fastjet.push_back(particle);
@@ -240,7 +246,7 @@ void jetClassification1(const char* fileName)
         } // End of individual jet creation
 
         std::cout << "\n--- c-tagged Jets ---" << std::endl;
-        for (const fastjet::PseudoJet  &jet : tagged_c_jets)
+        for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet
         {
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
 
@@ -250,12 +256,15 @@ void jetClassification1(const char* fileName)
             Float_t charmRatio = jet.pt() / charmPt;
             std::cout << "Charm ratio: " << charmRatio << std::endl;
 
-            for (const fastjet::PseudoJet &constituent : jet.constituents())
+            for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis ibject is a constituent of the jet
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t abs_constituentPdg = abs(constituentPdg);
+                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
 
-                if (abs_constituentPdg == 130 || abs_constituentPdg == 310 || abs_constituentPdg == 311 || abs_constituentPdg == 321 || abs_constituentPdg == 313 || abs_constituentPdg ==323 || abs_constituentPdg == 315 || abs_constituentPdg == 325 || abs_constituentPdg == 317 || abs_constituentPdg == 327 || abs_constituentPdg == 319 || abs_constituentPdg == 329 )
+                Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
+
+                if (abs_constituentMotherPdg == 411 || abs_constituentMotherPdg == 421 || abs_constituentMotherPdg == 413 || abs_constituentMotherPdg == 423 || abs_constituentMotherPdg == 415 || abs_constituentMotherPdg == 425 || abs_constituentMotherPdg == 431 || abs_constituentMotherPdg == 433 || abs_constituentMotherPdg == 435)
                 {
                     primary_CharmRatioHist->Fill(charmRatio);
                 }
@@ -264,25 +273,32 @@ void jetClassification1(const char* fileName)
                     secondary_CharmRatioHist->Fill(charmRatio);
                 }
 
-                std::cout << constituentPdg << std::endl;
+                std::cout << "Constituent PDG: " << constituentPdg << std::endl;
+                std::cout << "Constituent mother PDG: " << constituentMotherPdg << std::endl;
+                std::cout << "Constituent second mother PDG: " << constituentSecondMotherPdg << std::endl;
+                std::cout << std::endl;
             }
         }
 
-        std::cout << "\n--- s-tagged Jets ---" << std::endl;
+        //std::cout << "\n--- s-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet &jet : tagged_s_jets)
         {
             TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
 
-            std::cout << "----- New Jet -----" << std::endl;
-            std::cout << "Jet Mass: " << sJet.M() << std::endl;
-            std::cout << "Jet pT: " << sJet.Pt() << std::endl;
+            //std::cout << "----- New Jet -----" << std::endl;
+            //std::cout << "Jet Mass: " << sJet.M() << std::endl;
+            //std::cout << "Jet pT: " << sJet.Pt() << std::endl;
 
             Float_t strangeRatio = jet.pt() / strangePt;
-            std::cout << "Stange ratio: " << strangeRatio << std::endl;
+            //std::cout << "Stange ratio: " << strangeRatio << std::endl;
+            //std::cout << std::endl;
+
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                
                 Int_t abs_constituentPdg = abs(constituentPdg);
 
                 if (abs_constituentPdg == 130 || abs_constituentPdg == 310 || abs_constituentPdg == 311 || abs_constituentPdg == 321 || abs_constituentPdg == 313 || abs_constituentPdg == 323 || abs_constituentPdg == 315 || abs_constituentPdg == 325 || abs_constituentPdg == 317 || abs_constituentPdg == 327 || abs_constituentPdg == 319 || abs_constituentPdg == 329 )
@@ -294,7 +310,9 @@ void jetClassification1(const char* fileName)
                     secondary_StrangeRatioHist->Fill(strangeRatio);
                 }
                 
-                std::cout << constituentPdg << std::endl;
+                //std::cout << "Constituent PDG: " << constituentPdg << std::endl;
+                //std::cout << "Constituent mother PDG: " << constituentMotherPdg << std::endl;
+                //std::cout << std::endl;
             }
         }
 
@@ -332,27 +350,27 @@ void jetClassification1(const char* fileName)
     c2->Divide(1, 1);
 
     c2->cd(1);
-    primary_CharmRatioHist->SetTitle("Charm jet and quark p_{T} ratio");
-    primary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
-    primary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
-    primary_CharmRatioHist->SetLineColor(kRed);
-    primary_CharmRatioHist->Draw();
-
+    secondary_CharmRatioHist->SetTitle("Charm jet and quark p_{T} ratio");
+    secondary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
+    secondary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
     secondary_CharmRatioHist->SetLineColor(kBlue);
-    secondary_CharmRatioHist->Draw("same");
+    secondary_CharmRatioHist->Draw();
+
+    primary_CharmRatioHist->SetLineColor(kRed);
+    primary_CharmRatioHist->Draw("same");
 
     TCanvas *c3 = new TCanvas("c3", "Strange", 2500, 2500);
     c3->Divide(1, 1);
 
     c3->cd(1);
-    primary_StrangeRatioHist->SetTitle("Strange jet and quark p_{T} ratio");
-    primary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
-    primary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
-    primary_StrangeRatioHist->SetLineColor(kRed);
-    primary_StrangeRatioHist->Draw();
-    
+    secondary_StrangeRatioHist->SetTitle("Strange jet and quark p_{T} ratio");
+    secondary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
+    secondary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
     secondary_StrangeRatioHist->SetLineColor(kBlue);
-    secondary_StrangeRatioHist->Draw("same");
+    secondary_StrangeRatioHist->Draw();
+    
+    primary_StrangeRatioHist->SetLineColor(kRed);
+    primary_StrangeRatioHist->Draw("same");
 
     file->Close();
 }
