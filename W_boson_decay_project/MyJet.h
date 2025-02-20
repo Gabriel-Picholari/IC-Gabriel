@@ -6,7 +6,7 @@ class MyJet;
 class MyJet: public TObject
 {
  public: MyJet() :
-  TObject(), fPt(0), fEta(0), fPhi(0), fMass(0), fPx(0), fPy(0), fPz(0), fE(0) , fnConst(0), pT_LeadConst(0), signalType(""), finalParticlePdg(0){;}
+  TObject(), fPt(0), fEta(0), fPhi(0), fMass(0), fPx(0), fPy(0), fPz(0), fE(0) , fnConst(0), pT_LeadConst(0), signalType(""), finalParticlePdg(0), finalParticleSecondMotherPdg(0){;}
 
  public:
 
@@ -23,8 +23,9 @@ class MyJet: public TObject
     TString     signalType;
     Int_t       finalParticlePdg;
     Int_t       finalParticleMotherPdg;
+    Int_t       finalParticleSecondMotherPdg;
 
-  ClassDef(MyJet, 3)
+  ClassDef(MyJet, 4)
 };
 
 #endif
