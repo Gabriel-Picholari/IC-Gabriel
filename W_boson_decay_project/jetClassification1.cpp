@@ -12,6 +12,7 @@
 #include "TCanvas.h"
 #include "TPythia8.h"
 #include "TParticle.h"
+#include <unordered_set>
 #include "TClonesArray.h"
 #include <TLorentzVector.h>
 #include "fastjet/PseudoJet.hh"
@@ -77,7 +78,7 @@ void jetClassification1(const char* fileName)
     // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t jetR = 0.4;
+    Float_t jetR = 0.7;
 
     fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, jetR);
 
@@ -245,38 +246,48 @@ void jetClassification1(const char* fileName)
 
         } // End of individual jet creation
 
-        std::cout << "\n--- c-tagged Jets ---" << std::endl;
+        const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435, 10411, 10421, 413, 423, 10413, 10423, 20413, 20423, 415, 425, 431, 10431, 433, 10433, 20433, 435, 4122, 4222, 4212, 4112, 4224, 4214, 4114, 4232, 4132, 4322, 4312, 4324, 4314, 4332, 4334, 4412, 4422, 4414, 4424, 4432, 4434, 4444};
+        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329, 9000311, 9000321, 10311, 10321, 100311, 100321, 9010311, 9010321, 9020311, 9020321, 313, 323, 10313, 10323, 20313, 20323, 100313, 100323, 9000313, 9000323, 30313, 30323, 315, 325, 9000315, 9000325, 10315, 10325, 20315, 20325, 9010315, 9010325, 9020315, 9020325, 317, 327, 9010317, 9010327, 319, 329, 3122, 3222, 3212, 3112, 3224, 3214, 3114, 3322, 3312, 3324, 3314, 3334};
+
+
+        //std::cout << "\n--- c-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet
         {
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
+            Float_t charmRatio = jet.pt() / charmPt;
 
+            /*
             std::cout << "New Jet" << std::endl;
             std::cout << "Jet Mass: " << cJet.M() << std::endl;
             std::cout << "Jet pT: " << cJet.Pt() << std::endl;
-            Float_t charmRatio = jet.pt() / charmPt;
             std::cout << "Charm ratio: " << charmRatio << std::endl;
+            */
 
-            for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis ibject is a constituent of the jet
+            Bool_t hasCharmConstituent = false;
+
+            for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis object is a constituent of the jet
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
                 Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
                 Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
 
                 Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
 
-                if (abs_constituentMotherPdg == 411 || abs_constituentMotherPdg == 421 || abs_constituentMotherPdg == 413 || abs_constituentMotherPdg == 423 || abs_constituentMotherPdg == 415 || abs_constituentMotherPdg == 425 || abs_constituentMotherPdg == 431 || abs_constituentMotherPdg == 433 || abs_constituentMotherPdg == 435)
+                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg))
                 {
-                    primary_CharmRatioHist->Fill(charmRatio);
+                    hasCharmConstituent = true;
+                    break;
                 }
-                else
-                {
-                    secondary_CharmRatioHist->Fill(charmRatio);
-                }
+            }
 
-                std::cout << "Constituent PDG: " << constituentPdg << std::endl;
-                std::cout << "Constituent mother PDG: " << constituentMotherPdg << std::endl;
-                std::cout << "Constituent second mother PDG: " << constituentSecondMotherPdg << std::endl;
-                std::cout << std::endl;
+            if (hasCharmConstituent) 
+            {
+                primary_CharmRatioHist->Fill(charmRatio);
+            }
+            else
+            {
+                secondary_CharmRatioHist->Fill(charmRatio);
             }
         }
 
@@ -284,15 +295,17 @@ void jetClassification1(const char* fileName)
         for (const fastjet::PseudoJet &jet : tagged_s_jets)
         {
             TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
-
-            //std::cout << "----- New Jet -----" << std::endl;
-            //std::cout << "Jet Mass: " << sJet.M() << std::endl;
-            //std::cout << "Jet pT: " << sJet.Pt() << std::endl;
-
             Float_t strangeRatio = jet.pt() / strangePt;
-            //std::cout << "Stange ratio: " << strangeRatio << std::endl;
-            //std::cout << std::endl;
 
+            /*
+            std::cout << "----- New Jet -----" << std::endl;
+            std::cout << "Jet Mass: " << sJet.M() << std::endl;
+            std::cout << "Jet pT: " << sJet.Pt() << std::endl;
+            std::cout << "Stange ratio: " << strangeRatio << std::endl;
+            std::cout << std::endl;
+            */
+
+           Bool_t hasStrangeConstituent = false;
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
@@ -301,18 +314,20 @@ void jetClassification1(const char* fileName)
                 
                 Int_t abs_constituentPdg = abs(constituentPdg);
 
-                if (abs_constituentPdg == 130 || abs_constituentPdg == 310 || abs_constituentPdg == 311 || abs_constituentPdg == 321 || abs_constituentPdg == 313 || abs_constituentPdg == 323 || abs_constituentPdg == 315 || abs_constituentPdg == 325 || abs_constituentPdg == 317 || abs_constituentPdg == 327 || abs_constituentPdg == 319 || abs_constituentPdg == 329 )
+                if (strangePdgSet.count(abs_constituentPdg))
                 {
-                    primary_StrangeRatioHist->Fill(strangeRatio);
+                    hasStrangeConstituent = true;
+                    break;
                 }
-                else
-                {
-                    secondary_StrangeRatioHist->Fill(strangeRatio);
-                }
-                
-                //std::cout << "Constituent PDG: " << constituentPdg << std::endl;
-                //std::cout << "Constituent mother PDG: " << constituentMotherPdg << std::endl;
-                //std::cout << std::endl;
+            }
+
+            if (hasStrangeConstituent)
+            {
+                primary_StrangeRatioHist->Fill(strangeRatio);
+            }
+            else
+            {
+                secondary_StrangeRatioHist->Fill(strangeRatio);
             }
         }
 
@@ -371,6 +386,14 @@ void jetClassification1(const char* fileName)
     
     primary_StrangeRatioHist->SetLineColor(kRed);
     primary_StrangeRatioHist->Draw("same");
+
+    TFile *outputFile = new TFile("histogramas_jetR_07_fullList.root", "RECREATE");
+    invariantMass->Write();
+    primary_CharmRatioHist->Write();
+    secondary_CharmRatioHist->Write();
+    primary_StrangeRatioHist->Write();
+    secondary_StrangeRatioHist->Write();
+    outputFile->Close();
 
     file->Close();
 }

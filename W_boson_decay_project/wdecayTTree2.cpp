@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_DebugFile.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_30K.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -47,7 +47,7 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
   // Initialization of histograms
   //---------------------------------------------------------------------------------------------------------
 
-  TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
+  //TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
 
   //---------------------------------------------------------------------------------------------------------
   // Pythia initializations and configurations:
@@ -197,7 +197,7 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
             }
 
             Float_t R_quarks = TMath::Sqrt( TMath::Power(daughterEta_c - daughterEta_s, 2) + TMath::Power(daughterPhi_c - daughterPhi_s, 2) );
-            distanciaAngular->Fill(R_quarks);
+            //distanciaAngular->Fill(R_quarks);
             //std::cout << deltaR_c << std::endl;
             //std::cout << deltaR_s << std::endl;
 
@@ -234,6 +234,7 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
   pythia8.PrintStatistics();
   ttree->Write();
 
+  /*
   TCanvas *c1 = new TCanvas("c1", "Angular distance distribution", 2500, 2500);
   c1->Divide(1, 1);
 
@@ -242,6 +243,7 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
   distanciaAngular->GetXaxis()->SetTitle("Angular distance");
   distanciaAngular->GetYaxis()->SetTitle("Frequency");
   distanciaAngular->DrawCopy();
+  */
 
   outfile->Close();
 }
