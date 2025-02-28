@@ -74,6 +74,9 @@ void jetClassification1(const char* fileName)
     TH1F *primary_StrangeRatioHist = new TH1F("primaryStrangeRatio", "Strange: Ratio between tagged jets (with correct hadron) and quark p_{T}", 50, 0, 2);
     TH1F *secondary_StrangeRatioHist = new TH1F("secondaryStrangeRatio", "Strange: Ratio between tagged jets (whitout correct hadron) and quark p_{T}", 50, 0, 2);
 
+    TH1F *missingStrangeConstituentsPdgMap = new TH1F("strangeMissingMap","Potential particles' PDGs missing in the strange list", 5000, -2500, 2500);
+    TH1F *missingCharmConstituentsPdgMap = new TH1F("charmMissingMap","Potential particles' PDGs missing in the charm list", 5000, -2500, 2500);
+
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
@@ -249,19 +252,18 @@ void jetClassification1(const char* fileName)
         const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435, 10411, 10421, 413, 423, 10413, 10423, 20413, 20423, 415, 425, 431, 10431, 433, 10433, 20433, 435, 4122, 4222, 4212, 4112, 4224, 4214, 4114, 4232, 4132, 4322, 4312, 4324, 4314, 4332, 4334, 4412, 4422, 4414, 4424, 4432, 4434, 4444};
         const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329, 9000311, 9000321, 10311, 10321, 100311, 100321, 9010311, 9010321, 9020311, 9020321, 313, 323, 10313, 10323, 20313, 20323, 100313, 100323, 9000313, 9000323, 30313, 30323, 315, 325, 9000315, 9000325, 10315, 10325, 20315, 20325, 9010315, 9010325, 9020315, 9020325, 317, 327, 9010317, 9010327, 319, 329, 3122, 3222, 3212, 3112, 3224, 3214, 3114, 3322, 3312, 3324, 3314, 3334};
 
-
         //std::cout << "\n--- c-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet
         {
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t charmRatio = jet.pt() / charmPt;
 
-            /*
-            std::cout << "New Jet" << std::endl;
-            std::cout << "Jet Mass: " << cJet.M() << std::endl;
-            std::cout << "Jet pT: " << cJet.Pt() << std::endl;
-            std::cout << "Charm ratio: " << charmRatio << std::endl;
-            */
+            
+            //std::cout << "New Jet" << std::endl;
+            //std::cout << "Jet Mass: " << cJet.M() << std::endl;
+            //std::cout << "Jet pT: " << cJet.Pt() << std::endl;
+            //std::cout << "Charm ratio: " << charmRatio << std::endl;
+            
 
             Bool_t hasCharmConstituent = false;
 
@@ -288,6 +290,15 @@ void jetClassification1(const char* fileName)
             else
             {
                 secondary_CharmRatioHist->Fill(charmRatio);
+
+                if (charmRatio < 0.85) continue;
+                for (const fastjet::PseudoJet &constituent : jet.constituents())
+                {
+                    // Since we're only interested in the jets that "went missing" with more than, let' say, 75% of the quark's pT, we can place our attention to jets that go above this number
+                    Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                    //std::cout << "Missing jet constituents: " << constituentPdg << std::endl;
+                    missingCharmConstituentsPdgMap->Fill(constituentPdg);
+                }
             }
         }
 
@@ -297,15 +308,16 @@ void jetClassification1(const char* fileName)
             TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t strangeRatio = jet.pt() / strangePt;
 
-            /*
-            std::cout << "----- New Jet -----" << std::endl;
-            std::cout << "Jet Mass: " << sJet.M() << std::endl;
-            std::cout << "Jet pT: " << sJet.Pt() << std::endl;
-            std::cout << "Stange ratio: " << strangeRatio << std::endl;
-            std::cout << std::endl;
-            */
+            
+            //std::cout << "----- New Jet -----" << std::endl;
+            //std::cout << "Jet Mass: " << sJet.M() << std::endl;
+            //std::cout << "Jet pT: " << sJet.Pt() << std::endl;
+            //std::cout << "Stange ratio: " << strangeRatio << std::endl;
+            //std::cout << std::endl;
+            
 
            Bool_t hasStrangeConstituent = false;
+           Int_t missingStrangePdg = 0;
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
@@ -328,6 +340,19 @@ void jetClassification1(const char* fileName)
             else
             {
                 secondary_StrangeRatioHist->Fill(strangeRatio);
+
+                // If the event reaches this point, it means we have a jet that does not have any hadron within our list. We are, then, interested in the constituents related to this jet in particular
+                // Since we're only interested in the jets that "went missing" with more than, let' say, 75% of the quark's pT, we can place our attention to jets that go above this number
+                // Thus, I guess we can just reopen the jet into it's constituents and get them from directly from there
+
+                if (strangeRatio < 0.85) continue;
+                for (const fastjet::PseudoJet &constituent : jet.constituents())
+                {
+                    // Since we're only interested in the jets that "went missing" with more than, let' say, 75% of the quark's pT, we can place our attention to jets that go above this number
+                    Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                    //std::cout << "Missing jet constituents: " << constituentPdg << std::endl;
+                    missingStrangeConstituentsPdgMap->Fill(constituentPdg);
+                }
             }
         }
 
@@ -359,7 +384,7 @@ void jetClassification1(const char* fileName)
     invariantMass->SetTitle("Jet's invariant mass spectrum");
     invariantMass->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     invariantMass->GetYaxis()->SetTitle("Frequency");
-    invariantMass->Draw();
+    invariantMass->DrawCopy();
 
     TCanvas *c2 = new TCanvas("c2", "Charm", 2500, 2500);
     c2->Divide(1, 1);
@@ -387,6 +412,21 @@ void jetClassification1(const char* fileName)
     primary_StrangeRatioHist->SetLineColor(kRed);
     primary_StrangeRatioHist->Draw("same");
 
+    TCanvas *c4 = new TCanvas("c4", "Missing particles PDG", 2500, 2500);
+    c4->Divide(1, 2);
+
+    c4->cd(1);
+    missingStrangeConstituentsPdgMap->SetTitle("Potentially missing particles PDGs for strange jets list");
+    missingStrangeConstituentsPdgMap->GetXaxis()->SetTitle("PDG");
+    missingStrangeConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
+    missingStrangeConstituentsPdgMap->Draw();
+
+    c4->cd(2);
+    missingCharmConstituentsPdgMap->SetTitle("Potentially missing particles PDGs for charm jets list");
+    missingCharmConstituentsPdgMap->GetXaxis()->SetTitle("PDG");
+    missingCharmConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
+    missingCharmConstituentsPdgMap->Draw();
+
     TFile *outputFile = new TFile("histogramas_jetR_07_fullList.root", "RECREATE");
     invariantMass->Write();
     primary_CharmRatioHist->Write();
@@ -397,3 +437,4 @@ void jetClassification1(const char* fileName)
 
     file->Close();
 }
+

@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_30K.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_Debug.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -137,14 +137,22 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
         Int_t secondMotherPdg = secondMotherPart->GetPdgCode();
         fp->finalParticleSecondMotherPdg = secondMotherPdg; // Final particle second mother PDG
 
-
+        const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435};
+        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329};
         
         Int_t index = ip;
+
+        Bool_t hasCharmedHadron, hasStrangeHadron = false;
 
         while (index > 1)                                                      // The loop continues until the particle reaches the proton
         {
           TParticle *ipPart = (TParticle*)particles->At(index);
           Int_t ipPdg = ipPart->GetPdgCode();                                  // Takes the pdg of the current particle 
+          Int_t abs_ipPdg = abs(ipPdg);
+          
+          if (charmPdgSet.count(abs_ipPdg)) hasCharmedHadron = true;           // If true, then the decay chain passed through a hadron of interest (check sets above)
+          if (strangePdgSet.count(abs_ipPdg)) hasStrangeHadron = true;
+
           Int_t motherIdx1st = ipPart->GetFirstMother();                       // Takes the index of the particle's mother
           TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Creates a pointer to the mother
           Int_t motherPdg= motherPart->GetPdgCode();                           // Takes the pdg of the mother
@@ -156,7 +164,7 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
           Double_t daughterEta_c, daughterPhi_c = 0;
           Double_t daughterEta_s, daughterPhi_s = 0;
 
-          if(abs(motherPdg) == 24)          // Checks if we have reached a W boson
+          if(abs(motherPdg) == 24)                                              // Checks if we have reached a W boson
           {
             Int_t fd = motherPart->GetFirstDaughter();
             Int_t ld = motherPart->GetLastDaughter();
@@ -166,7 +174,7 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
               TParticle *daughterPart = (TParticle*)particles->At(id);
               Int_t daughterPdg = daughterPart->GetPdgCode();
               
-              if (abs(daughterPdg) == 4 || abs(daughterPdg) == 3)         // Obtaining quark raw data
+              if (abs(daughterPdg) == 4 || abs(daughterPdg) == 3)               // Obtaining quark raw data
               {
                 MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
           
