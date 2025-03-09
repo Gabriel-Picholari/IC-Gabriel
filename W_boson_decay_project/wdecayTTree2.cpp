@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -136,6 +136,18 @@ void wdecayTTree2(Int_t nev = 30, Int_t ndeb = 1 /* Listing */ )
         TParticle *secondMotherPart = (TParticle*)particles->At(secondMotherIndex);
         Int_t secondMotherPdg = secondMotherPart->GetPdgCode();
         fp->finalParticleSecondMotherPdg = secondMotherPdg; // Final particle second mother PDG
+        
+        Int_t thirdMotherPdg = 0;
+        Int_t thirdMotherIndex = secondMotherPart->GetFirstMother();
+        if (thirdMotherIndex >= 0 && thirdMotherIndex < np) 
+        { 
+          TParticle *thirdMotherPart = (TParticle*)particles->At(thirdMotherIndex);
+          
+          //if (thirdMotherPart) 
+          //{
+            thirdMotherPdg = thirdMotherPart->GetPdgCode();
+          //}
+        }
 
         const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435};
         const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329};

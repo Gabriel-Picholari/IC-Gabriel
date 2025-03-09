@@ -21,7 +21,7 @@
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
-        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg) {}
+        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0, const Int_t& thirdMotherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg), finalParticleThirdMotherPdg(thirdMotherPdg){}
 
         void setSignalType(const TString& type) { signalType = type; }
         TString getSignalType() const { return signalType; }
@@ -35,11 +35,15 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         void setFinalParticleSecondMotherPdg(Int_t secondMotherPdg) { finalParticleSecondMotherPdg = secondMotherPdg; }
         Int_t getFinalParticleSecondMotherPdg() const { return finalParticleSecondMotherPdg; }
 
+        void setFinalParticleThirdMotherPdg(Int_t thirdMotherPdg) { finalParticleThirdMotherPdg = thirdMotherPdg; }
+        Int_t getFinalParticleThirdMotherPdg() const { return finalParticleThirdMotherPdg; }
+
     private:
         TString signalType;
         Int_t finalParticlePdg;
         Int_t finalParticleMotherPdg;
         Int_t finalParticleSecondMotherPdg;
+        Int_t finalParticleThirdMotherPdg;
 };
 
 void jetClassification1(const char* fileName)
@@ -59,6 +63,7 @@ void jetClassification1(const char* fileName)
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
     Int_t finalParticleSecondMotherPdg = 0;
+    Int_t finalParticleThirdMotherPdg = 0;
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
@@ -160,10 +165,11 @@ void jetClassification1(const char* fileName)
             finalParticlePdg = fp->finalParticlePdg;
             finalParticleMotherPdg = fp->finalParticleMotherPdg;
             finalParticleSecondMotherPdg = fp->finalParticleSecondMotherPdg;
+            finalParticleThirdMotherPdg = fp->finalParticleThirdMotherPdg;
 
             fastjet::PseudoJet particle(fpPx, fpPy, fpPz, fpE);
             
-            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg, finalParticleSecondMotherPdg);
+            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg, finalParticleSecondMotherPdg, finalParticleThirdMotherPdg);
             particle.set_user_info(jetInfo);
 
             particles_fastjet.push_back(particle);
@@ -272,11 +278,13 @@ void jetClassification1(const char* fileName)
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
                 Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
                 Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
                 Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
                 Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg = abs(constituentThirdMotherPdg);
 
-                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg))
+                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasCharmConstituent = true;
                     break;
@@ -308,13 +316,11 @@ void jetClassification1(const char* fileName)
             TLorentzVector sJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t strangeRatio = jet.pt() / strangePt;
 
-            
             //std::cout << "----- New Jet -----" << std::endl;
             //std::cout << "Jet Mass: " << sJet.M() << std::endl;
             //std::cout << "Jet pT: " << sJet.Pt() << std::endl;
             //std::cout << "Stange ratio: " << strangeRatio << std::endl;
             //std::cout << std::endl;
-            
 
            Bool_t hasStrangeConstituent = false;
            Int_t missingStrangePdg = 0;
@@ -323,10 +329,13 @@ void jetClassification1(const char* fileName)
             {
                 Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
                 Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
                 
                 Int_t abs_constituentPdg = abs(constituentPdg);
+                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
 
-                if (strangePdgSet.count(abs_constituentPdg))
+
+                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg))
                 {
                     hasStrangeConstituent = true;
                     break;
