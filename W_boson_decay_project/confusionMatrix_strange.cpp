@@ -15,14 +15,14 @@
 #include <TMVA/Results.h>
 #include <TMVA/DataLoader.h>
 
-void confusionMatrix(const char *fileName)
+void confusionMatrix_strange(const char *fileName)
 {
     //---------------------------------------------------------------------------------------------------------
     // Recuperacao da Tree de teste
     //---------------------------------------------------------------------------------------------------------
 
     TFile* inputFile = TFile::Open(fileName, "READ");
-    TTree* testTree = dynamic_cast<TTree*>(inputFile->Get("dataset/TestTree"));
+    TTree* testTree = dynamic_cast<TTree*>(inputFile->Get("dataset_s/TestTree"));
 
     //---------------------------------------------------------------------------------------------------------
     // Inicializacao do objeto reader recuperando o arquivo xml gerado pela macro modelTrainment.cpp
@@ -30,20 +30,13 @@ void confusionMatrix(const char *fileName)
 
     TMVA::Reader reader;
 
-    Float_t pT_c, pT_lConst_c, label_c, nConst_c, averageAng_c, sigmaKT_c, eta_c, phi_c, energy_c;
+    Float_t pT_s, label_s, nConst_s;
 
-    //reader.AddVariable("pT_c", &pT_c);
-    //reader.AddVariable("eta_c", &eta_c);
-    //reader.AddVariable("phi_c", &phi_c);
-    //reader.AddVariable("energy_c", &energy_c);
-    //reader.AddVariable("nConst_c", &nConst_c);
-    reader.AddVariable("sigmaKT_c", &sigmaKT_c);
-    reader.AddVariable("pT_lConst_c", &pT_lConst_c);
-    //reader.AddVariable("averageAng_c", &averageAng_c);
+    reader.AddVariable("pT_s", &pT_s);
+    reader.AddVariable("nConst_s", &nConst_s);
+    reader.AddSpectator("label_s", &label_s);
 
-    reader.AddSpectator("label_c", &label_c);
-
-    reader.BookMVA("LogisticRegression", "dataset/weights/TMVARegression_LogisticRegression.weights.xml");
+    reader.BookMVA("LogisticRegression", "dataset_s/weights/TMVARegression_LogisticRegression.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Loop que contabiliza os verdadeiros positivos (TP), verdadeiros negativos (TN), falsos positivos (TP) e
@@ -52,16 +45,10 @@ void confusionMatrix(const char *fileName)
 
     int TP = 0, TN = 0, FP = 0, FN = 0;
 
-    testTree->SetBranchAddress("label_c", &label_c);
+    testTree->SetBranchAddress("label_s", &label_s);
+    testTree->SetBranchAddress("pT_s", &pT_s);
+    testTree->SetBranchAddress("nConst_s", &nConst_s);
 
-    //testTree->SetBranchAddress("pT_c", &pT_c);
-    //testTree->SetBranchAddress("eta_c", &eta_c);
-    //testTree->SetBranchAddress("phi_c", &phi_c);
-    //testTree->SetBranchAddress("energy_c", &energy_c);
-    //testTree->SetBranchAddress("nConst_c", &nConst_c);
-    testTree->SetBranchAddress("sigmaKT_c", &sigmaKT_c);
-    testTree->SetBranchAddress("pT_lConst_c", &pT_lConst_c);
-    //testTree->SetBranchAddress("averageAng_c", &averageAng_c);
 
     Long64_t nEntries = testTree->GetEntries();
 
@@ -80,19 +67,19 @@ void confusionMatrix(const char *fileName)
             predictedLabel = 0;
         }
 
-        if (predictedLabel == 1 && label_c == 1) 
+        if (predictedLabel == 1 && label_s == 1) 
         {
             TP++;
         } 
-        else if (predictedLabel == 0 && label_c == 0) 
+        else if (predictedLabel == 0 && label_s == 0) 
         {
             TN++;
         } 
-        else if (predictedLabel == 1 && label_c == 0) 
+        else if (predictedLabel == 1 && label_s == 0) 
         {
             FP++;
         } 
-        else if (predictedLabel == 0 && label_c == 1) 
+        else if (predictedLabel == 0 && label_s == 1) 
         {
             FN++;
         }

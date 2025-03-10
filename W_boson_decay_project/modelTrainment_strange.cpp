@@ -13,43 +13,36 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment(const char *fileName) {
+void modelTrainment_s(const char *fileName) {
     
-    TFile* outputFile = TFile::Open("TMVAOutput_3var.root", "RECREATE");
+    TFile* outputFile = TFile::Open("TMVAOutput_2var_strange.root", "RECREATE");
 
     TFile* inputFile = TFile::Open(fileName, "READ");
 
-    TTree* signalTree_c = dynamic_cast<TTree *>(inputFile->Get("SignalTree_c"));
-    TTree* backgroundTree_c = dynamic_cast<TTree *>(inputFile->Get("BackgroundTree_c"));
+    TTree* signalTree_s = dynamic_cast<TTree *>(inputFile->Get("SignalTree_s"));
+    TTree* backgroundTree_s = dynamic_cast<TTree *>(inputFile->Get("BackgroundTree_s"));
 
 
     TMVA::Factory factory("TMVARegression", outputFile, "AnalysisType=Classification");
-    TMVA::DataLoader loader("dataset");
+    TMVA::DataLoader loader("dataset_s");
 
-    //loader.AddVariable("pT_c", 'F');
-    //loader.AddVariable("eta_c", 'F');
-    //loader.AddVariable("phi_c", 'F');
-    //loader.AddVariable("energy_c", 'F');
-    //loader.AddVariable("nConst_c", 'F');
-    loader.AddVariable("sigmaKT_c", 'F');
-    loader.AddVariable("pT_lConst_c", 'F');
-    //loader.AddVariable("averageAng_c", 'F');
+    loader.AddVariable("pT_s", 'F');
+    loader.AddVariable("nConst_s", 'F');
+    loader.AddSpectator("label_s", "F");
 
-    loader.AddSpectator("label_c", "F");
-
-    loader.AddSignalTree(signalTree_c, 1.0);
-    loader.AddBackgroundTree(backgroundTree_c, 1.0);
+    loader.AddSignalTree(signalTree_s, 1.0);
+    loader.AddBackgroundTree(backgroundTree_s, 1.0);
 
     //---------------------------------------------------------------------------------------------------------
     // Divisao das Trees de sinal e fundo em treinamento e teste
     //---------------------------------------------------------------------------------------------------------
 
     TCut mycut = "";
-    Int_t nTest_Signal = signalTree_c->GetEntries() * 0.2;
-    Int_t nTrain_Signal = signalTree_c->GetEntries() * 0.8;
+    Int_t nTest_Signal = signalTree_s->GetEntries() * 0.2;
+    Int_t nTrain_Signal = signalTree_s->GetEntries() * 0.8;
 
-    Int_t nTest_Background = backgroundTree_c->GetEntries() * 0.2;
-    Int_t nTrain_Background = backgroundTree_c->GetEntries() * 0.8;
+    Int_t nTest_Background = backgroundTree_s->GetEntries() * 0.2;
+    Int_t nTrain_Background = backgroundTree_s->GetEntries() * 0.8;
     
     TString options = TString::Format("SplitMode=Random:SplitSeed=0:NormMode=NumEvents:nTrain_Signal=%d:nTrain_Background=%d:nTest_Signal=%d:nTest_Background=%d:!V", nTrain_Signal, nTrain_Background, nTest_Signal, nTest_Background);
     loader.PrepareTrainingAndTestTree(mycut, options.Data());
