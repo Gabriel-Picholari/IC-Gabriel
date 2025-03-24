@@ -13,7 +13,7 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_s(const char *fileName) {
+void modelTrainment_strange(const char *fileName) {
     
     TFile* outputFile = TFile::Open("TMVAOutput_2var_strange.root", "RECREATE");
 

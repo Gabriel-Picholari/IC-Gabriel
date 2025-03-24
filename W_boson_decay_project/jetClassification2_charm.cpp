@@ -100,7 +100,7 @@ void jetClassification2_charm(const char* fileName)
 
     Float_t pT_c, label_c, nConst_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_Analysis_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -265,8 +265,8 @@ void jetClassification2_charm(const char* fileName)
                 }
             }
 
-            if (!isCharmTagged && !isStrangeTagged) // Then it' a background jet, that is, neither a charmed nor a strange jet
-            {
+            if (!isCharmTagged) // Then it' a background jet, that is, not a charmed jet (can be strange or any other jet)
+            { 
                 label_c = 0;
                 pT_c = jetPt;
                 nConst_c = jetNConst;
