@@ -98,19 +98,29 @@ void jetClassification2_charm(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t pT_c, label_c, nConst_c = 0;
+    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_Analysis_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelApplication_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
+    signalTree_c->Branch("eta_c", &eta_c);
+    signalTree_c->Branch("phi_c", &phi_c);
+    signalTree_c->Branch("mass_c", &mass_c);
     signalTree_c->Branch("label_c", &label_c);
     signalTree_c->Branch("nConst_c", &nConst_c);
+    signalTree_c->Branch("eventID_c", &eventID_c);
+
 
     TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
     backgroundTree_c->Branch("pT_c", &pT_c);
+    backgroundTree_c->Branch("eta_c", &eta_c);
+    backgroundTree_c->Branch("phi_c", &phi_c);
+    backgroundTree_c->Branch("mass_c", &mass_c);
     backgroundTree_c->Branch("label_c", &label_c);
     backgroundTree_c->Branch("nConst_c", &nConst_c);
+    backgroundTree_c->Branch("eventID_c", &eventID_c);
+
 
     /* 
     Float_t pT_s, label_s, nConst_s = 0;
@@ -268,7 +278,11 @@ void jetClassification2_charm(const char* fileName)
             if (!isCharmTagged) // Then it' a background jet, that is, not a charmed jet (can be strange or any other jet)
             { 
                 label_c = 0;
+                eventID_c = ni;
                 pT_c = jetPt;
+                eta_c = jetEta;
+                phi_c = jetPhi;
+                mass_c = jetMass;
                 nConst_c = jetNConst;
                 backgroundTree_c->Fill();
             }
@@ -309,7 +323,11 @@ void jetClassification2_charm(const char* fileName)
             if (hasCharmConstituent) // Signal data
             {
                 label_c = 1;
+                eventID_c = ni;
                 pT_c = jetPt;
+                eta_c = jetEta;
+                phi_c = jetPhi;
+                mass_c = jetMass;
                 nConst_c = jetNConst;
                 signalTree_c->Fill();
             }

@@ -98,19 +98,27 @@ void jetClassification2_strange(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t pT_s, label_s, nConst_s = 0;
+    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_Analysis_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelApplication_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
+    signalTree_s->Branch("eta_s", &eta_s);
+    signalTree_s->Branch("phi_s", &phi_s);
+    signalTree_s->Branch("mass_s", &mass_s);
     signalTree_s->Branch("label_s", &label_s);
     signalTree_s->Branch("nConst_s", &nConst_s);
+    signalTree_s->Branch("eventID_s", &eventID_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
     backgroundTree_s->Branch("pT_s", &pT_s);
+    backgroundTree_s->Branch("eta_s", &eta_s);
+    backgroundTree_s->Branch("phi_s", &phi_s);
+    backgroundTree_s->Branch("mass_s", &mass_s);
     backgroundTree_s->Branch("label_s", &label_s);
     backgroundTree_s->Branch("nConst_s", &nConst_s);
+    backgroundTree_s->Branch("eventID_s", &eventID_s);
     
 
     //---------------------------------------------------------------------------------------------------------
@@ -253,7 +261,11 @@ void jetClassification2_strange(const char* fileName)
             if (!isStrangeTagged) // Then it' a background jet, that is, not a strange jet (can be charmed or any other jet)
             {
                 label_s = 0;
+                eventID_s = ni;
                 pT_s = jetPt;
+                eta_s = jetEta;
+                phi_s = jetPhi;
+                mass_s = jetMass;
                 nConst_s = jetNConst;
                 backgroundTree_s->Fill();
             }
@@ -293,7 +305,11 @@ void jetClassification2_strange(const char* fileName)
             if (hasStrangeConstituent)
             {
                 label_s = 1;
+                eventID_s = ni;
                 pT_s = jetPt;
+                eta_s = jetEta;
+                phi_s = jetPhi;
+                mass_s = jetMass;
                 nConst_s = jetNConst;
                 signalTree_s->Fill();
             }
