@@ -28,7 +28,12 @@ void modelTrainment_strange(const char *fileName) {
 
     loader.AddVariable("pT_s", 'F');
     loader.AddVariable("nConst_s", 'F');
+    
+    loader.AddSpectator("eta_s", "F");
+    loader.AddSpectator("phi_s", "F");
+    loader.AddSpectator("mass_s", "F");
     loader.AddSpectator("label_s", "F");
+    loader.AddSpectator("eventID_s", "F");
 
     loader.AddSignalTree(signalTree_s, 1.0);
     loader.AddBackgroundTree(backgroundTree_s, 1.0);

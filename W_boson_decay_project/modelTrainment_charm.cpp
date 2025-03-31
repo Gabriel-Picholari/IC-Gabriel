@@ -29,7 +29,12 @@ void modelTrainment_charm(const char *fileName)
 
     loader.AddVariable("pT_c", 'F');
     loader.AddVariable("nConst_c", 'F');
+
+    loader.AddSpectator("eta_c", "F");
+    loader.AddSpectator("phi_c", "F");
+    loader.AddSpectator("mass_c", "F");
     loader.AddSpectator("label_c", "F");
+    loader.AddSpectator("eventID_c", "F");
 
     loader.AddSignalTree(signalTree_c, 1.0);
     loader.AddBackgroundTree(backgroundTree_c, 1.0);
