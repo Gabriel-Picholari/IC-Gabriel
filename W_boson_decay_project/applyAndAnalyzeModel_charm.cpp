@@ -14,15 +14,17 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT_c = 0;
-    Float_t nConst_c = 0;
-    Float_t label_c = 0;
-    Float_t score = 0;
+    Float_t pT_c, nConst_c, eta_c, phi_c, mass_c, label_c, eventID_c, score = 0;
 
     reader->AddVariable("pT_c", &pT_c);
     reader->AddVariable("nConst_c", &nConst_c);
+    reader->AddSpectator("eta_c", &eta_c);
+    reader->AddSpectator("phi_c", &phi_c);
+    reader->AddSpectator("mass_c", &mass_c);
     reader->AddSpectator("label_c", &label_c);
+    reader->AddSpectator("eventID_c", &eventID_c);
     reader->BookMVA("LogisticRegression", "dataset_c/weights/TMVARegression_LogisticRegression.weights.xml");
+
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -33,12 +35,20 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     TTree* backgroundTree = (TTree*)inputFile->Get("BackgroundTree_c");
 
     signalTree->SetBranchAddress("pT_c", &pT_c);
+    signalTree->SetBranchAddress("eta_c", &eta_c);
+    signalTree->SetBranchAddress("phi_c", &phi_c);
+    signalTree->SetBranchAddress("mass_c", &mass_c);
     signalTree->SetBranchAddress("nConst_c", &nConst_c);
     signalTree->SetBranchAddress("label_c", &label_c);
+    signalTree->SetBranchAddress("eventID_c", &eventID_c);
 
     backgroundTree->SetBranchAddress("pT_c", &pT_c);
+    backgroundTree->SetBranchAddress("eta_c", &eta_c);
+    backgroundTree->SetBranchAddress("phi_c", &phi_c);
+    backgroundTree->SetBranchAddress("mass_c", &mass_c);
     backgroundTree->SetBranchAddress("nConst_c", &nConst_c);
     backgroundTree->SetBranchAddress("label_c", &label_c);
+    backgroundTree->SetBranchAddress("eventID_c", &eventID_c);
 
     //---------------------------------------------------------------------------------------------------------
     // Criação de TTrees de saída
@@ -48,16 +58,24 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
 
     TTree* outputSignal = new TTree("ScoredSignalTree_c", "Signal tree with ML score");
     outputSignal->Branch("pT_c", &pT_c);
+    outputSignal->Branch("eta_c", &eta_c);
+    outputSignal->Branch("phi_c", &phi_c);
+    outputSignal->Branch("mass_c", &mass_c);
     outputSignal->Branch("nConst_c", &nConst_c);
     outputSignal->Branch("label_c", &label_c);
     outputSignal->Branch("score", &score);
+    outputSignal->Branch("eventID_c", &eventID_c);
+
 
     TTree* outputBackground = new TTree("ScoredBackgroundTree_c", "Background tree with ML score");
     outputBackground->Branch("pT_c", &pT_c);
+    outputBackground->Branch("eta_c", &eta_c);
+    outputBackground->Branch("phi_c", &phi_c);
+    outputBackground->Branch("mass_c", &mass_c);
     outputBackground->Branch("nConst_c", &nConst_c);
     outputBackground->Branch("label_c", &label_c);
     outputBackground->Branch("score", &score);
-
+    outputBackground->Branch("eventID_c", &eventID_c);
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
     //---------------------------------------------------------------------------------------------------------

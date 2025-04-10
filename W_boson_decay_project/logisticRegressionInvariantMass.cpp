@@ -3,12 +3,13 @@
 #include <TFile.h>
 #include <TTree.h>
 #include <iostream>
+#include <algorithm>
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 #include <TLorentzVector.h>
 
-void logisticRegressionInvariantMass(const char* inputFileName_c, const char* inputFileName_s, float threshold = 0.3) {
+void logisticRegressionInvariantMass(const char* inputFileName_c, const char* inputFileName_s, const char* inputFileName_bkg, float threshold = 0.3) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
@@ -43,6 +44,22 @@ void logisticRegressionInvariantMass(const char* inputFileName_c, const char* in
     reader_s->AddSpectator("label_s", &label_s);
     reader_s->AddSpectator("eventID_s", &eventID_s);
     reader_s->BookMVA("LogisticRegression", "dataset_s/weights/TMVARegression_LogisticRegression.weights.xml");
+
+    TMVA::Reader* reader_bkg = new TMVA::Reader("!Color:!Silent");
+
+    Float_t eventID_bkg, pT_bkg, eta_bkg, phi_bkg, mass_bkg, nConst_bkg = 0;
+    Float_t label_bkg, score_bkg = 0;
+
+    reader_bkg->AddVariable("pT_bkg", &pT_bkg);
+    reader_bkg->AddVariable("nConst_bkg", &nConst_bkg);
+
+    reader_bkg->AddSpectator("eta_bkg", &eta_bkg);
+    reader_bkg->AddSpectator("phi_bkg", &phi_bkg);
+    reader_bkg->AddSpectator("mass_bkg", &mass_bkg);
+    reader_bkg->AddSpectator("label_bkg", &label_bkg);
+    reader_bkg->AddSpectator("eventID_bkg", &eventID_bkg);
+    reader_bkg->BookMVA("LogisticRegression", "dataset_bkg/weights/TMVARegression_LogisticRegression.weights.xml");
+
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -88,25 +105,53 @@ void logisticRegressionInvariantMass(const char* inputFileName_c, const char* in
     backgroundTree_s->SetBranchAddress("label_s", &label_s);
     backgroundTree_s->SetBranchAddress("eventID_s", &eventID_s);
 
+    TFile* inputFile_bkg = TFile::Open(inputFileName_bkg, "READ");
+    TTree* signalTree_bkg = (TTree*)inputFile_bkg->Get("SignalTree_bkg");
+    TTree* backgroundTree_bkg = (TTree*)inputFile_bkg->Get("BackgroundTree_bkg");
+
+    signalTree_bkg->SetBranchAddress("pT_bkg", &pT_bkg);
+    signalTree_bkg->SetBranchAddress("eta_bkg", &eta_bkg);
+    signalTree_bkg->SetBranchAddress("phi_bkg", &phi_bkg);
+    signalTree_bkg->SetBranchAddress("mass_bkg", &mass_bkg);
+    signalTree_bkg->SetBranchAddress("nConst_bkg", &nConst_bkg);
+    signalTree_bkg->SetBranchAddress("label_bkg", &label_bkg);
+    signalTree_bkg->SetBranchAddress("eventID_bkg", &eventID_bkg);
+
+    backgroundTree_bkg->SetBranchAddress("pT_bkg", &pT_bkg);
+    backgroundTree_bkg->SetBranchAddress("eta_bkg", &eta_bkg);
+    backgroundTree_bkg->SetBranchAddress("phi_bkg", &phi_bkg);
+    backgroundTree_bkg->SetBranchAddress("mass_bkg", &mass_bkg);
+    backgroundTree_bkg->SetBranchAddress("nConst_bkg", &nConst_bkg);
+    backgroundTree_bkg->SetBranchAddress("label_bkg", &label_bkg);
+    backgroundTree_bkg->SetBranchAddress("eventID_bkg", &eventID_bkg);
+
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
     //---------------------------------------------------------------------------------------------------------
 
-
     // Charm block
 
     std::multimap<Int_t, TLorentzVector> jatos_c;
+    std::multimap<Int_t, TLorentzVector> jatos_s;
 
     for (Long64_t i = 0; i < signalTree_c->GetEntries(); ++i) // By construction, both signal and background TTrees for either c or s have the same lenght, that is, they refer to the same amount of events
     {
         signalTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
 
-        if (score_c > threshold) 
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT_c, eta_c, phi_c, mass_c);
             jatos_c.insert({(Int_t)eventID_c, jet});
+        }
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_c, eta_c, phi_c, mass_c);
+            jatos_s.insert({(Int_t)eventID_c, jet});
         }
     }
     
@@ -117,44 +162,111 @@ void logisticRegressionInvariantMass(const char* inputFileName_c, const char* in
     {
         backgroundTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
 
-        if (score_c > threshold) 
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT_c, eta_c, phi_c, mass_c);
             jatos_c.insert({(Int_t)eventID_c, jet});
         }
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_c, eta_c, phi_c, mass_c);
+            jatos_s.insert({(Int_t)eventID_c, jet});
+        }
     }
 
     // Strange block
 
-        std::multimap<Int_t, TLorentzVector> jatos_s;
+    for (Long64_t i = 0; i < signalTree_s->GetEntries(); ++i) 
+    {
+        signalTree_s->GetEntry(i);
+        score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
 
-        for (Long64_t i = 0; i < signalTree_s->GetEntries(); ++i) 
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
         {
-            signalTree_s->GetEntry(i);
-            score_s = reader_s->EvaluateMVA("LogisticRegression");
-
-            if (score_s > threshold) 
-            {
-                TLorentzVector jet;
-                jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
-                jatos_s.insert({(Int_t)eventID_s, jet});
-            }
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
+            jatos_c.insert({(Int_t)eventID_s, jet});
         }
-
-        for (Long64_t i = 0; i < backgroundTree_s->GetEntries(); ++i) 
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
         {
-            backgroundTree_s->GetEntry(i);
-            score_s = reader_s->EvaluateMVA("LogisticRegression");
-
-            if (score_s > threshold) 
-            {
-                TLorentzVector jet;
-                jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
-                jatos_s.insert({(Int_t)eventID_s, jet});
-            }
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
+            jatos_s.insert({(Int_t)eventID_s, jet});
         }
+    }
+
+    for (Long64_t i = 0; i < backgroundTree_s->GetEntries(); ++i) 
+    {
+        backgroundTree_s->GetEntry(i);
+        score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
+
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
+            jatos_c.insert({(Int_t)eventID_s, jet});
+        }
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_s, eta_s, phi_s, mass_s);
+            jatos_s.insert({(Int_t)eventID_s, jet});
+        }
+    }
+
+    // Background block ( I suppose ? ) I'd say it's necessary, once our model can fail while classifying background as signal as well
+    // The result of such a failiure would, then, be a jet classified as charm or strange
+
+    for (Long64_t i = 0; i < signalTree_s->GetEntries(); ++i) 
+    {
+        signalTree_bkg->GetEntry(i);
+        score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
+
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_bkg, eta_bkg, phi_bkg, mass_bkg);
+            jatos_c.insert({(Int_t)eventID_bkg, jet});
+        }
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_bkg, eta_bkg, phi_bkg, mass_bkg);
+            jatos_s.insert({(Int_t)eventID_bkg, jet});
+        }
+    }
+
+    for (Long64_t i = 0; i < backgroundTree_s->GetEntries(); ++i) 
+    {
+        backgroundTree_bkg->GetEntry(i);
+        score_c = reader_c->EvaluateMVA("LogisticRegression");
+        score_s = reader_s->EvaluateMVA("LogisticRegression");
+        score_bkg = reader_bkg->EvaluateMVA("LogisticRegression");
+
+        if ( score_c == std::max({score_c, score_s, score_bkg}) ) 
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_bkg, eta_bkg, phi_bkg, mass_bkg);
+            jatos_c.insert({(Int_t)eventID_bkg, jet});
+        }
+        else if ( score_s == std::max({score_c, score_s, score_bkg}) )
+        {
+            TLorentzVector jet;
+            jet.SetPtEtaPhiM(pT_bkg, eta_bkg, phi_bkg, mass_bkg);
+            jatos_s.insert({(Int_t)eventID_bkg, jet});
+        }
+    }
 
     //---------------------------------------------------------------------------------------------------------
     // Reconstrução combinatória da massa do W

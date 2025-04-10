@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0.5) {
+void applyAndAnalyzeModel_background(const char* inputFileName, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -14,69 +14,67 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT_s, nConst_s, eta_s, phi_s, mass_s, label_s, eventID_s, score = 0;
+    Float_t pT_bkg, nConst_bkg, eta_bkg, phi_bkg, mass_bkg, label_bkg, eventID_bkg, score = 0;
 
-    reader->AddVariable("pT_s", &pT_s);
-    reader->AddVariable("nConst_s", &nConst_s);
-    reader->AddSpectator("eta_s", &eta_s);
-    reader->AddSpectator("phi_s", &phi_s);
-    reader->AddSpectator("mass_s", &mass_s);
-    reader->AddSpectator("label_s", &label_s);
-    reader->AddSpectator("eventID_s", &eventID_s);
-    reader->BookMVA("LogisticRegression", "dataset_s/weights/TMVARegression_LogisticRegression.weights.xml");
+    reader->AddVariable("pT_bkg", &pT_bkg);
+    reader->AddVariable("nConst_bkg", &nConst_bkg);
+    reader->AddSpectator("eta_bkg", &eta_bkg);
+    reader->AddSpectator("phi_bkg", &phi_bkg);
+    reader->AddSpectator("mass_bkg", &mass_bkg);
+    reader->AddSpectator("label_bkg", &label_bkg);
+    reader->AddSpectator("eventID_bkg", &eventID_bkg);
+    reader->BookMVA("LogisticRegression", "dataset_bkg/weights/TMVARegression_LogisticRegression.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
     //---------------------------------------------------------------------------------------------------------
 
     TFile* inputFile = TFile::Open(inputFileName, "READ");
-    TTree* signalTree = (TTree*)inputFile->Get("SignalTree_s");
-    TTree* backgroundTree = (TTree*)inputFile->Get("BackgroundTree_s");
+    TTree* signalTree = (TTree*)inputFile->Get("SignalTree_bkg");
+    TTree* backgroundTree = (TTree*)inputFile->Get("BackgroundTree_bkg");
 
-    signalTree->SetBranchAddress("pT_s", &pT_s);
-    signalTree->SetBranchAddress("eta_s", &eta_s);
-    signalTree->SetBranchAddress("phi_s", &phi_s);
-    signalTree->SetBranchAddress("mass_s", &mass_s);
-    signalTree->SetBranchAddress("nConst_s", &nConst_s);
-    signalTree->SetBranchAddress("label_s", &label_s);
-    signalTree->SetBranchAddress("eventID_s", &eventID_s);
+    signalTree->SetBranchAddress("pT_bkg", &pT_bkg);
+    signalTree->SetBranchAddress("eta_bkg", &eta_bkg);
+    signalTree->SetBranchAddress("phi_bkg", &phi_bkg);
+    signalTree->SetBranchAddress("mass_bkg", &mass_bkg);
+    signalTree->SetBranchAddress("nConst_bkg", &nConst_bkg);
+    signalTree->SetBranchAddress("label_bkg", &label_bkg);
+    signalTree->SetBranchAddress("eventID_bkg", &eventID_bkg);
 
-    backgroundTree->SetBranchAddress("pT_s", &pT_s);
-    backgroundTree->SetBranchAddress("eta_s", &eta_s);
-    backgroundTree->SetBranchAddress("phi_s", &phi_s);
-    backgroundTree->SetBranchAddress("mass_s", &mass_s);
-    backgroundTree->SetBranchAddress("nConst_s", &nConst_s);
-    backgroundTree->SetBranchAddress("label_s", &label_s);
-    backgroundTree->SetBranchAddress("eventID_s", &eventID_s);
+    backgroundTree->SetBranchAddress("pT_bkg", &pT_bkg);
+    backgroundTree->SetBranchAddress("eta_bkg", &eta_bkg);
+    backgroundTree->SetBranchAddress("phi_bkg", &phi_bkg);
+    backgroundTree->SetBranchAddress("mass_bkg", &mass_bkg);
+    backgroundTree->SetBranchAddress("nConst_bkg", &nConst_bkg);
+    backgroundTree->SetBranchAddress("label_bkg", &label_bkg);
+    backgroundTree->SetBranchAddress("eventID_bkg", &eventID_bkg);
 
     //---------------------------------------------------------------------------------------------------------
     // Criação de TTrees de saída
     //---------------------------------------------------------------------------------------------------------
 
-    TFile* outputFile = TFile::Open("scoredOutput_2var_strange.root", "RECREATE");
+    TFile* outputFile = TFile::Open("scoredOutput_2var_background.root", "RECREATE");
 
-    TTree* outputSignal = new TTree("ScoredSignalTree_s", "Signal tree with ML score");
-    outputSignal->Branch("pT_s", &pT_s);
-    outputSignal->Branch("eta_s", &eta_s);
-    outputSignal->Branch("phi_s", &phi_s);
-    outputSignal->Branch("mass_s", &mass_s);
-    outputSignal->Branch("nConst_s", &nConst_s);
-    outputSignal->Branch("label_s", &label_s);
+    TTree* outputSignal = new TTree("ScoredSignalTree_bkg", "Signal tree with ML score");
+    outputSignal->Branch("pT_bkg", &pT_bkg);
+    outputSignal->Branch("eta_bkg", &eta_bkg);
+    outputSignal->Branch("phi_bkg", &phi_bkg);
+    outputSignal->Branch("mass_bkg", &mass_bkg);
+    outputSignal->Branch("nConst_bkg", &nConst_bkg);
+    outputSignal->Branch("label_bkg", &label_bkg);
     outputSignal->Branch("score", &score);
-    outputSignal->Branch("eventID_s", &eventID_s);
+    outputSignal->Branch("eventID_bkg", &eventID_bkg);
 
-
-    TTree* outputBackground = new TTree("ScoredBackgroundTree_s", "Background tree with ML score");
-    outputBackground->Branch("pT_s", &pT_s);
-    outputBackground->Branch("eta_s", &eta_s);
-    outputBackground->Branch("phi_s", &phi_s);
-    outputBackground->Branch("mass_s", &mass_s);
-    outputBackground->Branch("nConst_s", &nConst_s);
-    outputBackground->Branch("label_s", &label_s);
+    TTree* outputBackground = new TTree("ScoredBackgroundTree_bkg", "Background tree with ML score");
+    outputBackground->Branch("pT_bkg", &pT_bkg);
+    outputBackground->Branch("eta_bkg", &eta_bkg);
+    outputBackground->Branch("phi_bkg", &phi_bkg);
+    outputBackground->Branch("mass_bkg", &mass_bkg);
+    outputBackground->Branch("nConst_bkg", &nConst_bkg);
+    outputBackground->Branch("label_bkg", &label_bkg);
     outputBackground->Branch("score", &score);
-    outputBackground->Branch("eventID_s", &eventID_s);
-
-
+    outputBackground->Branch("eventID_bkg", &eventID_bkg);
+    // Até aqui foi debugado e está tudo certo!
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
     //---------------------------------------------------------------------------------------------------------
@@ -103,14 +101,14 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
 
     Int_t VP = 0, FN = 0, FP = 0, VN = 0;
 
-    TH1F* h_signal = new TH1F("h_signal", "Scores para eventos de sinal;Score;Eventos", 100, 0, 1);
-    TH1F* h_background = new TH1F("h_background", "Scores para eventos de fundo;Score;Eventos", 100, 0, 1);
+    TH1F* h_signal = new TH1F("h_signal", "Scores para eventos de sinal; Score ;Eventos", 100, 0, 1);
+    TH1F* h_background = new TH1F("h_background", "Scores para eventos de fundo; Score; Eventos", 100, 0, 1);
 
     for (Long64_t i = 0; i < outputSignal->GetEntries(); ++i) {
         outputSignal->GetEntry(i);
         h_signal->Fill(score);
 
-        if (label_s == 1) {
+        if (label_bkg == 1) {
             if (score >= threshold) {
                 VP++;
             } else {
@@ -129,7 +127,7 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
         outputBackground->GetEntry(i);
         h_background->Fill(score);
 
-        if (label_s == 1) {
+        if (label_bkg == 1) {
             if (score >= threshold) {
                 VP++;
             } else {
@@ -176,10 +174,10 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 800, 600);
     h_signal->SetLineColor(kRed);
     h_background->SetLineColor(kBlue);
-    h_background->DrawCopy();
-    h_signal->DrawCopy("same");
+    h_signal->DrawCopy();
+    h_background->DrawCopy("same");
 
-    TLegend* leg = new TLegend(0.65, 0.75, 0.88, 0.88);
+    TLegend* leg = new TLegend(0.65, 0.75, 0.85, 0.90);
     leg->AddEntry(h_signal, "Sinal (label = 1)", "l");
     leg->AddEntry(h_background, "Fundo (label = 0)", "l");
     leg->Draw();
