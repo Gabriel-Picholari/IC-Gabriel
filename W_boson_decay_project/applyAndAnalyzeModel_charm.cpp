@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3) {
+void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -23,7 +23,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     reader->AddSpectator("mass_c", &mass_c);
     reader->AddSpectator("label_c", &label_c);
     reader->AddSpectator("eventID_c", &eventID_c);
-    reader->BookMVA("LogisticRegression", "dataset_c/weights/TMVARegression_LogisticRegression.weights.xml");
+    reader->BookMVA("Likelihood", "dataset_c/weights/TMVAClassification_Likelihood.weights.xml");
 
 
     //---------------------------------------------------------------------------------------------------------
@@ -82,13 +82,13 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
 
     for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
         signalTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputSignal->Fill();
     }
 
     for (Long64_t i = 0; i < backgroundTree->GetEntries(); ++i) {
         backgroundTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputBackground->Fill();
     }
 

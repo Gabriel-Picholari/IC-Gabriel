@@ -23,7 +23,7 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     reader->AddSpectator("mass_s", &mass_s);
     reader->AddSpectator("label_s", &label_s);
     reader->AddSpectator("eventID_s", &eventID_s);
-    reader->BookMVA("LogisticRegression", "dataset_s/weights/TMVARegression_LogisticRegression.weights.xml");
+    reader->BookMVA("Likelihood", "dataset_s/weights/TMVAClassification_Likelihood.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -83,13 +83,13 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
 
     for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
         signalTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputSignal->Fill();
     }
 
     for (Long64_t i = 0; i < backgroundTree->GetEntries(); ++i) {
         backgroundTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputBackground->Fill();
     }
 

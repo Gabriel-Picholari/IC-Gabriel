@@ -24,7 +24,7 @@ void modelTrainment_background(const char *fileName)
     TTree* backgroundTree_bkg = dynamic_cast<TTree *>(inputFile->Get("BackgroundTree_bkg"));
 
 
-    TMVA::Factory factory("TMVARegression", outputFile, "AnalysisType=Classification");
+    TMVA::Factory factory("TMVAClassification", outputFile, "AnalysisType=Classification");
     TMVA::DataLoader loader("dataset_bkg");
 
     loader.AddVariable("pT_bkg", 'F');
@@ -49,14 +49,14 @@ void modelTrainment_background(const char *fileName)
     Int_t nTest_Background = backgroundTree_bkg->GetEntries() * 0.2;
     Int_t nTrain_Background = backgroundTree_bkg->GetEntries() * 0.8;
     
-    TString options = TString::Format("SplitMode=Random:SplitSeed=0:NormMode=NumEvents:nTrain_Signal=%d:nTrain_Background=%d:nTest_Signal=%d:nTest_Background=%d:!V", nTrain_Signal, nTrain_Background, nTest_Signal, nTest_Background);
+    TString options = TString::Format("SplitMode=Random:SplitSeed=0:NormMode=None:nTrain_Signal=%d:nTrain_Background=%d:nTest_Signal=%d:nTest_Background=%d:!V", nTrain_Signal, nTrain_Background, nTest_Signal, nTest_Background);
     loader.PrepareTrainingAndTestTree(mycut, options.Data());
 
     //---------------------------------------------------------------------------------------------------------
     // Escolha do metodo de treinamento e concretizacao de teste, treino e evaluacao do modelo
     //---------------------------------------------------------------------------------------------------------
 
-    factory.BookMethod(&loader, TMVA::Types::kLD, "LogisticRegression");
+    factory.BookMethod(&loader, TMVA::Types::kLikelihood, "Likelihood", "H:!V");
 
     factory.TrainAllMethods();
     factory.TestAllMethods();

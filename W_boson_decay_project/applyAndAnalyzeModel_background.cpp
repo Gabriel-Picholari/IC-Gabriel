@@ -23,7 +23,7 @@ void applyAndAnalyzeModel_background(const char* inputFileName, float threshold 
     reader->AddSpectator("mass_bkg", &mass_bkg);
     reader->AddSpectator("label_bkg", &label_bkg);
     reader->AddSpectator("eventID_bkg", &eventID_bkg);
-    reader->BookMVA("LogisticRegression", "dataset_bkg/weights/TMVARegression_LogisticRegression.weights.xml");
+    reader->BookMVA("Likelihood", "dataset_bkg/weights/TMVAClassification_Likelihood.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -74,20 +74,20 @@ void applyAndAnalyzeModel_background(const char* inputFileName, float threshold 
     outputBackground->Branch("label_bkg", &label_bkg);
     outputBackground->Branch("score", &score);
     outputBackground->Branch("eventID_bkg", &eventID_bkg);
-    // Até aqui foi debugado e está tudo certo!
+    
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
     //---------------------------------------------------------------------------------------------------------
 
     for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
         signalTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputSignal->Fill();
     }
 
     for (Long64_t i = 0; i < backgroundTree->GetEntries(); ++i) {
         backgroundTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
+        score = reader->EvaluateMVA("Likelihood");
         outputBackground->Fill();
     }
 
@@ -95,6 +95,7 @@ void applyAndAnalyzeModel_background(const char* inputFileName, float threshold 
     outputSignal->Write();
     outputBackground->Write();
 
+    // Até aqui foi debugado e está tudo certo!
     //---------------------------------------------------------------------------------------------------------
     // Analize de desempenho
     //---------------------------------------------------------------------------------------------------------

@@ -316,6 +316,19 @@ void jetClassification2_background(const char* fileName)
                 nConst_bkg = jetNConst;
                 backgroundTree_bkg->Fill();
             }
+            /* 
+            else
+            {
+                label_bkg = 1;
+                eventID_bkg = ni;
+                pT_bkg = jetPt;
+                eta_bkg = jetEta;
+                phi_bkg = jetPhi;
+                mass_bkg = jetMass;
+                nConst_bkg = jetNConst;
+                signalTree_bkg->Fill();
+            }
+            */
         }
 
         //Strange
@@ -357,6 +370,19 @@ void jetClassification2_background(const char* fileName)
                 nConst_bkg = jetNConst;
                 backgroundTree_bkg->Fill();
             }
+            /* 
+            else
+            {
+                label_bkg = 1;
+                eventID_bkg = ni;
+                pT_bkg = jetPt;
+                eta_bkg = jetEta;
+                phi_bkg = jetPhi;
+                mass_bkg = jetMass;
+                nConst_bkg = jetNConst;
+                signalTree_bkg->Fill();
+            }
+            */
         }
         
 
@@ -370,11 +396,7 @@ void jetClassification2_background(const char* fileName)
     signalTree_bkg->Write();
     backgroundTree_bkg->Write();
 
-    //signalTree_s->Write();
-    //backgroundTree_s->Write();
-
     file->Close();
     filteredDataFile->Close();
     //filteredDataFile_s->Close();
 }
-
