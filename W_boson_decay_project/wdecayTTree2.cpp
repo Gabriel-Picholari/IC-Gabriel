@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_seed_3_1K_hardQCD_all_off.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -56,7 +56,7 @@ void wdecayTTree2(Int_t nev = 1000, Int_t ndeb = 1 /* Listing */ )
   TPythia8 pythia8 = new TPythia8();
   pythia8.ReadString("HardQCD:all = off");
   pythia8.ReadString("Random:setSeed = on");
-  pythia8.ReadString("Random:seed = 3");
+  pythia8.ReadString("Random:seed = 1");
 
   pythia8.ReadString("WeakSingleBoson:ffbar2W = on");
 

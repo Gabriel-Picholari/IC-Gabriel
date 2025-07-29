@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3) {
+void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -23,8 +23,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     reader->AddSpectator("mass_c", &mass_c);
     reader->AddSpectator("label_c", &label_c);
     reader->AddSpectator("eventID_c", &eventID_c);
-    reader->BookMVA("LogisticRegression", "dataset_c/weights/TMVARegression_LogisticRegression.weights.xml");
-
+    reader->BookMVA("GradBoost", "dataset_c/weights/TMVAClassification_GradBoost.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -51,62 +50,18 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     backgroundTree->SetBranchAddress("eventID_c", &eventID_c);
 
     //---------------------------------------------------------------------------------------------------------
-    // Criação de TTrees de saída
-    //---------------------------------------------------------------------------------------------------------
-
-    TFile* outputFile = TFile::Open("scoredOutput_2var_charm.root", "RECREATE");
-
-    TTree* outputSignal = new TTree("ScoredSignalTree_c", "Signal tree with ML score");
-    outputSignal->Branch("pT_c", &pT_c);
-    outputSignal->Branch("eta_c", &eta_c);
-    outputSignal->Branch("phi_c", &phi_c);
-    outputSignal->Branch("mass_c", &mass_c);
-    outputSignal->Branch("nConst_c", &nConst_c);
-    outputSignal->Branch("label_c", &label_c);
-    outputSignal->Branch("score", &score);
-    outputSignal->Branch("eventID_c", &eventID_c);
-
-
-    TTree* outputBackground = new TTree("ScoredBackgroundTree_c", "Background tree with ML score");
-    outputBackground->Branch("pT_c", &pT_c);
-    outputBackground->Branch("eta_c", &eta_c);
-    outputBackground->Branch("phi_c", &phi_c);
-    outputBackground->Branch("mass_c", &mass_c);
-    outputBackground->Branch("nConst_c", &nConst_c);
-    outputBackground->Branch("label_c", &label_c);
-    outputBackground->Branch("score", &score);
-    outputBackground->Branch("eventID_c", &eventID_c);
-    //---------------------------------------------------------------------------------------------------------
-    // Aplicação do modelo aos dados externos
-    //---------------------------------------------------------------------------------------------------------
-
-    for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
-        signalTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
-        outputSignal->Fill();
-    }
-
-    for (Long64_t i = 0; i < backgroundTree->GetEntries(); ++i) {
-        backgroundTree->GetEntry(i);
-        score = reader->EvaluateMVA("LogisticRegression");
-        outputBackground->Fill();
-    }
-
-    outputFile->cd();
-    outputSignal->Write();
-    outputBackground->Write();
-
-    //---------------------------------------------------------------------------------------------------------
     // Analize de desempenho
     //---------------------------------------------------------------------------------------------------------
 
     Int_t VP = 0, FN = 0, FP = 0, VN = 0;
 
-    TH1F* h_signal = new TH1F("h_signal", "Scores para eventos de sinal; Score ;Eventos", 100, 0, 1);
-    TH1F* h_background = new TH1F("h_background", "Scores para eventos de fundo; Score; Eventos", 100, 0, 1);
+    TH1F* h_signal = new TH1F("h_signal", "Scores para eventos de sinal; Score ;Eventos", 100, -1, 1);
+    TH1F* h_background = new TH1F("h_background", "Scores para eventos de fundo; Score; Eventos", 100, -1, 1);
 
-    for (Long64_t i = 0; i < outputSignal->GetEntries(); ++i) {
-        outputSignal->GetEntry(i);
+
+    for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
+        signalTree->GetEntry(i);
+        score = reader->EvaluateMVA("GradBoost");
         h_signal->Fill(score);
 
         if (label_c == 1) {
@@ -124,8 +79,9 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
         }
     }
 
-    for (Long64_t i = 0; i < outputBackground->GetEntries(); ++i) {
-        outputBackground->GetEntry(i);
+    for (Long64_t i = 0; i < backgroundTree->GetEntries(); ++i) {
+        backgroundTree->GetEntry(i);
+        score = reader->EvaluateMVA("GradBoost");
         h_background->Fill(score);
 
         if (label_c == 1) {
@@ -172,19 +128,45 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.3
     // Plotar histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 800, 600);
-    h_signal->SetLineColor(kRed);
-    h_background->SetLineColor(kBlue);
-    h_background->DrawCopy();
-    h_signal->DrawCopy("same");
+    TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 900, 700);
+    c1->SetGrid();
+    c1->SetLogy();  // Escala logarítmica (opcional, pode remover se preferir linear)
 
-    TLegend* leg = new TLegend(0.65, 0.75, 0.85, 0.90);
-    leg->AddEntry(h_signal, "Sinal (label = 1)", "l");
-    leg->AddEntry(h_background, "Fundo (label = 0)", "l");
+    h_signal->SetLineColor(kBlue + 1);
+    h_signal->SetFillColorAlpha(kBlue, 0.35);
+    h_signal->SetLineWidth(2);
+
+    h_background->SetLineColor(kRed + 1);
+    h_background->SetFillColorAlpha(kRed, 0.35);
+    h_background->SetLineWidth(2);
+
+    h_signal->SetStats(0);
+    h_background->SetStats(0);
+
+    //h_signal->Scale(1.0 / h_signal->Integral());
+    //h_background->Scale(1.0 / h_background->Integral());
+
+
+    h_signal->SetTitle("Distribuição do Score do GradBoost");
+    h_signal->GetXaxis()->SetTitle("Score");
+    h_signal->GetYaxis()->SetTitle("Eventos");
+    h_signal->GetXaxis()->CenterTitle(true);
+    h_signal->GetYaxis()->CenterTitle(true);
+    h_signal->GetYaxis()->SetTitleOffset(1.3);
+
+    // Primeiro fundo, depois sinal por cima
+    h_background->DrawCopy("HIST");
+    h_signal->DrawCopy("HIST SAME");
+
+    TLegend* leg = new TLegend(0.65, 0.75, 0.88, 0.90);
+    leg->SetBorderSize(1);
+    leg->SetFillColorAlpha(0, 0.3);
+    leg->SetTextSize(0.03);
+    leg->AddEntry(h_signal, "Sinal (label = 1)", "f");
+    leg->AddEntry(h_background, "Fundo (label = 0)", "f");
     leg->Draw();
 
     // Finalizar
-    outputFile->Close();
     inputFile->Close();
     delete reader;
 }
