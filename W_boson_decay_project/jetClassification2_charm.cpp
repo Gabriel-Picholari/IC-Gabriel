@@ -98,9 +98,9 @@ void jetClassification2_charm(const char* fileName)
     // Initialization of TMVA TTrees
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c = 0;
+    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, maxRho_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -109,6 +109,7 @@ void jetClassification2_charm(const char* fileName)
     signalTree_c->Branch("mass_c", &mass_c);
     signalTree_c->Branch("label_c", &label_c);
     signalTree_c->Branch("nConst_c", &nConst_c);
+    //signalTree_c->Branch("maxRho_c", &maxRho_c);
     signalTree_c->Branch("eventID_c", &eventID_c);
 
     TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
@@ -118,6 +119,7 @@ void jetClassification2_charm(const char* fileName)
     backgroundTree_c->Branch("mass_c", &mass_c);
     backgroundTree_c->Branch("label_c", &label_c);
     backgroundTree_c->Branch("nConst_c", &nConst_c);
+    //backgroundTree_c->Branch("maxRho_c", &maxRho_c);
     backgroundTree_c->Branch("eventID_c", &eventID_c);
 
     //---------------------------------------------------------------------------------------------------------

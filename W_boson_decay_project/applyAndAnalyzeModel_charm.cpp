@@ -14,10 +14,11 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5
     
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT_c, nConst_c, eta_c, phi_c, mass_c, label_c, eventID_c, score = 0;
+    Float_t pT_c, nConst_c, eta_c, phi_c, mass_c, label_c, eventID_c, score, maxRho_c = 0;
 
     reader->AddVariable("pT_c", &pT_c);
     reader->AddVariable("nConst_c", &nConst_c);
+    //reader->AddVariable("maxRho_c", &maxRho_c);
     reader->AddSpectator("eta_c", &eta_c);
     reader->AddSpectator("phi_c", &phi_c);
     reader->AddSpectator("mass_c", &mass_c);
@@ -38,6 +39,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5
     signalTree->SetBranchAddress("phi_c", &phi_c);
     signalTree->SetBranchAddress("mass_c", &mass_c);
     signalTree->SetBranchAddress("nConst_c", &nConst_c);
+    //signalTree->SetBranchAddress("maxRho_c", &maxRho_c);
     signalTree->SetBranchAddress("label_c", &label_c);
     signalTree->SetBranchAddress("eventID_c", &eventID_c);
 
@@ -46,6 +48,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5
     backgroundTree->SetBranchAddress("phi_c", &phi_c);
     backgroundTree->SetBranchAddress("mass_c", &mass_c);
     backgroundTree->SetBranchAddress("nConst_c", &nConst_c);
+    //backgroundTree->SetBranchAddress("maxRho_c", &maxRho_c);
     backgroundTree->SetBranchAddress("label_c", &label_c);
     backgroundTree->SetBranchAddress("eventID_c", &eventID_c);
 
