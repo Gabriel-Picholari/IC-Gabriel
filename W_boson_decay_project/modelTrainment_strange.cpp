@@ -19,6 +19,7 @@ void modelTrainment_strange(const char *fileName) {
     // Variáveis de entrada
     loader.AddVariable("pT_s", 'F');
     loader.AddVariable("nConst_s", 'F');
+    //loader.AddVariable("maxRho_s", 'F');
 
     // Variáveis espectadoras
     loader.AddSpectator("eta_s", "F");

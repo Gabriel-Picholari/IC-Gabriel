@@ -19,6 +19,7 @@ void modelTrainment_charm(const char *fileName)
     // Variáveis de entrada
     loader.AddVariable("pT_c", 'F');
     loader.AddVariable("nConst_c", 'F');
+    //loader.AddVariable("maxRho_c", 'F');
 
     // Variáveis espectadoras
     loader.AddSpectator("eta_c", "F");

@@ -98,9 +98,9 @@ void jetClassification2_strange(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s = 0;
+    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, maxRho_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -109,6 +109,7 @@ void jetClassification2_strange(const char* fileName)
     signalTree_s->Branch("mass_s", &mass_s);
     signalTree_s->Branch("label_s", &label_s);
     signalTree_s->Branch("nConst_s", &nConst_s);
+    //signalTree_s->Branch("maxRho_s", &maxRho_s);
     signalTree_s->Branch("eventID_s", &eventID_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
@@ -118,6 +119,7 @@ void jetClassification2_strange(const char* fileName)
     backgroundTree_s->Branch("mass_s", &mass_s);
     backgroundTree_s->Branch("label_s", &label_s);
     backgroundTree_s->Branch("nConst_s", &nConst_s);
+    //backgroundTree_s->Branch("maxRho_s", &maxRho_s);
     backgroundTree_s->Branch("eventID_s", &eventID_s);
     
 

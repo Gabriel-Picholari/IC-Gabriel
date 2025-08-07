@@ -14,10 +14,11 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT_s, nConst_s, eta_s, phi_s, mass_s, label_s, eventID_s, score = 0;
+    Float_t pT_s, nConst_s, eta_s, phi_s, mass_s, label_s, eventID_s, score,maxRho_s = 0;
 
     reader->AddVariable("pT_s", &pT_s);
     reader->AddVariable("nConst_s", &nConst_s);
+    //reader->AddVariable("maxRho_s", &maxRho_s);
     reader->AddSpectator("eta_s", &eta_s);
     reader->AddSpectator("phi_s", &phi_s);
     reader->AddSpectator("mass_s", &mass_s);
@@ -38,6 +39,7 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     signalTree->SetBranchAddress("phi_s", &phi_s);
     signalTree->SetBranchAddress("mass_s", &mass_s);
     signalTree->SetBranchAddress("nConst_s", &nConst_s);
+    //signalTree->SetBranchAddress("maxRho_s", &maxRho_s);
     signalTree->SetBranchAddress("label_s", &label_s);
     signalTree->SetBranchAddress("eventID_s", &eventID_s);
 
@@ -46,6 +48,7 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     backgroundTree->SetBranchAddress("phi_s", &phi_s);
     backgroundTree->SetBranchAddress("mass_s", &mass_s);
     backgroundTree->SetBranchAddress("nConst_s", &nConst_s);
+    //backgroundTree->SetBranchAddress("maxRho_s", &maxRho_s);
     backgroundTree->SetBranchAddress("label_s", &label_s);
     backgroundTree->SetBranchAddress("eventID_s", &eventID_s);
 
