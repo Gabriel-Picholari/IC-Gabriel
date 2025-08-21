@@ -110,6 +110,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       */
 
       Float_t eta = part->Eta();
+      Float_t pT = part->Pt();
+      if (pT < 5) continue; // Perturbative approxiation theory used by Pythia requires this pT cut;
       //if (eta < -2 || eta > 2) continue;
 
       if (ist > 0)
@@ -125,6 +127,9 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         fp->fPy   = part->Py();
         fp->fPz   = part->Pz();
         fp->fE    = part->Energy();
+        fp->fVx   = part->Vx();
+        fp->fVy   = part->Vy();
+        fp->fVz   = part->Vz();
 
         fp->finalParticlePdg = partPdg; 
         Int_t motherIndex = part->GetFirstMother();
