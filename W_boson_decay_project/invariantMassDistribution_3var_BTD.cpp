@@ -33,15 +33,16 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID, pT, eta, phi, mass, nConst, maxRho = 0;
+    Float_t eventID, pT, eta, phi, mass, nConst, maxRho, nRho = 0;
     Float_t score_c, score_s, score_bkg = 0;
     Float_t label, score = 0;
 
     TMVA::Reader* reader_c = new TMVA::Reader("!Color:!Silent");
 
     reader_c->AddVariable("pT_c", &pT);
+    reader_c->AddVariable("nRho_c", &nRho);
     reader_c->AddVariable("nConst_c", &nConst);
-    reader_c->AddVariable("maxRho_c", &maxRho);
+    //reader_c->AddVariable("maxRho_c", &maxRho); Discontinued
 
     reader_c->AddSpectator("eta_c", &eta);
     reader_c->AddSpectator("phi_c", &phi);
@@ -53,8 +54,9 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     TMVA::Reader* reader_s = new TMVA::Reader("!Color:!Silent");
 
     reader_s->AddVariable("pT_s", &pT);
+    reader_s->AddVariable("nRho_s", &nRho);
     reader_s->AddVariable("nConst_s", &nConst);
-    reader_s->AddVariable("maxRho_s", &maxRho);
+    //reader_s->AddVariable("maxRho_s", &maxRho); Discontinued
 
     reader_s->AddSpectator("eta_s", &eta);
     reader_s->AddSpectator("phi_s", &phi);
@@ -76,7 +78,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     signalTree_c->SetBranchAddress("phi_c", &phi);
     signalTree_c->SetBranchAddress("mass_c", &mass);
     signalTree_c->SetBranchAddress("nConst_c", &nConst);
-    signalTree_c->SetBranchAddress("maxRho_c", &maxRho);
+    signalTree_c->SetBranchAddress("nRho_c", &nRho);
+    //signalTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
     signalTree_c->SetBranchAddress("label_c", &label);
     signalTree_c->SetBranchAddress("eventID_c", &eventID);
 
@@ -85,7 +88,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     backgroundTree_c->SetBranchAddress("phi_c", &phi);
     backgroundTree_c->SetBranchAddress("mass_c", &mass);
     backgroundTree_c->SetBranchAddress("nConst_c", &nConst);
-    backgroundTree_c->SetBranchAddress("maxRho_c", &maxRho);
+    backgroundTree_c->SetBranchAddress("nRho_c", &nRho);
+    //backgroundTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
     backgroundTree_c->SetBranchAddress("label_c", &label);
     backgroundTree_c->SetBranchAddress("eventID_c", &eventID);
 
@@ -98,7 +102,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     signalTree_s->SetBranchAddress("phi_s", &phi);
     signalTree_s->SetBranchAddress("mass_s", &mass);
     signalTree_s->SetBranchAddress("nConst_s", &nConst);
-    signalTree_s->SetBranchAddress("maxRho_s", &maxRho);
+    signalTree_s->SetBranchAddress("nRho_s", &nRho);
+    //signalTree_s->SetBranchAddress("maxRho_s", &maxRho); Discontinued
     signalTree_s->SetBranchAddress("label_s", &label);
     signalTree_s->SetBranchAddress("eventID_s", &eventID);
 
@@ -107,7 +112,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     backgroundTree_s->SetBranchAddress("phi_s", &phi);
     backgroundTree_s->SetBranchAddress("mass_s", &mass);
     backgroundTree_s->SetBranchAddress("nConst_s", &nConst);
-    backgroundTree_s->SetBranchAddress("maxRho_s", &maxRho);
+    backgroundTree_s->SetBranchAddress("nRho_s", &nRho);
+    //backgroundTree_s->SetBranchAddress("maxRho_s", &maxRho); Discontinued
     backgroundTree_s->SetBranchAddress("label_s", &label);
     backgroundTree_s->SetBranchAddress("eventID_s", &eventID);
 
@@ -133,7 +139,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
 
     auto iguais = [](const TLorentzVector& a, const TLorentzVector& b) 
     {
-        return (std::fabs(a.Pt() - b.Pt())  < 1e-4 && std::fabs(a.M()   - b.M())   < 1e-6);
+        return (std::fabs(a.Pt() - b.Pt())  < 1e-4 && std::fabs(a.M() - b.M())   < 1e-6);
     };
 
     for (Long64_t i = 0; i < signalTree_c->GetEntries(); ++i) // By construction, both signal and background TTrees for either c or s have the same lenght, that is, they refer to the same amount of events
@@ -142,7 +148,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
         if (score_c < 0 && score_s < 0) continue;
-        std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
         signalC_set_correlation->Fill(score_c, score_s);
 
         if (score_c > score_s) 
@@ -198,7 +204,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
         if (score_c < 0 && score_s < 0) continue;
-        std::cout << "Background for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        //std::cout << "Background for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
         backgroundC_set_correlation->Fill(score_c, score_s);
 
         if ( score_c > score_s ) 
@@ -252,7 +258,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
         if (score_c < 0 && score_s < 0) continue;
-        std::cout << "Signal for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        //std::cout << "Signal for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
         signalS_set_correlation->Fill(score_c, score_s);
 
         if ( score_c > score_s ) 
@@ -303,7 +309,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
         if (score_c < 0 && score_s < 0) continue;
-        std::cout << "Background for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        //std::cout << "Background for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
         backgroundS_set_correlation->Fill(score_c, score_s);
 
         if ( score_c > score_s ) 
@@ -350,13 +356,13 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     }
 
 
-    printJets(jatos_c, "Charm");
-    printJets(jatos_s, "Strange");
+    //printJets(jatos_c, "Charm");
+    //printJets(jatos_s, "Strange");
     
     //---------------------------------------------------------------------------------------------------------
     // Reconstrução combinatória da massa do W
     //---------------------------------------------------------------------------------------------------------
-    /* 
+    
     for (auto const& [eventID, _] : jatos_c) 
     {
         // Recuperar todos os jatos c e s com esse eventID
@@ -375,7 +381,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
             }
         }
     }
-    */
+    
     //---------------------------------------------------------------------------------------------------------
     // Plotar histogramas
     //---------------------------------------------------------------------------------------------------------
