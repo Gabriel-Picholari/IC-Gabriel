@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5) {
+void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -133,18 +133,8 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5
 
     TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 900, 700);
     c1->SetGrid();
-    c1->SetLogy();  // Escala logarítmica (opcional, pode remover se preferir linear)
-
-    h_signal->SetLineColor(kBlue + 1);
-    h_signal->SetFillColorAlpha(kBlue, 0.35);
-    h_signal->SetLineWidth(2);
-
-    h_background->SetLineColor(kRed + 1);
-    h_background->SetFillColorAlpha(kRed, 0.35);
-    h_background->SetLineWidth(2);
-
-    h_signal->SetStats(0);
-    h_background->SetStats(0);
+    h_signal->SetLineColor(kGreen );
+    h_background->SetLineColor(kRed );
 
     //h_signal->Scale(1.0 / h_signal->Integral());
     //h_background->Scale(1.0 / h_background->Integral());
@@ -153,13 +143,10 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.5
     h_signal->SetTitle("Distribuição do Score do GradBoost");
     h_signal->GetXaxis()->SetTitle("Score");
     h_signal->GetYaxis()->SetTitle("Eventos");
-    h_signal->GetXaxis()->CenterTitle(true);
-    h_signal->GetYaxis()->CenterTitle(true);
-    h_signal->GetYaxis()->SetTitleOffset(1.3);
 
     // Primeiro fundo, depois sinal por cima
-    h_background->DrawCopy("HIST");
-    h_signal->DrawCopy("HIST SAME");
+    h_background->DrawCopy();
+    h_signal->DrawCopy("same");
 
     TLegend* leg = new TLegend(0.65, 0.75, 0.88, 0.90);
     leg->SetBorderSize(1);

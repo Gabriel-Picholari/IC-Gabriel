@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0.5) {
+void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0.0) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -24,7 +24,7 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     reader->AddSpectator("mass_s", &mass_s);
     reader->AddSpectator("label_s", &label_s);
     reader->AddSpectator("eventID_s", &eventID_s);
-    reader->BookMVA("GradBoost", "dataset_s/weights/TMVAClassification_GradBoost.weights.xml");
+    reader->BookMVA("GradBoost", "dataset_s_2var/weights/TMVAClassification_GradBoost.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -114,22 +114,14 @@ void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0
     TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 900, 700);
     c1->SetGrid();
 
-    h_signal->SetLineColor(kBlue + 1);
-    h_signal->SetFillColorAlpha(kBlue, 0.35);
-    h_signal->SetLineWidth(2);
-
-    h_background->SetLineColor(kRed + 1);
-    h_background->SetFillColorAlpha(kRed, 0.35);
-    h_background->SetLineWidth(2);
-
-    h_signal->SetStats(0);
-    h_background->SetStats(0);
+    h_background->SetLineColor(kRed);
+    h_signal->SetLineColor(kGreen);
 
     //h_signal->Scale(1.0 / h_signal->Integral());
     //h_background->Scale(1.0 / h_background->Integral());
 
-    h_background->DrawCopy("HIST");
-    h_signal->DrawCopy("HIST SAME");
+    h_background->DrawCopy();
+    h_signal->DrawCopy("same");
 
     TLegend* leg = new TLegend(0.65, 0.75, 0.88, 0.90);
     leg->SetBorderSize(1);

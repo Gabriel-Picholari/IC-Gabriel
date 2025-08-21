@@ -58,7 +58,7 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         Int_t finalParticleThirdMotherPdg;
 };
 
-void jetClassification2_strange(const char* fileName)
+void jetClassification_3var_strange(const char* fileName)
 {
 
     gSystem->Load("libEG");
@@ -112,7 +112,7 @@ void jetClassification2_strange(const char* fileName)
 
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, maxRho_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE"); // Shortcuts: PreTesting       Training
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -121,6 +121,7 @@ void jetClassification2_strange(const char* fileName)
     signalTree_s->Branch("mass_s", &mass_s);
     signalTree_s->Branch("label_s", &label_s);
     signalTree_s->Branch("nConst_s", &nConst_s);
+    signalTree_s->Branch("maxRho_s", &maxRho_s);
     signalTree_s->Branch("eventID_s", &eventID_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
@@ -130,6 +131,7 @@ void jetClassification2_strange(const char* fileName)
     backgroundTree_s->Branch("mass_s", &mass_s);
     backgroundTree_s->Branch("label_s", &label_s);
     backgroundTree_s->Branch("nConst_s", &nConst_s);
+    backgroundTree_s->Branch("maxRho_s", &maxRho_s);
     backgroundTree_s->Branch("eventID_s", &eventID_s);
     
 
@@ -238,7 +240,11 @@ void jetClassification2_strange(const char* fileName)
                 {
                     pT_LeadConst = constituent.pt();
                 }
-            }           
+            }
+            if (maxRho > 1)
+            {
+                maxRho = 1;
+            }
 
             Float_t angAve, sigmaKT = 0;
 
@@ -276,14 +282,12 @@ void jetClassification2_strange(const char* fileName)
                     tagged_c_jets.push_back(jet);
                     vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
                     isCharmTagged = true;
-                    break;
                 }
                 else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
                     tagged_s_jets.push_back(jet);
                     vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
                     isStrangeTagged = true;
-                    break;
                 }
             }
             
@@ -296,6 +300,7 @@ void jetClassification2_strange(const char* fileName)
                 phi_s = jetPhi;
                 mass_s = jetMass;
                 nConst_s = jetNConst;
+                maxRho_s = maxRho;
                 backgroundTree_s->Fill();
             }
 
@@ -340,9 +345,9 @@ void jetClassification2_strange(const char* fileName)
                 phi_s = jetPhi;
                 mass_s = jetMass;
                 nConst_s = jetNConst;
+                maxRho_s = maxRho;
                 signalTree_s->Fill();
             } // On stand-by for adding an extra else in here (please, refer to the charm analogous macro with the full comments)
-            // No else will be added! It was decided it's best not to used the jets that did not go through the second verification in any dataset
         }
         
 

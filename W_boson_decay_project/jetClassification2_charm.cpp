@@ -21,8 +21,17 @@
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
-        JetInfo(const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0, const Int_t& thirdMotherPdg = 0) : signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg), finalParticleThirdMotherPdg(thirdMotherPdg){}
+        JetInfo(const Float_t& vx = 0, const Float_t& vy = 0, const Float_t& vz = 0, const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0, const Int_t& thirdMotherPdg = 0) : fpVx(vx), fpVy(vy), fpVz(vz), signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg), finalParticleThirdMotherPdg(thirdMotherPdg){}
 
+        void setVx(Float_t vx) { fpVx = vx; }
+        Float_t getVx() const { return fpVx; }
+
+        void setVy(Float_t vy) { fpVy = vy; }
+        Float_t getVy() const { return fpVy; }
+
+        void setVz(Float_t vz) { fpVz = vz; }
+        Float_t getVz() const { return fpVz; }
+        
         void setSignalType(const TString& type) { signalType = type; }
         TString getSignalType() const { return signalType; }
 
@@ -39,6 +48,9 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         Int_t getFinalParticleThirdMotherPdg() const { return finalParticleThirdMotherPdg; }
 
     private:
+        Float_t fpVx;
+        Float_t fpVy;
+        Float_t fpVz;
         TString signalType;
         Int_t finalParticlePdg;
         Int_t finalParticleMotherPdg;
@@ -56,7 +68,7 @@ void jetClassification2_charm(const char* fileName)
     // Initialization of variables
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass = 0;
+    Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
     Float_t maxRho, nVert;
     TString signalType = "";
@@ -109,7 +121,6 @@ void jetClassification2_charm(const char* fileName)
     signalTree_c->Branch("mass_c", &mass_c);
     signalTree_c->Branch("label_c", &label_c);
     signalTree_c->Branch("nConst_c", &nConst_c);
-    //signalTree_c->Branch("maxRho_c", &maxRho_c);
     signalTree_c->Branch("eventID_c", &eventID_c);
 
     TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
@@ -119,7 +130,6 @@ void jetClassification2_charm(const char* fileName)
     backgroundTree_c->Branch("mass_c", &mass_c);
     backgroundTree_c->Branch("label_c", &label_c);
     backgroundTree_c->Branch("nConst_c", &nConst_c);
-    //backgroundTree_c->Branch("maxRho_c", &maxRho_c);
     backgroundTree_c->Branch("eventID_c", &eventID_c);
 
     //---------------------------------------------------------------------------------------------------------
@@ -165,6 +175,9 @@ void jetClassification2_charm(const char* fileName)
         {
             MyJet *fp = static_cast<MyJet *>(jets_array->At(nj));
 
+            fpVx = fp->fVx;
+            fpVy = fp->fVy;
+            fpVz = fp->fVz; 
             fpPx = fp->fPx;
             fpPy = fp->fPy;
             fpPz = fp->fPz;
@@ -182,7 +195,7 @@ void jetClassification2_charm(const char* fileName)
 
             fastjet::PseudoJet particle(fpPx, fpPy, fpPz, fpE);
             
-            JetInfo* jetInfo = new JetInfo(signalType, finalParticlePdg, finalParticleMotherPdg, finalParticleSecondMotherPdg, finalParticleThirdMotherPdg);
+            JetInfo* jetInfo = new JetInfo(fpVx, fpVy, fpVz, signalType, finalParticlePdg, finalParticleMotherPdg, finalParticleSecondMotherPdg, finalParticleThirdMotherPdg);
             particle.set_user_info(jetInfo);
 
             //---------------------------------------------------------------------------------------------------------
@@ -211,14 +224,26 @@ void jetClassification2_charm(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
+            maxRho = 0;
             pT_LeadConst = 0;
+    
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
+                Float_t vx = constituent.user_info<JetInfo>().getVx();
+                Float_t vy = constituent.user_info<JetInfo>().getVy();
+                
+                Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
+
+                if (Rho > maxRho) 
+                {
+                    maxRho = Rho;
+                }
+
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
                 }
-            }           
+            }                  
 
             Float_t angAve, sigmaKT = 0;
 
@@ -257,12 +282,14 @@ void jetClassification2_charm(const char* fileName)
                     tagged_c_jets.push_back(jet);
                     vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE);
                     isCharmTagged = true; // Tagged - we've got a label
+                    break;
                 }
                 else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
                     tagged_s_jets.push_back(jet);
                     vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE);
                     isStrangeTagged = true; // Analogous
+                    break;
                 }
             }
 
@@ -289,8 +316,10 @@ void jetClassification2_charm(const char* fileName)
         // Charmed jets tagging
         //---------------------------------------------------------------------------------------------------------
 
+        //std::cout << "Charmed tagged Jets (prior to second check)" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet with a constituent found to have ancestry in a charm
         {
+            //std::cout << "Pt = " << jet.pt() << "; Mass: " << jet.m() << std::endl;
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t charmRatio = jet.pt() / charmPt;
             
@@ -317,7 +346,6 @@ void jetClassification2_charm(const char* fileName)
                     break;
                 }
             }
-
             if (hasCharmConstituent) // Signal data
             {
                 label_c = 1;
@@ -329,7 +357,7 @@ void jetClassification2_charm(const char* fileName)
                 nConst_c = jetNConst;
                 signalTree_c->Fill();
             }
-            // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea
+            // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea. (Later) Idea confirmed!
         }
 
         particles_fastjet.clear();
