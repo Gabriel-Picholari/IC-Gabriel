@@ -70,7 +70,8 @@ void jetClassification_3var_strange(const char* fileName)
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t maxRho, nVert;
+    Float_t maxRho, nVert, nRho = 0;
+    Float_t rhoUpperBound = 1.5;
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
@@ -110,9 +111,9 @@ void jetClassification_3var_strange(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, maxRho_s = 0;
+    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE"); // Shortcuts: PreTesting       Training
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE"); // Shortcuts: PreTesting       Training
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -121,7 +122,7 @@ void jetClassification_3var_strange(const char* fileName)
     signalTree_s->Branch("mass_s", &mass_s);
     signalTree_s->Branch("label_s", &label_s);
     signalTree_s->Branch("nConst_s", &nConst_s);
-    signalTree_s->Branch("maxRho_s", &maxRho_s);
+    signalTree_s->Branch("nRho_s", &nRho_s);
     signalTree_s->Branch("eventID_s", &eventID_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
@@ -131,7 +132,7 @@ void jetClassification_3var_strange(const char* fileName)
     backgroundTree_s->Branch("mass_s", &mass_s);
     backgroundTree_s->Branch("label_s", &label_s);
     backgroundTree_s->Branch("nConst_s", &nConst_s);
-    backgroundTree_s->Branch("maxRho_s", &maxRho_s);
+    backgroundTree_s->Branch("nRho_s", &nRho_s);
     backgroundTree_s->Branch("eventID_s", &eventID_s);
     
 
@@ -221,6 +222,7 @@ void jetClassification_3var_strange(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
+            nRho = 0;
             maxRho = 0;
             pT_LeadConst = 0;
     
@@ -236,6 +238,11 @@ void jetClassification_3var_strange(const char* fileName)
                     maxRho = Rho;
                 }
 
+                if (Rho > 0 && Rho < rhoUpperBound)
+                {
+                    nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
+                }
+
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
@@ -246,7 +253,8 @@ void jetClassification_3var_strange(const char* fileName)
                 maxRho = 1;
             }
 
-            Float_t angAve, sigmaKT = 0;
+            Float_t angAve = 0;
+            Float_t sigmaKT = 0;
 
             for (Int_t i = 0; i < jetNConst; ++i) 
             {
@@ -300,7 +308,7 @@ void jetClassification_3var_strange(const char* fileName)
                 phi_s = jetPhi;
                 mass_s = jetMass;
                 nConst_s = jetNConst;
-                maxRho_s = maxRho;
+                nRho_s = nRho;
                 backgroundTree_s->Fill();
             }
 
@@ -322,30 +330,58 @@ void jetClassification_3var_strange(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                
-                Int_t abs_constituentPdg = abs(constituentPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
-                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg))
+                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentMotherPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg) || strangePdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasStrangeConstituent = true;
                     break;
                 }
             }
-            if (hasStrangeConstituent)
+            if (hasStrangeConstituent) // Signal data
             {
                 label_s = 1;
                 eventID_s = ni;
-                pT_s = jetPt;
-                eta_s = jetEta;
-                phi_s = jetPhi;
-                mass_s = jetMass;
-                nConst_s = jetNConst;
-                maxRho_s = maxRho;
+
+                //Kinematics directly from PseudoJet
+                pT_s = jet.pt();
+                eta_s = jet.eta();
+                phi_s = jet.phi();
+                mass_s = jet.m();
+
+                nConst_s = (Int_t)jet.constituents().size();
+
+                //nRho from JetUserInfo data
+
+                nRho_s = 0;
+
+                for (const fastjet::PseudoJet &constituent : jet.constituents())
+                {
+                    Float_t vx = constituent.user_info<JetInfo>().getVx();
+                    Float_t vy = constituent.user_info<JetInfo>().getVy();
+                    
+                    Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
+
+                    if (Rho > 0 && Rho < rhoUpperBound)
+                    {
+                        nRho_s++;
+                    }
+
+                    /*  Just uncomment and ajust if leadingPt is required
+                    if (constituent.pt() > pT_LeadConst)
+                    {
+                        pT_LeadConst = constituent.pt();
+                    }
+                    */
+                }
                 signalTree_s->Fill();
             } // On stand-by for adding an extra else in here (please, refer to the charm analogous macro with the full comments)
         }
