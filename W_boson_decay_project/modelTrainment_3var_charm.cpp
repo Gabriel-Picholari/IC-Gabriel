@@ -18,8 +18,9 @@ void modelTrainment_3var_charm(const char *fileName)
 
     // Variáveis de entrada
     loader.AddVariable("pT_c", 'F');
+    loader.AddVariable("nRho_c", 'I');
     loader.AddVariable("nConst_c", 'F');
-    loader.AddVariable("maxRho_c", 'F');
+    //loader.AddVariable("maxRho_c", 'F'); Discontinued
 
     // Variáveis espectadoras
     loader.AddSpectator("eta_c", "F");
