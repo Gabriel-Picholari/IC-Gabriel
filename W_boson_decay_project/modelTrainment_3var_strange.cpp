@@ -5,7 +5,8 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_3var_strange(const char *fileName) {
+void modelTrainment_3var_strange(const char *fileName) 
+{
     
     TFile* outputFile = TFile::Open("TMVAOutput_3var_strange.root", "RECREATE");
     TFile* inputFile = TFile::Open(fileName, "READ");
@@ -18,8 +19,9 @@ void modelTrainment_3var_strange(const char *fileName) {
 
     // Variáveis de entrada
     loader.AddVariable("pT_s", 'F');
+    loader.AddVariable("nRho_s", 'I');
     loader.AddVariable("nConst_s", 'F');
-    loader.AddVariable("maxRho_s", 'F');
+    //loader.AddVariable("maxRho_s", 'F'); Discontinued
 
     // Variáveis espectadoras
     loader.AddSpectator("eta_s", "F");
