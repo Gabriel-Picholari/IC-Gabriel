@@ -111,7 +111,8 @@ void jetClassification2_strange(const char* fileName)
 
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_strange.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);

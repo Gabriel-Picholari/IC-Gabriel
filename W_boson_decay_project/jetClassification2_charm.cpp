@@ -111,7 +111,8 @@ void jetClassification2_charm(const char* fileName)
 
     Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
