@@ -70,7 +70,6 @@ void jetClassification2_strange(const char* fileName)
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t maxRho, nVert;
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
@@ -110,8 +109,9 @@ void jetClassification2_strange(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, maxRho_s = 0;
+    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s = 0;
 
+    //TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_strange.root", "RECREATE");
     TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
@@ -219,21 +219,10 @@ void jetClassification2_strange(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
-            maxRho = 0;
             pT_LeadConst = 0;
     
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Float_t vx = constituent.user_info<JetInfo>().getVx();
-                Float_t vy = constituent.user_info<JetInfo>().getVy();
-                
-                Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
-
-                if (Rho > maxRho) 
-                {
-                    maxRho = Rho;
-                }
-
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
@@ -276,14 +265,12 @@ void jetClassification2_strange(const char* fileName)
                     tagged_c_jets.push_back(jet);
                     vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
                     isCharmTagged = true;
-                    break;
                 }
                 else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
                     tagged_s_jets.push_back(jet);
                     vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
                     isStrangeTagged = true;
-                    break;
                 }
             }
             
@@ -301,7 +288,7 @@ void jetClassification2_strange(const char* fileName)
 
         } // End of individual jet creation
 
-        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329, 9000311, 9000321, 10311, 10321, 100311, 100321, 9010311, 9010321, 9020311, 9020321, 313, 323, 10313, 10323, 20313, 20323, 100313, 100323, 9000313, 9000323, 30313, 30323, 315, 325, 9000315, 9000325, 10315, 10325, 20315, 20325, 9010315, 9010325, 9020315, 9020325, 317, 327, 9010317, 9010327, 319, 329, 3122, 3222, 3212, 3112, 3224, 3214, 3114, 3322, 3312, 3324, 3314, 3334};
+        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329, 9000311, 9000321, 10311, 10321, 100311, 100321, 9010311, 9010321, 9020311, 9020321, 323, 10313, 10323, 20313, 20323, 100313, 100323, 9000313, 9000323, 30313, 30323, 315, 325, 9000315, 9000325, 10315, 10325, 20315, 20325, 9010315, 9010325, 9020315, 9020325, 317, 327, 9010317, 9010327, 319, 329, 3122, 3222, 3212, 3112, 3224, 3214, 3114, 3322, 3312, 3324, 3314, 3334};
 
         //---------------------------------------------------------------------------------------------------------
         // Strange jets tagging
@@ -317,33 +304,45 @@ void jetClassification2_strange(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                
-                Int_t abs_constituentPdg = abs(constituentPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
-                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg))
+                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentMotherPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg) || strangePdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasStrangeConstituent = true;
                     break;
                 }
             }
-            if (hasStrangeConstituent)
+            if (hasStrangeConstituent) // Signal data
             {
                 label_s = 1;
                 eventID_s = ni;
-                pT_s = jetPt;
-                eta_s = jetEta;
-                phi_s = jetPhi;
-                mass_s = jetMass;
-                nConst_s = jetNConst;
+
+                //Kinematics directly from PseudoJet
+                pT_s = jet.pt();
+                eta_s = jet.eta();
+                phi_s = jet.phi();
+                mass_s = jet.m();
+
+                nConst_s = (Int_t)jet.constituents().size();
+
+                /*  Just uncomment and ajust if leadingPt is required
+                if (constituent.pt() > pT_LeadConst)
+                {
+                    pT_LeadConst = constituent.pt();
+                }
+                */
+
                 signalTree_s->Fill();
             } // On stand-by for adding an extra else in here (please, refer to the charm analogous macro with the full comments)
-            // No else will be added! It was decided it's best not to used the jets that did not go through the second verification in any dataset
-        }
+        }// No else will be added! It was decided it's best not to used the jets that did not go through the second verification in any dataset
         
 
         particles_fastjet.clear();
@@ -360,4 +359,3 @@ void jetClassification2_strange(const char* fileName)
     file->Close();
     filteredDataFile->Close();
 }
-

@@ -70,7 +70,10 @@ void jetClassification_3var_strange(const char* fileName)
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t maxRho, nVert;
+    Float_t maxRho, nVert, first_nRho, second_nRho, third_nRho = 0;
+    Float_t firstRhoUpperBound = 1;
+    Float_t secondRhoUpperBound = 1.5;
+    Float_t thirdRhoUpperBound = 2;
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
@@ -79,6 +82,18 @@ void jetClassification_3var_strange(const char* fileName)
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
+
+    //---------------------------------------------------------------------------------------------------------
+    // Histogramas
+    //---------------------------------------------------------------------------------------------------------
+
+    TH1F* first_signal_nRho_Distribution = new TH1F("firstNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1", 10, 0, 10);
+    TH1F* second_signal_nRho_Distribution = new TH1F("secondNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1.5", 10, 0, 10);
+    TH1F* third_signal_nRho_Distribution = new TH1F("thirdNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 2", 10, 0, 10);
+
+    TH1F* first_background_nRho_Distribution = new TH1F("firstNRho_background_hist", "Distribution for background nRho with interval upperBound of 1", 10, 0, 10);
+    TH1F* second_background_nRho_Distribution = new TH1F("secondNRho_background_hist", "Distribution for background nRho with interval upperBound of 1.5", 10, 0, 10);
+    TH1F* third_background_nRho_Distribution = new TH1F("thirdNRho_background_hist", "Distribution for background nRho with interval upperBound of 2", 10, 0, 10);
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -110,9 +125,10 @@ void jetClassification_3var_strange(const char* fileName)
     // Inicializacao das TTrees TMVA
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, maxRho_s = 0;
+    Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE"); // Shortcuts: PreTesting       Training
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -121,7 +137,7 @@ void jetClassification_3var_strange(const char* fileName)
     signalTree_s->Branch("mass_s", &mass_s);
     signalTree_s->Branch("label_s", &label_s);
     signalTree_s->Branch("nConst_s", &nConst_s);
-    signalTree_s->Branch("maxRho_s", &maxRho_s);
+    signalTree_s->Branch("nRho_s", &nRho_s);
     signalTree_s->Branch("eventID_s", &eventID_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
@@ -131,7 +147,7 @@ void jetClassification_3var_strange(const char* fileName)
     backgroundTree_s->Branch("mass_s", &mass_s);
     backgroundTree_s->Branch("label_s", &label_s);
     backgroundTree_s->Branch("nConst_s", &nConst_s);
-    backgroundTree_s->Branch("maxRho_s", &maxRho_s);
+    backgroundTree_s->Branch("nRho_s", &nRho_s);
     backgroundTree_s->Branch("eventID_s", &eventID_s);
     
 
@@ -221,6 +237,9 @@ void jetClassification_3var_strange(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
+            first_nRho = 0; // Counter that will serve as the new discriminatory variable: it measures the amount of constituents, per jet, that have a vertex in a given interval [0, rhoUpperBound]
+            second_nRho = 0;
+            third_nRho = 0;
             maxRho = 0;
             pT_LeadConst = 0;
     
@@ -236,17 +255,34 @@ void jetClassification_3var_strange(const char* fileName)
                     maxRho = Rho;
                 }
 
+                if (Rho >= 0 && Rho < firstRhoUpperBound)
+                {
+                    first_nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
+                }
+
+                if (Rho >= 0 && Rho < secondRhoUpperBound)
+                {
+                    second_nRho++;
+                }
+
+                if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                {
+                    third_nRho++;
+                }
+
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
                 }
+
             }
             if (maxRho > 1)
             {
                 maxRho = 1;
             }
 
-            Float_t angAve, sigmaKT = 0;
+            Float_t angAve = 0;
+            Float_t sigmaKT = 0;
 
             for (Int_t i = 0; i < jetNConst; ++i) 
             {
@@ -300,7 +336,12 @@ void jetClassification_3var_strange(const char* fileName)
                 phi_s = jetPhi;
                 mass_s = jetMass;
                 nConst_s = jetNConst;
-                maxRho_s = maxRho;
+                nRho_s = first_nRho;        // To be changed accordingly to the plots being examined -> It's going to be a particular choice
+
+                first_background_nRho_Distribution->Fill(first_nRho);
+                second_background_nRho_Distribution->Fill(second_nRho);
+                third_background_nRho_Distribution->Fill(third_nRho);
+
                 backgroundTree_s->Fill();
             }
 
@@ -322,30 +363,77 @@ void jetClassification_3var_strange(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                
-                Int_t abs_constituentPdg = abs(constituentPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
-                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg))
+                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentMotherPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg) || strangePdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasStrangeConstituent = true;
                     break;
                 }
             }
-            if (hasStrangeConstituent)
+            if (hasStrangeConstituent) // Signal data
             {
                 label_s = 1;
                 eventID_s = ni;
-                pT_s = jetPt;
-                eta_s = jetEta;
-                phi_s = jetPhi;
-                mass_s = jetMass;
-                nConst_s = jetNConst;
-                maxRho_s = maxRho;
+
+                //Kinematics directly from PseudoJet
+                pT_s = jet.pt();
+                eta_s = jet.eta();
+                phi_s = jet.phi();
+                mass_s = jet.m();
+
+                nConst_s = (Int_t)jet.constituents().size();
+
+                //nRho from JetUserInfo data
+
+                first_nRho_s = 0;
+                second_nRho_s = 0;
+                third_nRho_s = 0;
+
+                for (const fastjet::PseudoJet &constituent : jet.constituents())
+                {
+                    Float_t vx = constituent.user_info<JetInfo>().getVx();
+                    Float_t vy = constituent.user_info<JetInfo>().getVy();
+                    
+                    Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
+
+                    if (Rho >= 0 && Rho < firstRhoUpperBound)
+                    {
+                        first_nRho_s++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
+                    }
+
+                    if (Rho >= 0 && Rho < secondRhoUpperBound)
+                    {
+                        second_nRho_s++;
+                    }
+
+                    if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                    {
+                        third_nRho_s++;
+                    }
+
+                    /*  Just uncomment and ajust if leadingPt is required
+                    if (constituent.pt() > pT_LeadConst)
+                    {
+                        pT_LeadConst = constituent.pt();
+                    }
+                    */
+                }
+
+                nRho_s = first_nRho_s;
+
+                first_signal_nRho_Distribution->Fill(first_nRho_s);
+                second_signal_nRho_Distribution->Fill(second_nRho_s);
+                third_signal_nRho_Distribution->Fill(third_nRho_s);
+
                 signalTree_s->Fill();
             } // On stand-by for adding an extra else in here (please, refer to the charm analogous macro with the full comments)
         }
@@ -361,6 +449,45 @@ void jetClassification_3var_strange(const char* fileName)
 
     signalTree_s->Write();
     backgroundTree_s->Write();
+
+    TCanvas *c1 = new TCanvas("c1", "Strange jet classificator nRho distributions", 2500, 2500);
+    c1->Divide(3, 2);
+
+    c1->cd(1);
+    first_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1");
+    first_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    first_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(2);
+    second_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1.5");
+    second_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    second_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(3);
+    third_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 2");
+    third_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    third_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(4);
+    first_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1");
+    first_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    first_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_background_nRho_Distribution->DrawCopy();
+
+    c1->cd(5);
+    second_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1.5");
+    second_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    second_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_background_nRho_Distribution->DrawCopy();
+
+    c1->cd(6);
+    third_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 2");
+    third_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    third_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_background_nRho_Distribution->DrawCopy();
 
     file->Close();
     filteredDataFile->Close();

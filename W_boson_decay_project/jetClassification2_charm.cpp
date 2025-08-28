@@ -70,7 +70,6 @@ void jetClassification2_charm(const char* fileName)
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t maxRho, nVert;
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
@@ -110,8 +109,9 @@ void jetClassification2_charm(const char* fileName)
     // Initialization of TMVA TTrees
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, maxRho_c = 0;
+    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c = 0;
 
+    //TFile *filteredDataFile = new TFile("filteredOutput_2var_modelTraining_charm.root", "RECREATE");
     TFile *filteredDataFile = new TFile("filteredOutput_2var_modelPreTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
@@ -224,21 +224,10 @@ void jetClassification2_charm(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
-            maxRho = 0;
             pT_LeadConst = 0;
     
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Float_t vx = constituent.user_info<JetInfo>().getVx();
-                Float_t vy = constituent.user_info<JetInfo>().getVy();
-                
-                Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
-
-                if (Rho > maxRho) 
-                {
-                    maxRho = Rho;
-                }
-
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
@@ -282,14 +271,12 @@ void jetClassification2_charm(const char* fileName)
                     tagged_c_jets.push_back(jet);
                     vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE);
                     isCharmTagged = true; // Tagged - we've got a label
-                    break;
                 }
                 else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
                 {
                     tagged_s_jets.push_back(jet);
                     vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE);
                     isStrangeTagged = true; // Analogous
-                    break;
                 }
             }
 
@@ -316,10 +303,8 @@ void jetClassification2_charm(const char* fileName)
         // Charmed jets tagging
         //---------------------------------------------------------------------------------------------------------
 
-        //std::cout << "Charmed tagged Jets (prior to second check)" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet with a constituent found to have ancestry in a charm
         {
-            //std::cout << "Pt = " << jet.pt() << "; Mass: " << jet.m() << std::endl;
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t charmRatio = jet.pt() / charmPt;
             
@@ -327,20 +312,21 @@ void jetClassification2_charm(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis object is a constituent of the jet
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                Int_t constituentThirdMotherPdg = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
-                Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
-                Int_t abs_constituentThirdMotherPdg = abs(constituentThirdMotherPdg);
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
                 // We found it to be necessary to go back to the third consecutive mother of the final particle because some intermediate decays made the presence of
                 // hadrons on the list to be "hard to see". We are here trying to make sure that the final particle we said to have ancestry on a charm taht comes from 
                 // the decay of W bósons is indeed a particle that comes from the decay, in first ( or till third ) instance of a confirmed charmed hadron.
 
-                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
+                if (charmPdgSet.count(abs_constituentPdg) || charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasCharmConstituent = true; // If thats the case, then we welcome this jets to the list of charmed jets that will label the trainment
                     break;
@@ -350,14 +336,25 @@ void jetClassification2_charm(const char* fileName)
             {
                 label_c = 1;
                 eventID_c = ni;
-                pT_c = jetPt;
-                eta_c = jetEta;
-                phi_c = jetPhi;
-                mass_c = jetMass;
-                nConst_c = jetNConst;
+
+                //Kinematics directly from PseudoJet
+                pT_c = jet.pt();
+                eta_c = jet.eta();
+                phi_c = jet.phi();
+                mass_c = jet.m();
+
+                nConst_c = (Int_t)jet.constituents().size();
+
+                /*  Just uncomment if leadingPt is required
+                if (constituent.pt() > pT_LeadConst)
+                {
+                    pT_LeadConst = constituent.pt();
+                }
+                */
+
                 signalTree_c->Fill();
             }
-            // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea. (Later) Idea confirmed!
+            // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea
         }
 
         particles_fastjet.clear();

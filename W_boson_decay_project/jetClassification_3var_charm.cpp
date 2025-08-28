@@ -70,7 +70,10 @@ void jetClassification_3var_charm(const char* fileName)
 
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
-    Float_t maxRho, nVert;
+    Float_t maxRho, nVert, first_nRho, second_nRho, third_nRho = 0;
+    Float_t firstRhoUpperBound = 1;
+    Float_t secondRhoUpperBound = 1.5;
+    Float_t thirdRhoUpperBound = 2;
     TString signalType = "";
     Int_t finalParticlePdg = 0;
     Int_t finalParticleMotherPdg = 0;
@@ -79,6 +82,18 @@ void jetClassification_3var_charm(const char* fileName)
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
+
+    //---------------------------------------------------------------------------------------------------------
+    // Histogramas
+    //---------------------------------------------------------------------------------------------------------
+
+    TH1F* first_signal_nRho_Distribution = new TH1F("firstNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1", 10, 0, 10);
+    TH1F* second_signal_nRho_Distribution = new TH1F("secondNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1.5", 10, 0, 10);
+    TH1F* third_signal_nRho_Distribution = new TH1F("thirdNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 2", 10, 0, 10);
+
+    TH1F* first_background_nRho_Distribution = new TH1F("firstNRho_background_hist", "Distribution for background nRho with interval upperBound of 1", 10, 0, 10);
+    TH1F* second_background_nRho_Distribution = new TH1F("secondNRho_background_hist", "Distribution for background nRho with interval upperBound of 1.5", 10, 0, 10);
+    TH1F* third_background_nRho_Distribution = new TH1F("thirdNRho_background_hist", "Distribution for background nRho with interval upperBound of 2", 10, 0, 10);
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -110,9 +125,10 @@ void jetClassification_3var_charm(const char* fileName)
     // Initialization of TMVA TTrees
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, maxRho_c = 0;
+    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE"); // Shortcuts: PreTesting     Training
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -121,7 +137,7 @@ void jetClassification_3var_charm(const char* fileName)
     signalTree_c->Branch("mass_c", &mass_c);
     signalTree_c->Branch("label_c", &label_c);
     signalTree_c->Branch("nConst_c", &nConst_c);
-    signalTree_c->Branch("maxRho_c", &maxRho_c);
+    signalTree_c->Branch("nRho_c", &nRho_c);
     signalTree_c->Branch("eventID_c", &eventID_c);
 
     TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
@@ -131,7 +147,7 @@ void jetClassification_3var_charm(const char* fileName)
     backgroundTree_c->Branch("mass_c", &mass_c);
     backgroundTree_c->Branch("label_c", &label_c);
     backgroundTree_c->Branch("nConst_c", &nConst_c);
-    backgroundTree_c->Branch("maxRho_c", &maxRho_c);
+    backgroundTree_c->Branch("nRho_c", &nRho_c);
     backgroundTree_c->Branch("eventID_c", &eventID_c);
 
     //---------------------------------------------------------------------------------------------------------
@@ -226,6 +242,9 @@ void jetClassification_3var_charm(const char* fileName)
             jetE = jet.E();
             jetNConst = jet.constituents().size();
             
+            first_nRho = 0; // Counter that will serve as the new discriminatory variable: it measures the amount of constituents, per jet, that have a vertex in a given interval [0, rhoUpperBound]
+            second_nRho = 0;
+            third_nRho = 0;
             maxRho = 0;
             pT_LeadConst = 0;
     
@@ -241,17 +260,34 @@ void jetClassification_3var_charm(const char* fileName)
                     maxRho = Rho;
                 }
 
+                if (Rho >= 0 && Rho < firstRhoUpperBound)
+                {
+                    first_nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
+                }
+
+                if (Rho >= 0 && Rho < secondRhoUpperBound)
+                {
+                    second_nRho++;
+                }
+
+                if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                {
+                    third_nRho++;
+                }
+
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
                 }
             }
+
             if (maxRho > 1)
             {
                 maxRho = 1;
-            }           
+            }
 
-            Float_t angAve, sigmaKT = 0;
+            Float_t angAve = 0;
+            Float_t sigmaKT = 0;
 
             for (Int_t i = 0; i < jetNConst; ++i) 
             {
@@ -306,7 +342,11 @@ void jetClassification_3var_charm(const char* fileName)
                 phi_c = jetPhi;
                 mass_c = jetMass;
                 nConst_c = jetNConst;
-                maxRho_c = maxRho;
+                nRho_c = first_nRho;        // To be changed accordingly to the plots to be examined -> It's going to be a particular choice
+
+                first_background_nRho_Distribution->Fill(first_nRho);
+                second_background_nRho_Distribution->Fill(second_nRho);
+                third_background_nRho_Distribution->Fill(third_nRho);
                 backgroundTree_c->Fill();
 
                 // Since we're dealing in this specific macro only with charmed jets, for a model dedicated to predicting charmed jets, anything else, that is, stranged jets
@@ -330,20 +370,21 @@ void jetClassification_3var_charm(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis object is a constituent of the jet
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                Int_t constituentThirdMotherPdg = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
-                Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
-                Int_t abs_constituentThirdMotherPdg = abs(constituentThirdMotherPdg);
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
                 // We found it to be necessary to go back to the third consecutive mother of the final particle because some intermediate decays made the presence of
                 // hadrons on the list to be "hard to see". We are here trying to make sure that the final particle we said to have ancestry on a charm taht comes from 
                 // the decay of W bósons is indeed a particle that comes from the decay, in first ( or till third ) instance of a confirmed charmed hadron.
 
-                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
+                if (charmPdgSet.count(abs_constituentPdg) || charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasCharmConstituent = true; // If thats the case, then we welcome this jets to the list of charmed jets that will label the trainment
                     break;
@@ -354,12 +395,58 @@ void jetClassification_3var_charm(const char* fileName)
             {
                 label_c = 1;
                 eventID_c = ni;
-                pT_c = jetPt;
-                eta_c = jetEta;
-                phi_c = jetPhi;
-                mass_c = jetMass;
-                nConst_c = jetNConst;
-                maxRho_c = maxRho;
+
+                //Kinematics directly from PseudoJet
+                pT_c = jet.pt();
+                eta_c = jet.eta();
+                phi_c = jet.phi();
+                mass_c = jet.m();
+
+                nConst_c = (Int_t)jet.constituents().size();
+
+                //nRho from JetUserInfo data
+                
+                first_nRho_c = 0;
+                second_nRho_c = 0;
+                third_nRho_c = 0;
+
+                for (const fastjet::PseudoJet &constituent : jet.constituents())
+                {
+                    Float_t vx = constituent.user_info<JetInfo>().getVx();
+                    Float_t vy = constituent.user_info<JetInfo>().getVy();
+                    
+                    Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
+
+
+                    if (Rho >= 0 && Rho < firstRhoUpperBound)
+                    {
+                        first_nRho_c++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
+                    }
+
+                    if (Rho >= 0 && Rho < secondRhoUpperBound)
+                    {
+                        second_nRho_c++;
+                    }
+
+                    if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                    {
+                        third_nRho_c++;
+                    }
+
+                    /*  Just uncomment if leadingPt is required
+                    if (constituent.pt() > pT_LeadConst)
+                    {
+                        pT_LeadConst = constituent.pt();
+                    }
+                    */
+                }
+
+                nRho_c = first_nRho_c;
+                
+                first_signal_nRho_Distribution->Fill(first_nRho_c);
+                second_signal_nRho_Distribution->Fill(second_nRho_c);
+                third_signal_nRho_Distribution->Fill(third_nRho_c);
+
                 signalTree_c->Fill();
             }
             // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea
@@ -377,6 +464,49 @@ void jetClassification_3var_charm(const char* fileName)
 
     //signalTree_s->Write();
     //backgroundTree_s->Write();
+
+    //---------------------------------------------------------------------------------------------------------
+    // Plotar histogramas
+    //---------------------------------------------------------------------------------------------------------
+
+    TCanvas *c1 = new TCanvas("c1", "Charmed jet classificator nRho distributions", 2500, 2500);
+    c1->Divide(3, 2);
+
+    c1->cd(1);
+    first_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1");
+    first_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    first_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(2);
+    second_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1.5");
+    second_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    second_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(3);
+    third_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 2");
+    third_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    third_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_signal_nRho_Distribution->DrawCopy();
+
+    c1->cd(4);
+    first_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1");
+    first_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    first_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_background_nRho_Distribution->DrawCopy();
+
+    c1->cd(5);
+    second_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1.5");
+    second_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    second_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_background_nRho_Distribution->DrawCopy();
+
+    c1->cd(6);
+    third_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 2");
+    third_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
+    third_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_background_nRho_Distribution->DrawCopy();
 
     file->Close();
     filteredDataFile->Close();

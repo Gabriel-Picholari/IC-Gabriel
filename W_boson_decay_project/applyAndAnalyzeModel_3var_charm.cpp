@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2) {
+void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold = 0.0) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -14,16 +14,19 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
     
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT_c, nConst_c, eta_c, phi_c, mass_c, label_c, eventID_c, score, maxRho_c = 0;
+    Float_t pT_c, nConst_c, eta_c, phi_c, mass_c, label_c, eventID_c, score, maxRho_c, nRho_c = 0;
 
     reader->AddVariable("pT_c", &pT_c);
+    reader->AddVariable("nRho_c", &nRho_c);
     reader->AddVariable("nConst_c", &nConst_c);
+    //reader->AddVariable("maxRho_c", &maxRho_c); Discontinued
+
     reader->AddSpectator("eta_c", &eta_c);
     reader->AddSpectator("phi_c", &phi_c);
     reader->AddSpectator("mass_c", &mass_c);
     reader->AddSpectator("label_c", &label_c);
     reader->AddSpectator("eventID_c", &eventID_c);
-    reader->BookMVA("GradBoost", "dataset_c_2var/weights/TMVAClassification_GradBoost.weights.xml");
+    reader->BookMVA("GradBoost", "dataset_c_3var/weights/TMVAClassification_GradBoost.weights.xml");
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -38,6 +41,8 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
     signalTree->SetBranchAddress("phi_c", &phi_c);
     signalTree->SetBranchAddress("mass_c", &mass_c);
     signalTree->SetBranchAddress("nConst_c", &nConst_c);
+    signalTree->SetBranchAddress("nRho_c", &nRho_c);
+    //signalTree->SetBranchAddress("maxRho_c", &maxRho_c); Discontinued
     signalTree->SetBranchAddress("label_c", &label_c);
     signalTree->SetBranchAddress("eventID_c", &eventID_c);
 
@@ -46,6 +51,8 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
     backgroundTree->SetBranchAddress("phi_c", &phi_c);
     backgroundTree->SetBranchAddress("mass_c", &mass_c);
     backgroundTree->SetBranchAddress("nConst_c", &nConst_c);
+    backgroundTree->SetBranchAddress("nRho_c", &nRho_c);
+    //backgroundTree->SetBranchAddress("maxRho_c", &maxRho_c); Discontinued
     backgroundTree->SetBranchAddress("label_c", &label_c);
     backgroundTree->SetBranchAddress("eventID_c", &eventID_c);
 
@@ -55,8 +62,8 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
 
     Int_t VP = 0, FN = 0, FP = 0, VN = 0;
 
-    TH1F* h_signal = new TH1F("h_signal", "Scores para eventos de sinal; Score ;Eventos", 100, -1, 1);
-    TH1F* h_background = new TH1F("h_background", "Scores para eventos de fundo; Score; Eventos", 100, -1, 1);
+    TH1F* h_signal = new TH1F("h_signal", "TMVA response for classifier: GradBoost;GradBoost response;Events", 100, -1, 1);
+    TH1F* h_background = new TH1F("h_background", "TMVA response for classifier: GradBoost;GradBoost response;Events", 100, -1, 1);
 
 
     for (Long64_t i = 0; i < signalTree->GetEntries(); ++i) {
@@ -112,7 +119,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
     } else {
         pureza = 0;
     }
-
+    std::cout << "--------------Charm--------------" << std::endl;
     std::cout << "\nMatriz de Confusão (threshold = " << threshold << "):" << std::endl;
     std::cout << "--------------------------------------" << std::endl;
     std::cout << "             | Pred: S | Pred: B     " << std::endl;
@@ -128,7 +135,7 @@ void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2
     // Plotar histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TCanvas* c1 = new TCanvas("c1", "Distribuição dos scores", 900, 700);
+    TCanvas* c1 = new TCanvas("c1", "Charmed score distribution", 900, 700);
     c1->SetGrid();
     h_signal->SetLineColor(kGreen );
     h_background->SetLineColor(kRed );
