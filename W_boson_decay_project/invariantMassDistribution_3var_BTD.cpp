@@ -27,7 +27,8 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char* inputFileName_s, float threshold = 0.5) {
+void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char* inputFileName_s, float t_c = 0.0, float t_s = 0.2) 
+{
 
     //---------------------------------------------------------------------------------------------------------
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
@@ -147,11 +148,10 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         signalTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < 0 && score_s < 0) continue;
-        //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        signalC_set_correlation->Fill(score_c, score_s);
+        if (score_c < t_c && score_s < t_s) continue;
 
-        if (score_c > score_s) 
+        // Caso 1: passou apenas no corte do charm
+        if (score_c >= t_c && score_s < t_s) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
@@ -161,7 +161,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
@@ -172,7 +173,9 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 jatos_c.insert({(Int_t)eventID, jet});
             }
         }
-        else
+
+        // Caso 2: passou apenas no corte do strange
+        else if (score_s >= t_s && score_c < t_c) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
@@ -182,17 +185,67 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
             }
-
             if (!existe) 
             {
                 jatos_s.insert({(Int_t)eventID, jet});
             }
         }
+
+        // Caso 3: ambos passam os cortes
+        else if (score_c >= t_c && score_s >= t_s) 
+        {
+            if (score_c > score_s)
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_c.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_c.insert({(Int_t)eventID, jet});
+                }
+            }
+            else
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_s.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_s.insert({(Int_t)eventID, jet});
+                }
+            }
+        }
+        //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        signalC_set_correlation->Fill(score_c, score_s);
+
     }
     
     // Obviously, ideally, no jet from this TTree should contribute to "jatos_c". 
@@ -203,21 +256,21 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         backgroundTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < 0 && score_s < 0) continue;
-        //std::cout << "Background for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        backgroundC_set_correlation->Fill(score_c, score_s);
-
-        if ( score_c > score_s ) 
+        if (score_c < t_c && score_s < t_s) continue;
+        
+        // Caso 1: passou apenas no corte do charm
+        if (score_c >= t_c && score_s < t_s) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-            
+
             auto range = jatos_c.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
@@ -228,26 +281,78 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 jatos_c.insert({(Int_t)eventID, jet});
             }
         }
-        else
+
+        // Caso 2: passou apenas no corte do strange
+        else if (score_s >= t_s && score_c < t_c) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-                        auto range = jatos_s.equal_range((Int_t)eventID);
+
+            auto range = jatos_s.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
             }
-
             if (!existe) 
             {
                 jatos_s.insert({(Int_t)eventID, jet});
             }
         }
+
+        // Caso 3: ambos passam os cortes
+        else if (score_c >= t_c && score_s >= t_s) 
+        {
+            if (score_c > score_s)
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_c.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_c.insert({(Int_t)eventID, jet});
+                }
+            }
+            else
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_s.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_s.insert({(Int_t)eventID, jet});
+                }
+            }
+        }
+        //std::cout << "Backgound for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        backgroundC_set_correlation->Fill(score_c, score_s);
     }
 
     // Strange block
@@ -257,21 +362,21 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         signalTree_s->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < 0 && score_s < 0) continue;
-        //std::cout << "Signal for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        signalS_set_correlation->Fill(score_c, score_s);
-
-        if ( score_c > score_s ) 
+        if (score_c < t_c && score_s < t_s) continue;
+        
+        // Caso 1: passou apenas no corte do charm
+        if (score_c >= t_c && score_s < t_s) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-            
+
             auto range = jatos_c.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
@@ -282,47 +387,99 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 jatos_c.insert({(Int_t)eventID, jet});
             }
         }
-        else
+
+        // Caso 2: passou apenas no corte do strange
+        else if (score_s >= t_s && score_c < t_c) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-                        auto range = jatos_s.equal_range((Int_t)eventID);
+
+            auto range = jatos_s.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
             }
-
             if (!existe) 
             {
                 jatos_s.insert({(Int_t)eventID, jet});
             }
         }
+
+        // Caso 3: ambos passam os cortes
+        else if (score_c >= t_c && score_s >= t_s) 
+        {
+            if (score_c > score_s)
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_c.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_c.insert({(Int_t)eventID, jet});
+                }
+            }
+            else
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_s.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_s.insert({(Int_t)eventID, jet});
+                }
+            }
+        }
+        //std::cout << "Signal for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        signalS_set_correlation->Fill(score_c, score_s);
     }
     for (Long64_t i = 0; i < backgroundTree_s->GetEntries(); ++i) 
     {
         backgroundTree_s->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < 0 && score_s < 0) continue;
-        //std::cout << "Background for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        backgroundS_set_correlation->Fill(score_c, score_s);
+        if (score_c < t_c && score_s < t_s) continue;
 
-        if ( score_c > score_s ) 
+        // Caso 1: passou apenas no corte do charm
+        if (score_c >= t_c && score_s < t_s) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-            
+
             auto range = jatos_c.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
@@ -333,26 +490,78 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 jatos_c.insert({(Int_t)eventID, jet});
             }
         }
-        else
+
+        // Caso 2: passou apenas no corte do strange
+        else if (score_s >= t_s && score_c < t_c) 
         {
             TLorentzVector jet;
             jet.SetPtEtaPhiM(pT, eta, phi, mass);
-                        auto range = jatos_s.equal_range((Int_t)eventID);
+
+            auto range = jatos_s.equal_range((Int_t)eventID);
 
             bool existe = false;
             for (auto it = range.first; it != range.second; ++it) 
             {
-                if (iguais(it->second, jet)) {
+                if (iguais(it->second, jet)) 
+                {
                     existe = true;
                     break;
                 }
             }
-
             if (!existe) 
             {
                 jatos_s.insert({(Int_t)eventID, jet});
             }
         }
+
+        // Caso 3: ambos passam os cortes
+        else if (score_c >= t_c && score_s >= t_s) 
+        {
+            if (score_c > score_s)
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_c.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_c.insert({(Int_t)eventID, jet});
+                }
+            }
+            else
+            {
+                TLorentzVector jet;
+                jet.SetPtEtaPhiM(pT, eta, phi, mass);
+
+                auto range = jatos_s.equal_range((Int_t)eventID);
+
+                bool existe = false;
+                for (auto it = range.first; it != range.second; ++it) 
+                {
+                    if (iguais(it->second, jet)) 
+                    {
+                        existe = true;
+                        break;
+                    }
+                }
+                if (!existe) 
+                {
+                    jatos_s.insert({(Int_t)eventID, jet});
+                }
+            }
+        }
+        //std::cout << "Background for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
+        backgroundS_set_correlation->Fill(score_c, score_s);
     }
 
 
@@ -371,6 +580,9 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
 
         // Se não houver jato s para esse evento, pula
         if (range_s.first == range_s.second) continue;
+
+        // Se não houver jato c para esse evento, pula
+        if (range_c.first == range_c.second) continue;
 
         for (auto it_c = range_c.first; it_c != range_c.second; ++it_c) // Combinatorial loop
         {

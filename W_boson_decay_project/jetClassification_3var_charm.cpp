@@ -127,8 +127,8 @@ void jetClassification_3var_charm(const char* fileName)
 
     Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
-    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -260,17 +260,17 @@ void jetClassification_3var_charm(const char* fileName)
                     maxRho = Rho;
                 }
 
-                if (Rho >= 0 && Rho < firstRhoUpperBound)
+                if (Rho >= 0.01 && Rho < firstRhoUpperBound)
                 {
                     first_nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                 }
 
-                if (Rho >= 0 && Rho < secondRhoUpperBound)
+                if (Rho >= 0.01 && Rho < secondRhoUpperBound)
                 {
                     second_nRho++;
                 }
 
-                if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
                 {
                     third_nRho++;
                 }
@@ -418,17 +418,17 @@ void jetClassification_3var_charm(const char* fileName)
                     Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
 
 
-                    if (Rho >= 0 && Rho < firstRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < firstRhoUpperBound)
                     {
                         first_nRho_c++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                     }
 
-                    if (Rho >= 0 && Rho < secondRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < secondRhoUpperBound)
                     {
                         second_nRho_c++;
                     }
 
-                    if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
                     {
                         third_nRho_c++;
                     }

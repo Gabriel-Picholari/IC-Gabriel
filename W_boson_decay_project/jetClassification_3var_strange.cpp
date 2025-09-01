@@ -127,8 +127,8 @@ void jetClassification_3var_strange(const char* fileName)
 
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
-    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -255,17 +255,17 @@ void jetClassification_3var_strange(const char* fileName)
                     maxRho = Rho;
                 }
 
-                if (Rho >= 0 && Rho < firstRhoUpperBound)
+                if (Rho >= 0.01 && Rho < firstRhoUpperBound)
                 {
                     first_nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                 }
 
-                if (Rho >= 0 && Rho < secondRhoUpperBound)
+                if (Rho >= 0.01 && Rho < secondRhoUpperBound)
                 {
                     second_nRho++;
                 }
 
-                if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
                 {
                     third_nRho++;
                 }
@@ -405,17 +405,17 @@ void jetClassification_3var_strange(const char* fileName)
                     
                     Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
 
-                    if (Rho >= 0 && Rho < firstRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < firstRhoUpperBound)
                     {
                         first_nRho_s++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                     }
 
-                    if (Rho >= 0 && Rho < secondRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < secondRhoUpperBound)
                     {
                         second_nRho_s++;
                     }
 
-                    if (Rho >= 0 && Rho < thirdRhoUpperBound)
+                    if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
                     {
                         third_nRho_s++;
                     }
