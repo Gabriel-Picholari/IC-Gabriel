@@ -9,7 +9,7 @@
 #include <vector>
 #include <TLine.h>
 
-void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold = 0.1) {
+void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold = 0.7) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -214,7 +214,7 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
         hPur->SetBinContent(k+1, vPur[k]);
     }
 
-    TCanvas* c2 = new TCanvas("c2","Eficiência e Pureza vs Threshold",900,700);
+    TCanvas* c2 = new TCanvas("c2","Eficiencia e Pureza vs Threshold",900,700);
     c2->SetGrid();  
 
     TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());

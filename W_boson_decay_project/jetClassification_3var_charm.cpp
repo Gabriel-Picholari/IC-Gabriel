@@ -128,7 +128,8 @@ void jetClassification_3var_charm(const char* fileName)
     Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c = 0;
 
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_latest_modelTraining_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -233,6 +234,8 @@ void jetClassification_3var_charm(const char* fileName)
             count++;
 
             jetPt = jet.pt();
+            if (jetPt < 5) continue;
+
             jetEta = jet.eta();
             jetPhi = jet.phi();
             jetMass = jet.m();

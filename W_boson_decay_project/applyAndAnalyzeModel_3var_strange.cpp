@@ -11,7 +11,7 @@
 #include <TLine.h>
 #include <vector>
 
-void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshold = 0.3) {
+void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshold = 0.1) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -165,55 +165,52 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
     h_signal->DrawCopy("same");
 
     //---------------------------------------------------------------------------------------------------------
-    // >>> ADIÇÃO: scan de thresholds e gráficos sobrepostos (Eficiência & Pureza)
+    // Scan em thresholds
     //---------------------------------------------------------------------------------------------------------
-    int   nSteps = 100;
-    float tmin   = -1.0f;
-    float tmax   =  1.0f;
+
+    int nSteps = 1000;
+    float tmin = -1.0, tmax = 1.0;
 
     std::vector<double> vx, vEff, vPur;
-    vx.reserve(nSteps);
-    vEff.reserve(nSteps);
-    vPur.reserve(nSteps);
+    vx.reserve(nSteps); vEff.reserve(nSteps); vPur.reserve(nSteps);
 
-    for (int k = 0; k < nSteps; ++k) 
+    for (int k=0; k<nSteps; ++k) 
     {
-        float thr = tmin + (tmax - tmin) * k / (float)(nSteps - 1);
+        Float_t thr = tmin + (tmax-tmin)*k/(nSteps-1);
+        int vp=0, fn=0, fp=0, vn=0;
 
-        int vp = 0, fn = 0, fp = 0, vn = 0;
-        for (size_t j = 0; j < allScores.size(); ++j) 
+        for (size_t j=0;j<allScores.size();++j) 
         {
             bool predS = (allScores[j] >= thr);
-            if (allLabels[j] == 1) 
-            {
-                if (predS) vp++;
-                else       fn++;
-            } 
+            if (allLabels[j]==1) 
+            { 
+                if(predS) vp++; 
+                else fn++; 
+            }
             else 
-            {
-                if (predS) fp++;
-                else       vn++;
+            { 
+                if(predS) fp++; 
+                else vn++; 
             }
         }
 
-        float eff;
+        Float_t eff, pur;
         if (vp + fn > 0) 
         {
             eff = (float)vp / (vp + fn);
         } 
         else 
         {
-            eff = 0.0f;
+            eff = 0.0;
         }
 
-        float pur;
         if (vp + fp > 0) 
         {
             pur = (float)vp / (vp + fp);
         } 
         else 
         {
-            pur = 0.0f;
+            pur = 0.0;
         }
 
         vx.push_back(thr);
@@ -221,11 +218,20 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
         vPur.push_back(pur);
     }
 
-    TCanvas* c2 = new TCanvas("c2","Eficiência e Pureza vs Threshold",900,700);
-    c2->SetGrid();
+    TH1F* hEff = new TH1F("hEff",";Threshold;Valor", nSteps, tmin, tmax);
+    TH1F* hPur = new TH1F("hPur",";Threshold;Valor", nSteps, tmin, tmax);
+
+    for (int k=0; k<nSteps; ++k) {
+        float thr = tmin + (tmax-tmin)*k/(nSteps-1);
+        hEff->SetBinContent(k+1, vEff[k]);
+        hPur->SetBinContent(k+1, vPur[k]);
+    }
+
+    TCanvas* c2 = new TCanvas("c2", "Eficiencia e Pureza vs Threshold", 900, 700);
+    c2->SetGrid();  
 
     TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());
-    gEff->SetTitle("Eficiência e Pureza vs Threshold;Threshold;Valor");
+    gEff->SetTitle("Eficiencia e Pureza vs Threshold;Threshold;Valor");
     gEff->SetLineColor(kBlue);
     gEff->SetLineWidth(2);
     gEff->Draw("AL");
@@ -235,9 +241,9 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
     gPur->SetLineWidth(2);
     gPur->Draw("L same");
 
-    TLine* lth = new TLine(threshold, 0, threshold, 1);
-    lth->SetLineStyle(2);
-    lth->Draw("same");
+    TLine* l1 = new TLine(threshold,0,threshold,1);
+    l1->SetLineStyle(2);
+    l1->Draw("same");
 
     inputFile->Close();
     delete reader;

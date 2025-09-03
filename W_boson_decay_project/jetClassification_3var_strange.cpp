@@ -128,7 +128,8 @@ void jetClassification_3var_strange(const char* fileName)
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
 
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_latest_modelTraining_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -228,6 +229,8 @@ void jetClassification_3var_strange(const char* fileName)
             count++;
 
             jetPt = jet.pt();
+            if (jetPt < 5) continue;
+
             jetEta = jet.eta();
             jetPhi = jet.phi();
             jetMass = jet.m();

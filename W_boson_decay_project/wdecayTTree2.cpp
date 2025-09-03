@@ -47,7 +47,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   // Initialization of histograms
   //---------------------------------------------------------------------------------------------------------
 
-  //TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
+  TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
+  TH1F *bosonW_rapidity_distribution = new TH1F("bosonW_rapidity", "Boson W^{+-} rapidity distribution", 100, 0, 100);
 
   //---------------------------------------------------------------------------------------------------------
   // Pythia initializations and configurations:
@@ -109,10 +110,15 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       }
       */
 
-      Float_t eta = part->Eta();
-      Float_t pT = part->Pt();
-      if (pT < 5) continue; // Perturbative approxiation theory used by Pythia requires this pT cut;
-      //if (eta < -2 || eta > 2) continue;
+      if (abs(partPdg) == 24)
+      {
+        TLorentzVector vec;
+        vec.SetPxPyPzE(part->Px(), part->Py(), part->Pz(), part->Energy());
+
+        Float_t bosonW_rapidity = vec.Rapidity();
+        bosonW_rapidity_distribution->Fill(bosonW_rapidity);
+
+      }
 
       if (ist > 0)
       {
@@ -222,8 +228,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
             }
 
             Float_t R_quarks = TMath::Sqrt( TMath::Power(daughterEta_c - daughterEta_s, 2) + TMath::Power(daughterPhi_c - daughterPhi_s, 2) );
-            //distanciaAngular->Fill(R_quarks);
-            //std::cout << deltaR_c << std::endl;
+            distanciaAngular->Fill(R_quarks);
+            ///std::cout << deltaR_c << std::endl;
             //std::cout << deltaR_s << std::endl;
 
             if ( deltaR_c < deltaR_s)
@@ -259,7 +265,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   pythia8.PrintStatistics();
   ttree->Write();
 
-  /*
+  
   TCanvas *c1 = new TCanvas("c1", "Angular distance distribution", 2500, 2500);
   c1->Divide(1, 1);
 
@@ -268,7 +274,16 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   distanciaAngular->GetXaxis()->SetTitle("Angular distance");
   distanciaAngular->GetYaxis()->SetTitle("Frequency");
   distanciaAngular->DrawCopy();
-  */
+  
+
+  TCanvas *c2 = new TCanvas("c2", "W^{+-} rapidity distribution", 2500, 2500);
+  c2->Divide(1, 1);
+
+  c2->cd(1);
+  bosonW_rapidity_distribution->SetTitle("W^{+-} boson rapidity distribution");
+  bosonW_rapidity_distribution->GetXaxis()->SetTitle("Rapidity");
+  bosonW_rapidity_distribution->GetYaxis()->SetTitle("Frequency");
+  bosonW_rapidity_distribution->DrawCopy();
 
   outfile->Close();
 }

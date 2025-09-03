@@ -7,8 +7,9 @@
 
 void modelTrainment_3var_strange(const char *fileName) 
 {
-    
-    TFile* outputFile = TFile::Open("TMVAOutput_3var_strange.root", "RECREATE");
+    //TFile* outputFile = TFile::Open("TMVAOutput_3var_strange.root", "RECREATE");
+    TFile* outputFile = TFile::Open("TMVAOutput_3var_latest_strange.root", "RECREATE");
+
     TFile* inputFile = TFile::Open(fileName, "READ");
 
     TTree* signalTree_s = dynamic_cast<TTree *>(inputFile->Get("SignalTree_s"));

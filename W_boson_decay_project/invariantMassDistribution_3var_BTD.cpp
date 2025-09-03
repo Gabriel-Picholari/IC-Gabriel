@@ -27,7 +27,7 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char* inputFileName_s, float t_c = 0.0, float t_s = 0.2) 
+void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char* inputFileName_s, float t_c = 0.7, float t_s = 0.1) 
 {
 
     //---------------------------------------------------------------------------------------------------------
@@ -572,22 +572,19 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     // Reconstrução combinatória da massa do W
     //---------------------------------------------------------------------------------------------------------
     
-    for (auto const& [eventID, _] : jatos_c) 
+    for (auto it = jatos_c.begin(); it != jatos_c.end(); it = jatos_c.upper_bound(it->first)) 
     {
-        // Recuperar todos os jatos c e s com esse eventID
+        Int_t eventID = it->first;
+
         auto range_c = jatos_c.equal_range(eventID);
         auto range_s = jatos_s.equal_range(eventID);
 
-        // Se não houver jato s para esse evento, pula
-        if (range_s.first == range_s.second) continue;
+        if (range_c.first == range_c.second) continue; // não deveria acontecer aqui, mas ok
+        if (range_s.first == range_s.second) continue; // sem s: não há par
 
-        // Se não houver jato c para esse evento, pula
-        if (range_c.first == range_c.second) continue;
-
-        for (auto it_c = range_c.first; it_c != range_c.second; ++it_c) // Combinatorial loop
+        for (auto it_c = range_c.first; it_c != range_c.second; ++it_c) 
         {
-            for (auto it_s = range_s.first; it_s != range_s.second; ++it_s) 
-            {
+            for (auto it_s = range_s.first; it_s != range_s.second; ++it_s) {
                 TLorentzVector W = it_c->second + it_s->second;
                 h_massW->Fill(W.M());
             }

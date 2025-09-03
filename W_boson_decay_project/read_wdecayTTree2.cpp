@@ -197,6 +197,8 @@ void read_wdecayTTree2(const char* fileName)
         for (const fastjet::PseudoJet& jet : jets)
         {
             jetPt = jet.pt();
+            if (jetPt < 5) continue;
+
             jetEta = jet.eta();
             jetPhi = jet.phi();
             jetMass = jet.m(); // Invariant mass
