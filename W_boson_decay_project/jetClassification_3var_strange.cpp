@@ -71,6 +71,7 @@ void jetClassification_3var_strange(const char* fileName)
     Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz, fpMass, fpVx, fpVy, fpVz = 0;
     Float_t jetPt, jetEta, jetPhi, jetE, jetPx, jetPy, jetPz, jetMass, jetNConst, pT_LeadConst = 0;
     Float_t maxRho, nVert, first_nRho, second_nRho, third_nRho = 0;
+    Float_t rhoLowerBound = 0.01;
     Float_t firstRhoUpperBound = 1;
     Float_t secondRhoUpperBound = 1.5;
     Float_t thirdRhoUpperBound = 2;
@@ -127,9 +128,8 @@ void jetClassification_3var_strange(const char* fileName)
 
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
 
-    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_latest_modelTraining_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -258,17 +258,17 @@ void jetClassification_3var_strange(const char* fileName)
                     maxRho = Rho;
                 }
 
-                if (Rho >= 0.01 && Rho < firstRhoUpperBound)
+                if (Rho >= rhoLowerBound && Rho < firstRhoUpperBound)
                 {
                     first_nRho++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                 }
 
-                if (Rho >= 0.01 && Rho < secondRhoUpperBound)
+                if (Rho >= rhoLowerBound && Rho < secondRhoUpperBound)
                 {
                     second_nRho++;
                 }
 
-                if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
+                if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
                 {
                     third_nRho++;
                 }
@@ -382,7 +382,7 @@ void jetClassification_3var_strange(const char* fileName)
                     break;
                 }
             }
-            if (hasStrangeConstituent) // Signal data
+            if (hasStrangeConstituent && strangeRatio > 0.6) // Signal data
             {
                 label_s = 1;
                 eventID_s = ni;
@@ -408,17 +408,17 @@ void jetClassification_3var_strange(const char* fileName)
                     
                     Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
 
-                    if (Rho >= 0.01 && Rho < firstRhoUpperBound)
+                    if (Rho >= rhoLowerBound && Rho < firstRhoUpperBound)
                     {
                         first_nRho_s++; // Once per constituent -> accessed only when rho lies in the determined interval -> nRho per jet
                     }
 
-                    if (Rho >= 0.01 && Rho < secondRhoUpperBound)
+                    if (Rho >= rhoLowerBound && Rho < secondRhoUpperBound)
                     {
                         second_nRho_s++;
                     }
 
-                    if (Rho >= 0.01 && Rho < thirdRhoUpperBound)
+                    if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
                     {
                         third_nRho_s++;
                     }

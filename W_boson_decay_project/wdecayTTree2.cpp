@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 100, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_seed_1_100_hardQCD_all_off.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -153,15 +153,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         if (thirdMotherIndex >= 0 && thirdMotherIndex < np) 
         { 
           TParticle *thirdMotherPart = (TParticle*)particles->At(thirdMotherIndex);
-          
-          //if (thirdMotherPart) 
-          //{
-            thirdMotherPdg = thirdMotherPart->GetPdgCode();
-          //}
+          thirdMotherPdg = thirdMotherPart->GetPdgCode();
         }
-
-        const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435};
-        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329};
         
         Int_t index = ip;
 
@@ -172,9 +165,6 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
           TParticle *ipPart = (TParticle*)particles->At(index);
           Int_t ipPdg = ipPart->GetPdgCode();                                  // Takes the pdg of the current particle 
           Int_t abs_ipPdg = abs(ipPdg);
-          
-          if (charmPdgSet.count(abs_ipPdg)) hasCharmedHadron = true;           // If true, then the decay chain passed through a hadron of interest (check sets above)
-          if (strangePdgSet.count(abs_ipPdg)) hasStrangeHadron = true;
 
           Int_t motherIdx1st = ipPart->GetFirstMother();                       // Takes the index of the particle's mother
           TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Creates a pointer to the mother

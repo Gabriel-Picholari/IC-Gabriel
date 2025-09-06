@@ -27,7 +27,7 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char* inputFileName_s, float t_c = 0.7, float t_s = 0.1) 
+void invariantMassDistribution_3var_BTD(const char* inputFileName_c, /*const char* inputFileName_s, */ float t_c = 0.7, float t_s = 0.5) 
 {
 
     //---------------------------------------------------------------------------------------------------------
@@ -94,6 +94,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     backgroundTree_c->SetBranchAddress("label_c", &label);
     backgroundTree_c->SetBranchAddress("eventID_c", &eventID);
 
+    /*
     TFile* inputFile_s = TFile::Open(inputFileName_s, "READ");
     TTree* signalTree_s = (TTree*)inputFile_s->Get("SignalTree_s");
     TTree* backgroundTree_s = (TTree*)inputFile_s->Get("BackgroundTree_s");
@@ -117,6 +118,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     //backgroundTree_s->SetBranchAddress("maxRho_s", &maxRho); Discontinued
     backgroundTree_s->SetBranchAddress("label_s", &label);
     backgroundTree_s->SetBranchAddress("eventID_s", &eventID);
+    */
 
     //---------------------------------------------------------------------------------------------------------
     // Histogramas
@@ -198,6 +200,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         }
 
         // Caso 3: ambos passam os cortes
+        /* 
         else if (score_c >= t_c && score_s >= t_s) 
         {
             if (score_c > score_s)
@@ -243,9 +246,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 }
             }
         }
+        */
         //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        signalC_set_correlation->Fill(score_c, score_s);
-
     }
     
     // Obviously, ideally, no jet from this TTree should contribute to "jatos_c". 
@@ -306,6 +308,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
         }
 
         // Caso 3: ambos passam os cortes
+        /* 
         else if (score_c >= t_c && score_s >= t_s) 
         {
             if (score_c > score_s)
@@ -351,12 +354,12 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
                 }
             }
         }
+        */
         //std::cout << "Backgound for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        backgroundC_set_correlation->Fill(score_c, score_s);
     }
 
-    // Strange block
-
+    // Strange block (redundant, then discontinued)
+    /*
     for (Long64_t i = 0; i < signalTree_s->GetEntries(); ++i) 
     {
         signalTree_s->GetEntry(i);
@@ -458,7 +461,6 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
             }
         }
         //std::cout << "Signal for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        signalS_set_correlation->Fill(score_c, score_s);
     }
     for (Long64_t i = 0; i < backgroundTree_s->GetEntries(); ++i) 
     {
@@ -561,8 +563,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
             }
         }
         //std::cout << "Background for S - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
-        backgroundS_set_correlation->Fill(score_c, score_s);
     }
+    */
 
 
     //printJets(jatos_c, "Charm");
@@ -604,36 +606,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, const char*
     h_massW->GetYaxis()->SetTitle("Frequency");
     h_massW->DrawCopy();
 
-    TCanvas *c2 = new TCanvas("c2", "Correlation distributions", 2500, 2500);
-    c2->Divide(2, 2);
-
-    c2->cd(1);
-    signalS_set_correlation->SetTitle("Charm x Strange scores over strange signal data");
-    signalS_set_correlation->GetXaxis()->SetTitle("Score c");
-    signalS_set_correlation->GetYaxis()->SetTitle("Score s");
-    signalS_set_correlation->DrawCopy();
-
-    c2->cd(2);
-    backgroundS_set_correlation->SetTitle("Charm x Strange scores over strange background data");
-    backgroundS_set_correlation->GetXaxis()->SetTitle("Score c");
-    backgroundS_set_correlation->GetYaxis()->SetTitle("Score s");
-    backgroundS_set_correlation->DrawCopy();
-    
-    c2->cd(3);
-    signalC_set_correlation->SetTitle("Charm x Strange scores over charm signal data");
-    signalC_set_correlation->GetXaxis()->SetTitle("Score c");
-    signalC_set_correlation->GetYaxis()->SetTitle("Score s");
-    signalC_set_correlation->DrawCopy();
-
-    c2->cd(4);
-    backgroundC_set_correlation->SetTitle("Charm x Strange scores over charm background data");
-    backgroundC_set_correlation->GetXaxis()->SetTitle("Score c");
-    backgroundC_set_correlation->GetYaxis()->SetTitle("Score s");
-    backgroundC_set_correlation->DrawCopy();
-
-
     inputFile_c->Close();
-    inputFile_s->Close();
+    //inputFile_s->Close();
     delete reader_c;
     delete reader_s;
 }
