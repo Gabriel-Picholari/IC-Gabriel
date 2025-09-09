@@ -88,13 +88,19 @@ void jetClassification_3var_strange(const char* fileName)
     // Histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F* first_signal_nRho_Distribution = new TH1F("firstNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1", 10, 0, 10);
-    TH1F* second_signal_nRho_Distribution = new TH1F("secondNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 1.5", 10, 0, 10);
-    TH1F* third_signal_nRho_Distribution = new TH1F("thirdNRho_signal_hist", "Distribution for signal nRho with interval upperBound of 2", 10, 0, 10);
+    TH1F* first_signal_nRho_Distribution = new TH1F("firstNRho_signal_hist", "Signal jets: nRho distribution (upper bound = 1)", 20, 0, 20);
+    TH1F* second_signal_nRho_Distribution = new TH1F("secondNRho_signal_hist", "Signal jets: nRho distribution (upper bound = 1.5)", 20, 0, 20);
+    TH1F* third_signal_nRho_Distribution = new TH1F("thirdNRho_signal_hist", "Signal jets: nRho distribution (upper bound = 2)", 20, 0, 20);
 
-    TH1F* first_background_nRho_Distribution = new TH1F("firstNRho_background_hist", "Distribution for background nRho with interval upperBound of 1", 10, 0, 10);
-    TH1F* second_background_nRho_Distribution = new TH1F("secondNRho_background_hist", "Distribution for background nRho with interval upperBound of 1.5", 10, 0, 10);
-    TH1F* third_background_nRho_Distribution = new TH1F("thirdNRho_background_hist", "Distribution for background nRho with interval upperBound of 2", 10, 0, 10);
+    TH1F* first_background_nRho_Distribution = new TH1F("firstNRho_background_hist", "Background jets: nRho distribution (upper bound = 1)", 20, 0, 20);
+    TH1F* second_background_nRho_Distribution = new TH1F("secondNRho_background_hist", "Background jets: nRho distribution (upper bound = 1.5)", 20, 0, 20);
+    TH1F* third_background_nRho_Distribution = new TH1F("thirdNRho_background_hist", "Background jets: nRho distribution (upper bound = 2)", 20, 0, 20);
+
+    TH1F* signal_pTDistribution = new TH1F("signal_pTDistribution", "Signal jets: p_{T} distribution", 100, 0, 100);
+    TH1F* background_pTDistribution = new TH1F("background_pTDistribution", "Background jets: p_{T} distribution", 100, 0, 100);
+
+    TH1F* signal_nConstDistribution = new TH1F("signal_nConstDistribution", "Signal jets: number of constituents", 100, 0, 100);
+    TH1F* background_nConstDistribution = new TH1F("background_nConstDistribution", "Background jets: number of constituents", 100, 0, 100);
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -341,6 +347,8 @@ void jetClassification_3var_strange(const char* fileName)
                 nConst_s = jetNConst;
                 nRho_s = first_nRho;        // To be changed accordingly to the plots being examined -> It's going to be a particular choice
 
+                background_pTDistribution->Fill(pT_s);
+                background_nConstDistribution->Fill(nConst_s);
                 first_background_nRho_Distribution->Fill(first_nRho);
                 second_background_nRho_Distribution->Fill(second_nRho);
                 third_background_nRho_Distribution->Fill(third_nRho);
@@ -382,7 +390,7 @@ void jetClassification_3var_strange(const char* fileName)
                     break;
                 }
             }
-            if (hasStrangeConstituent && strangeRatio > 0.6) // Signal data
+            if (hasStrangeConstituent) // Signal data
             {
                 label_s = 1;
                 eventID_s = ni;
@@ -433,6 +441,8 @@ void jetClassification_3var_strange(const char* fileName)
 
                 nRho_s = first_nRho_s;
 
+                signal_pTDistribution->Fill(pT_s);
+                signal_nConstDistribution->Fill(nConst_s);
                 first_signal_nRho_Distribution->Fill(first_nRho_s);
                 second_signal_nRho_Distribution->Fill(second_nRho_s);
                 third_signal_nRho_Distribution->Fill(third_nRho_s);
@@ -453,44 +463,78 @@ void jetClassification_3var_strange(const char* fileName)
     signalTree_s->Write();
     backgroundTree_s->Write();
 
-    TCanvas *c1 = new TCanvas("c1", "Strange jet classificator nRho distributions", 2500, 2500);
+    TCanvas *c1 = new TCanvas("c1", "Strange-jet classifier: nRho distributions", 2500, 2500);
     c1->Divide(3, 2);
 
+    // Signal (upper bound = 1, 1.5, 2)
     c1->cd(1);
-    first_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1");
+    first_signal_nRho_Distribution->SetTitle("Strange signal jets: nRho distribution (upper bound = 1)");
     first_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    first_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_signal_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     first_signal_nRho_Distribution->DrawCopy();
 
     c1->cd(2);
-    second_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 1.5");
+    second_signal_nRho_Distribution->SetTitle("Strange signal jets: nRho distribution (upper bound = 1.5)");
     second_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    second_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_signal_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     second_signal_nRho_Distribution->DrawCopy();
 
     c1->cd(3);
-    third_signal_nRho_Distribution->SetTitle("Distribution of signal nRho for intervall upperBound of 2");
+    third_signal_nRho_Distribution->SetTitle("Strange signal jets: nRho distribution (upper bound = 2)");
     third_signal_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    third_signal_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_signal_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     third_signal_nRho_Distribution->DrawCopy();
 
+    // Background (upper bound = 1, 1.5, 2)
     c1->cd(4);
-    first_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1");
+    first_background_nRho_Distribution->SetTitle("Strange background jets: nRho distribution (upper bound = 1)");
     first_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    first_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    first_background_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     first_background_nRho_Distribution->DrawCopy();
 
     c1->cd(5);
-    second_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 1.5");
+    second_background_nRho_Distribution->SetTitle("Strange background jets: nRho distribution (upper bound = 1.5)");
     second_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    second_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    second_background_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     second_background_nRho_Distribution->DrawCopy();
 
     c1->cd(6);
-    third_background_nRho_Distribution->SetTitle("Distribution of background nRho for intervall upperBound of 2");
+    third_background_nRho_Distribution->SetTitle("Strange background jets: nRho distribution (upper bound = 2)");
     third_background_nRho_Distribution->GetXaxis()->SetTitle("nRho");
-    third_background_nRho_Distribution->GetYaxis()->SetTitle("Frequency");
+    third_background_nRho_Distribution->GetYaxis()->SetTitle("Entries");
     third_background_nRho_Distribution->DrawCopy();
+
+
+    TCanvas *c2 = new TCanvas("c2", "Transverse momentum (signal vs background)", 2500, 2500);
+    c2->Divide(2, 1);
+
+    c2->cd(1);
+    signal_pTDistribution->SetTitle("Strange signal jets: p_{T} distribution");
+    signal_pTDistribution->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+    signal_pTDistribution->GetYaxis()->SetTitle("Entries");
+    signal_pTDistribution->DrawCopy();
+
+    c2->cd(2);
+    background_pTDistribution->SetTitle("Strange background jets: p_{T} distribution");
+    background_pTDistribution->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+    background_pTDistribution->GetYaxis()->SetTitle("Entries");
+    background_pTDistribution->DrawCopy();
+
+
+    TCanvas *c3 = new TCanvas("c3", "Number of constituents (signal vs background)", 2500, 2500);
+    c3->Divide(2, 1);
+
+    c3->cd(1);
+    signal_nConstDistribution->SetTitle("Strange signal jets: number of constituents distribution");
+    signal_nConstDistribution->GetXaxis()->SetTitle("Constituents");
+    signal_nConstDistribution->GetYaxis()->SetTitle("Entries");
+    signal_nConstDistribution->DrawCopy();
+
+    c3->cd(2);
+    background_nConstDistribution->SetTitle("Strange background jets: number of constituents distribution");
+    background_nConstDistribution->GetXaxis()->SetTitle("Constituents");
+    background_nConstDistribution->GetYaxis()->SetTitle("Entries");
+    background_nConstDistribution->DrawCopy();
 
     file->Close();
     filteredDataFile->Close();

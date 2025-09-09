@@ -24,7 +24,7 @@ quarks from the appropriate W boson decay channel.
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 100, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -37,7 +37,7 @@ void wdecayTTree2(Int_t nev = 100, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_seed_1_100_hardQCD_all_off.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);

@@ -7,8 +7,7 @@
 
 void modelTrainment_3var_charm(const char *fileName) 
 {
-    //TFile* outputFile = TFile::Open("TMVAOutput_3var_charm.root", "RECREATE");
-    TFile* outputFile = TFile::Open("TMVAOutput_3var_latest_charm.root", "RECREATE");
+    TFile* outputFile = TFile::Open("TMVAOutput_3var_charm.root", "RECREATE");
 
     TFile* inputFile = TFile::Open(fileName, "READ");
 

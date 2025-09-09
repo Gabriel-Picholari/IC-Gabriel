@@ -135,19 +135,19 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
     std::cout << "Eficiência (Recall) = " << eficiencia << std::endl;
     std::cout << "Pureza (Precision)  = " << pureza << std::endl;
 
-    //---------------------------------------------------------------------------------------------------------
-    // Plotar histogramas originais
-    //---------------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------------------------
+// Plot original histograms
+//---------------------------------------------------------------------------------------------------------
 
-    TCanvas* c1 = new TCanvas("c1", "Charmed score distribution", 900, 700);
+    TCanvas* c1 = new TCanvas("c1", "GradBoost Score Distribution (Charm)", 900, 700);
     c1->SetGrid();
 
-    h_signal->SetLineColor(kGreen);
     h_background->SetLineColor(kRed);
+    h_signal->SetLineColor(kGreen);
 
-    h_signal->SetTitle("Distribuição do Score do GradBoost");
-    h_signal->GetXaxis()->SetTitle("Score");
-    h_signal->GetYaxis()->SetTitle("Eventos");
+    h_signal->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Number of Events");
+    h_background->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Number of Events");
+
     h_background->DrawCopy();
     h_signal->DrawCopy("same");
 
@@ -205,8 +205,8 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
         vPur.push_back(pur);
     }
 
-    TH1F* hEff = new TH1F("hEff",";Threshold;Valor", nSteps, tmin, tmax);
-    TH1F* hPur = new TH1F("hPur",";Threshold;Valor", nSteps, tmin, tmax);
+    TH1F* hEff = new TH1F("hEff","Efficiency vs Threshold (Charm);Threshold;Efficiency", nSteps, tmin, tmax);
+    TH1F* hPur = new TH1F("hPur","Purity vs Threshold (Charm);Threshold;Purity", nSteps, tmin, tmax);
 
     for (int k=0; k<nSteps; ++k) {
         float thr = tmin + (tmax-tmin)*k/(nSteps-1);
@@ -214,11 +214,11 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
         hPur->SetBinContent(k+1, vPur[k]);
     }
 
-    TCanvas* c2 = new TCanvas("c2","Eficiencia e Pureza vs Threshold",900,700);
+    TCanvas* c2 = new TCanvas("c2", "Efficiency and Purity vs Threshold (Charm)", 900, 700);
     c2->SetGrid();  
 
     TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());
-    gEff->SetTitle("Eficiencia e Pureza vs Threshold;Threshold;Valor");
+    gEff->SetTitle("Efficiency and Purity vs Threshold for Charm Jets;Threshold;Value");
     gEff->SetLineColor(kBlue);
     gEff->SetLineWidth(2);
     gEff->Draw("AL");

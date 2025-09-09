@@ -11,7 +11,7 @@
 #include <TLine.h>
 #include <vector>
 
-void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshold = 0.1) {
+void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 
@@ -155,11 +155,14 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
     // Plotar histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TCanvas* c1 = new TCanvas("c1", "Strange score distribution", 900, 700);
+    TCanvas* c1 = new TCanvas("c1", "GradBoost Score Distribution (Strange)", 900, 700);
     c1->SetGrid();
 
     h_background->SetLineColor(kRed);
     h_signal->SetLineColor(kGreen);
+
+    h_signal->SetTitle("GradBoost Score Distribution for Strange Jets;Score;Number of Events");
+    h_background->SetTitle("GradBoost Score Distribution for Strange Jets;Score;Number of Events");
 
     h_background->DrawCopy();
     h_signal->DrawCopy("same");
@@ -218,8 +221,8 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
         vPur.push_back(pur);
     }
 
-    TH1F* hEff = new TH1F("hEff",";Threshold;Valor", nSteps, tmin, tmax);
-    TH1F* hPur = new TH1F("hPur",";Threshold;Valor", nSteps, tmin, tmax);
+    TH1F* hEff = new TH1F("hEff","Efficiency vs Threshold (Strange);Threshold;Efficiency", nSteps, tmin, tmax);
+    TH1F* hPur = new TH1F("hPur","Purity vs Threshold (Strange);Threshold;Purity", nSteps, tmin, tmax);
 
     for (int k=0; k<nSteps; ++k) {
         float thr = tmin + (tmax-tmin)*k/(nSteps-1);
@@ -227,11 +230,11 @@ void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshol
         hPur->SetBinContent(k+1, vPur[k]);
     }
 
-    TCanvas* c2 = new TCanvas("c2", "Eficiencia e Pureza vs Threshold", 900, 700);
+    TCanvas* c2 = new TCanvas("c2", "Efficiency and Purity vs Threshold (Strange)", 900, 700);
     c2->SetGrid();  
 
     TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());
-    gEff->SetTitle("Eficiencia e Pureza vs Threshold;Threshold;Valor");
+    gEff->SetTitle("Efficiency and Purity vs Threshold for Strange Jets;Threshold;Value");
     gEff->SetLineColor(kBlue);
     gEff->SetLineWidth(2);
     gEff->Draw("AL");
