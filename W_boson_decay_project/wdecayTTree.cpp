@@ -37,7 +37,7 @@ void wdecayTTree(Int_t nev = 1000, Int_t ndeb = 1 /* Listagem */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay1K_QCD_OFF.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay10K_QCD_OFF.root", "RECREATE");
   TTree *ttree = new TTree("W decay TTree", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);

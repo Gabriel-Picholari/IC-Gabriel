@@ -82,6 +82,8 @@ void jetClassification1(const char* fileName)
     TH1F *missingStrangeConstituentsPdgMap = new TH1F("strangeMissingMap","Potential particles' PDGs missing in the strange list", 5000, -2500, 2500);
     TH1F *missingCharmConstituentsPdgMap = new TH1F("charmMissingMap","Potential particles' PDGs missing in the charm list", 5000, -2500, 2500);
 
+    TH1F *observable_F_sc_Distribution = new TH1F("observable_F_sc_Distribution", "Strange jet by charm jet p_{T} - F_{sc} distribution", 100, 0, 10);
+
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
@@ -191,6 +193,10 @@ void jetClassification1(const char* fileName)
             if (jetPt < 5) continue; // Basic cut on jet pT
 
             jetEta = jet.eta();
+
+            Float_t absEta = TMath::Abs(jetEta);
+            if (absEta < 1) continue; // Basic cut on jet eta
+            
             jetPhi = jet.phi();
             jetMass = jet.m();
             jetPx = jet.px();
@@ -280,14 +286,13 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.6) 
+            if (hasCharmConstituent && charmRatio > 0.6) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
 
             if (hasCharmConstituent) 
             {
-                good_c_jets.push_back(jet);
                 primary_CharmRatioHist->Fill(charmRatio);
             }
             else
@@ -339,7 +344,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.6) 
+            if (hasStrangeConstituent && strangeRatio > 0.6) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -367,16 +372,6 @@ void jetClassification1(const char* fileName)
             }
         }
 
-        /* 
-        const Float_t tolerance = 1e-5;
-        
-        if ( fabs(vec_c.M() - 3.141592) > tolerance && fabs(vec_s.M() - 3.141592) > tolerance ) 
-        {
-            TLorentzVector vec_W = vec_c + vec_s;
-            invariantMass->Fill( vec_W.M() ); 
-        }
-        */
-
         // Combinatoral loop to buid the W boson invariant mass scpectrum
 
         for (size_t ic = 0; ic < good_c_jets.size(); ++ic) 
@@ -389,7 +384,50 @@ void jetClassification1(const char* fileName)
                 TLorentzVector vW = vc + vs;
                 invariantMass->Fill(vW.M());
             }
+        } // Notice how it was a very straight forward implementation: all jets of charm were combined with all jets of strange in the same event
+
+        // Before proceding into a similar loop to fill F_sc (check on November 6th, 2025 research log), I'm going to select the jets that fulfill the criteria established in the log
+
+        Float_t backToback_lowerLimit = 7*TMath::Pi()/8;
+        Float_t backToback_upperLimit = 11*TMath::Pi()/8;
+
+        fastjet::PseudoJet event_strange_jet;
+        fastjet::PseudoJet event_charmed_jet;
+        Double_t max_pt_c = -1.0; // We use a negative value so the fist jet in the vector will always be the macimum pT jet
+        Double_t max_pt_s = -1.0;
+
+        for (const fastjet::PseudoJet &jet : good_c_jets)
+        {
+            if (jet.pt() > max_pt_c)
+            {
+                max_pt_c = jet.pt();
+                event_charmed_jet = jet;
+            }
         }
+        for (const fastjet::PseudoJet &jet : good_s_jets)
+        {
+            if (jet.pt() > max_pt_s)
+            {
+                max_pt_s = jet.pt();
+                event_strange_jet = jet;
+            }
+        }
+
+        // For more information about the cuts in physical quantities associated to jets, please refer to November 10th, 2025 research log
+
+        Float_t deltaPhi = TMath::Abs(event_charmed_jet.phi() - event_strange_jet.phi());
+
+        //Float_t charmJet_absEta = TMath::Abs(event_charmed_jet.eta());
+        //Float_t strangeJet_absEta = TMath::Abs(event_strange_jet.eta());
+
+        //if ( charmJet_absEta < 1 || strangeJet_absEta < 1) continue;
+
+        if (deltaPhi >= backToback_lowerLimit || deltaPhi < backToback_upperLimit)
+        {
+            Float_t F_sc = event_strange_jet.pt() / event_charmed_jet.pt(); // New observable - for more information, check November 6th, 2025 research log
+            observable_F_sc_Distribution->Fill(F_sc);
+        }
+        
 
         particles_fastjet.clear();
         jets.clear();
@@ -466,6 +504,17 @@ void jetClassification1(const char* fileName)
     primary_StrangeRatioHist->Write();
     secondary_StrangeRatioHist->Write();
     outputFile->Close();
+
+    TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distribution", 2500, 2500);
+    c5->Divide(1, 1);
+
+    c5->cd(1);
+    observable_F_sc_Distribution->SetTitle("Observable F_{sc} distribution");
+    observable_F_sc_Distribution->GetXaxis()->SetTitle("Ratio (dimensionless)");
+    observable_F_sc_Distribution->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution->DrawCopy();
+
+    
 
     file->Close();
 }
