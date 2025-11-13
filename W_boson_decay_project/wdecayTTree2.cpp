@@ -1,14 +1,3 @@
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-/*
-
-The primary difference between this macro and its predecessor is that, in this version, data from all quarks—c, c̅, s, and s̅—are being saved, whereas previously we were only interested in the 
-quarks from the appropriate W boson decay channel.
-
- */
-
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 #include "TH1F.h"
 #include "MyJet.h"
 #include "TMath.h"
@@ -37,7 +26,9 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off.root", "RECREATE");
+  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off_cutPT_10Gev_on.root", "RECREATE"); 
+  // cutPT_10Gev_on/off => trees filled with data regarding only final particles whose pT > 0 10 GeV or pT <= 10 GeV, respectively
+
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
@@ -47,7 +38,11 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   // Initialization of histograms
   //---------------------------------------------------------------------------------------------------------
 
-  //TH1F *distanciaAngular = new TH1F("h1", "Distância angular entre os quarks cbar(c) e s(sbar)", 100, 0, 10);
+  TH1F *distanciaAngular = new TH1F("h1", "Angular separation between quarks cbar(c) and s(sbar)", 100, 0, 10);
+  TH1F *bosonW_rapidity_distribution = new TH1F("bosonW_rapidity", "Boson W^{+-} rapidity distribution", 100, 0, 100);
+  TH1F *bosonW_pT_distribution = new TH1F("bosonW_pT", "Boson W^{+-} transverse momentum distribution", 100, 0, 100);
+  TH1F *bosonW_pT_distribution_cut = new TH1F("bosonW_pT_cut", "Boson W^{+-} transverse momentum distribution with cut", 100, 0, 100);
+
 
   //---------------------------------------------------------------------------------------------------------
   // Pythia initializations and configurations:
@@ -59,12 +54,13 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   pythia8.ReadString("Random:seed = 1");
 
   pythia8.ReadString("WeakSingleBoson:ffbar2W = on");
-
+  
   pythia8.ReadString("24:onMode = off");
   pythia8.ReadString("24:onIfMatch = 3 -4");
   
   pythia8.ReadString("-24:onMode = off");
   pythia8.ReadString("-24:onIfMatch = -3 4");
+  
 
   pythia8.Initialize(2212 /* Proton */, 2212 /* Proton */, 14000 /* TeV */); /* 14000 TeV = 14000000 GeV */
 
@@ -109,10 +105,21 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       }
       */
 
-      Float_t eta = part->Eta();
-      Float_t pT = part->Pt();
-      if (pT < 5) continue; // Perturbative approxiation theory used by Pythia requires this pT cut;
-      //if (eta < -2 || eta > 2) continue;
+      if (abs(partPdg) == 24)
+      {
+        TLorentzVector vec;
+        vec.SetPxPyPzE(part->Px(), part->Py(), part->Pz(), part->Energy());
+
+        Float_t bosonW_rapidity = vec.Rapidity();
+        bosonW_rapidity_distribution->Fill(bosonW_rapidity);
+
+        Float_t bosonW_pT = vec.Pt();
+        bosonW_pT_distribution->Fill(bosonW_pT);
+        //if (bosonW_pT > 10) continue;    // Regarding cut_pT_10Gev_off
+        if (bosonW_pT <= 10) continue; // Regarding cut_pT_10Gev_on
+        bosonW_pT_distribution_cut->Fill(bosonW_pT);
+
+      }
 
       if (ist > 0)
       {
@@ -147,15 +154,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         if (thirdMotherIndex >= 0 && thirdMotherIndex < np) 
         { 
           TParticle *thirdMotherPart = (TParticle*)particles->At(thirdMotherIndex);
-          
-          //if (thirdMotherPart) 
-          //{
-            thirdMotherPdg = thirdMotherPart->GetPdgCode();
-          //}
+          thirdMotherPdg = thirdMotherPart->GetPdgCode();
         }
-
-        const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435};
-        const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329};
         
         Int_t index = ip;
 
@@ -166,9 +166,6 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
           TParticle *ipPart = (TParticle*)particles->At(index);
           Int_t ipPdg = ipPart->GetPdgCode();                                  // Takes the pdg of the current particle 
           Int_t abs_ipPdg = abs(ipPdg);
-          
-          if (charmPdgSet.count(abs_ipPdg)) hasCharmedHadron = true;           // If true, then the decay chain passed through a hadron of interest (check sets above)
-          if (strangePdgSet.count(abs_ipPdg)) hasStrangeHadron = true;
 
           Int_t motherIdx1st = ipPart->GetFirstMother();                       // Takes the index of the particle's mother
           TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Creates a pointer to the mother
@@ -222,8 +219,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
             }
 
             Float_t R_quarks = TMath::Sqrt( TMath::Power(daughterEta_c - daughterEta_s, 2) + TMath::Power(daughterPhi_c - daughterPhi_s, 2) );
-            //distanciaAngular->Fill(R_quarks);
-            //std::cout << deltaR_c << std::endl;
+            distanciaAngular->Fill(R_quarks);
+            ///std::cout << deltaR_c << std::endl;
             //std::cout << deltaR_s << std::endl;
 
             if ( deltaR_c < deltaR_s)
@@ -259,16 +256,40 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   pythia8.PrintStatistics();
   ttree->Write();
 
-  /*
+  
   TCanvas *c1 = new TCanvas("c1", "Angular distance distribution", 2500, 2500);
   c1->Divide(1, 1);
 
   c1->cd(1);
-  distanciaAngular->SetTitle("Quarks angular distance distribution");
+  distanciaAngular->SetTitle("Quarks angular separation distribution");
   distanciaAngular->GetXaxis()->SetTitle("Angular distance");
   distanciaAngular->GetYaxis()->SetTitle("Frequency");
   distanciaAngular->DrawCopy();
-  */
+  
+
+  TCanvas *c2 = new TCanvas("c2", "W^{+-} rapidity distribution", 2500, 2500);
+  c2->Divide(1, 1);
+
+  c2->cd(1);
+  bosonW_rapidity_distribution->SetTitle("W^{+-} boson rapidity distribution");
+  bosonW_rapidity_distribution->GetXaxis()->SetTitle("Rapidity");
+  bosonW_rapidity_distribution->GetYaxis()->SetTitle("Frequency");
+  bosonW_rapidity_distribution->DrawCopy();
+
+  TCanvas *c3 = new TCanvas("c3", "W^{+-} p_{T} distribution", 2500, 2500);
+  c3->Divide(1, 2);
+
+  c3->cd(1);
+  bosonW_pT_distribution->SetTitle("W^{+-} boson p_{T} distribution");
+  bosonW_pT_distribution->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  bosonW_pT_distribution->GetYaxis()->SetTitle("Frequency");
+  bosonW_pT_distribution->DrawCopy();
+
+  c3->cd(2);
+  bosonW_pT_distribution_cut->SetTitle("W^{+-} boson p_{T} distribution with cut");
+  bosonW_pT_distribution_cut->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+  bosonW_pT_distribution_cut->GetYaxis()->SetTitle("Frequency");
+  bosonW_pT_distribution_cut->DrawCopy();
 
   outfile->Close();
 }

@@ -82,6 +82,8 @@ void jetClassification1(const char* fileName)
     TH1F *missingStrangeConstituentsPdgMap = new TH1F("strangeMissingMap","Potential particles' PDGs missing in the strange list", 5000, -2500, 2500);
     TH1F *missingCharmConstituentsPdgMap = new TH1F("charmMissingMap","Potential particles' PDGs missing in the charm list", 5000, -2500, 2500);
 
+    TH1F *observable_F_sc_Distribution = new TH1F("observable_F_sc_Distribution", "Strange jet by charm jet p_{T} - F_{sc} distribution", 100, 0, 10);
+
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
@@ -188,7 +190,13 @@ void jetClassification1(const char* fileName)
             count++;
 
             jetPt = jet.pt();
+            if (jetPt < 5) continue; // Basic cut on jet pT
+
             jetEta = jet.eta();
+
+            Float_t absEta = TMath::Abs(jetEta);
+            if (absEta < 1) continue; // Basic cut on jet eta
+            
             jetPhi = jet.phi();
             jetMass = jet.m();
             jetPx = jet.px();
@@ -204,24 +212,7 @@ void jetClassification1(const char* fileName)
                 {
                     pT_LeadConst = constituent.pt();
                 }
-            }           
-
-            Float_t angAve, sigmaKT = 0;
-
-            for (Int_t i = 0; i < jetNConst; ++i) 
-            {
-                Double_t pt_constituentes = jet.constituents()[i].pt();
-                Double_t eta_constituentes = jet.constituents()[i].eta();
-                Double_t phi_constituentes = jet.constituents()[i].phi();
-
-                Double_t angPart = TMath::Sqrt(TMath::Power(TMath::Abs(phi_constituentes) - TMath::Abs(jetPhi), 2) + TMath::Power(eta_constituentes - jetEta, 2));
-
-                angAve = angAve + angPart;
-                sigmaKT = sigmaKT + (TMath::Power(pt_constituentes - (jetPt / jetNConst), 2));
-            }
-
-            angAve = angAve / jetNConst;
-            sigmaKT = sigmaKT / jetNConst;               
+            }                 
 
             //---------------------------------------------------------------------------------------------------------
             // Jet classification block (based on constituents info)
@@ -257,6 +248,9 @@ void jetClassification1(const char* fileName)
 
         const std::unordered_set<int> charmPdgSet = {411, 421, 413, 423, 415, 425, 431, 433, 435, 10411, 10421, 413, 423, 10413, 10423, 20413, 20423, 415, 425, 431, 10431, 433, 10433, 20433, 435, 4122, 4222, 4212, 4112, 4224, 4214, 4114, 4232, 4132, 4322, 4312, 4324, 4314, 4332, 4334, 4412, 4422, 4414, 4424, 4432, 4434, 4444};
         const std::unordered_set<int> strangePdgSet = {130, 310, 311, 321, 313, 323, 315, 325, 317, 327, 319, 329, 9000311, 9000321, 10311, 10321, 100311, 100321, 9010311, 9010321, 9020311, 9020321, 313, 323, 10313, 10323, 20313, 20323, 100313, 100323, 9000313, 9000323, 30313, 30323, 315, 325, 9000315, 9000325, 10315, 10325, 20315, 20325, 9010315, 9010325, 9020315, 9020325, 317, 327, 9010317, 9010327, 319, 329, 3122, 3222, 3212, 3112, 3224, 3214, 3114, 3322, 3312, 3324, 3314, 3334};
+        
+        std::vector<fastjet::PseudoJet> good_c_jets;
+        std::vector<fastjet::PseudoJet> good_s_jets;
 
         //std::cout << "\n--- c-tagged Jets ---" << std::endl;
         for (const fastjet::PseudoJet  &jet : tagged_c_jets) // Opening the jet vector: the analysis object is a jet
@@ -264,31 +258,37 @@ void jetClassification1(const char* fileName)
             TLorentzVector cJet(jet.px(), jet.py(), jet.pz(), jet.E());
             Float_t charmRatio = jet.pt() / charmPt;
 
-            
-            //std::cout << "New Jet" << std::endl;
+            //std::cout << "----- New Jet -----" << std::endl;
             //std::cout << "Jet Mass: " << cJet.M() << std::endl;
             //std::cout << "Jet pT: " << cJet.Pt() << std::endl;
             //std::cout << "Charm ratio: " << charmRatio << std::endl;
+            //std::cout << std::endl;
             
 
             Bool_t hasCharmConstituent = false;
 
             for (const fastjet::PseudoJet &constituent : jet.constituents()) // Opening the jet itself: the analysis object is a constituent of the jet
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                Int_t constituentThirdMotherPdg = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
-                Int_t abs_constituentMotherPdg = abs(constituentMotherPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
-                Int_t abs_constituentThirdMotherPdg = abs(constituentThirdMotherPdg);
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
-                if (charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
+                if (charmPdgSet.count(abs_constituentPdg) || charmPdgSet.count(abs_constituentMotherPdg) || charmPdgSet.count(abs_constituentSecondMotherPdg) || charmPdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasCharmConstituent = true;
                     break;
                 }
+            }
+
+            if (hasCharmConstituent && charmRatio > 0.6) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            {
+                good_c_jets.push_back(jet);
             }
 
             if (hasCharmConstituent) 
@@ -327,19 +327,26 @@ void jetClassification1(const char* fileName)
 
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
-                Int_t constituentPdg = constituent.user_info<JetInfo>().getFinalParticlePdg();
-                Int_t constituentMotherPdg = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
-                Int_t constituentSecondMotherPdg = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
-                
-                Int_t abs_constituentPdg = abs(constituentPdg);
-                Int_t abs_constituentSecondMotherPdg = abs(constituentSecondMotherPdg);
+                Int_t constituentPdg                = constituent.user_info<JetInfo>().getFinalParticlePdg();
+                Int_t constituentMotherPdg          = constituent.user_info<JetInfo>().getFinalParticleMotherPdg();
+                Int_t constituentSecondMotherPdg    = constituent.user_info<JetInfo>().getFinalParticleSecondMotherPdg();
+                Int_t constituentThirdMotherPdg     = constituent.user_info<JetInfo>().getFinalParticleThirdMotherPdg();
 
+                Int_t abs_constituentPdg                = abs(constituentPdg);
+                Int_t abs_constituentMotherPdg          = abs(constituentMotherPdg);
+                Int_t abs_constituentSecondMotherPdg    = abs(constituentSecondMotherPdg);
+                Int_t abs_constituentThirdMotherPdg     = abs(constituentThirdMotherPdg);
 
-                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg))
+                if (strangePdgSet.count(abs_constituentPdg) || strangePdgSet.count(abs_constituentMotherPdg) || strangePdgSet.count(abs_constituentSecondMotherPdg) || strangePdgSet.count(abs_constituentThirdMotherPdg))
                 {
                     hasStrangeConstituent = true;
                     break;
                 }
+            }
+
+            if (hasStrangeConstituent && strangeRatio > 0.6) // Same as before
+            {
+                good_s_jets.push_back(jet);
             }
 
             if (hasStrangeConstituent)
@@ -365,13 +372,62 @@ void jetClassification1(const char* fileName)
             }
         }
 
-        const Float_t tolerance = 1e-5;
-        
-        if ( fabs(vec_c.M() - 3.141592) > tolerance && fabs(vec_s.M() - 3.141592) > tolerance ) 
+        // Combinatoral loop to buid the W boson invariant mass scpectrum
+
+        for (size_t ic = 0; ic < good_c_jets.size(); ++ic) 
         {
-            TLorentzVector vec_W = vec_c + vec_s;
-            invariantMass->Fill( vec_W.M() ); 
+            TLorentzVector vc(good_c_jets[ic].px(), good_c_jets[ic].py(), good_c_jets[ic].pz(), good_c_jets[ic].E());
+
+            for (size_t is = 0; is < good_s_jets.size(); ++is) 
+            {
+                TLorentzVector vs(good_s_jets[is].px(), good_s_jets[is].py(), good_s_jets[is].pz(), good_s_jets[is].E());
+                TLorentzVector vW = vc + vs;
+                invariantMass->Fill(vW.M());
+            }
+        } // Notice how it was a very straight forward implementation: all jets of charm were combined with all jets of strange in the same event
+
+        // Before proceding into a similar loop to fill F_sc (check on November 6th, 2025 research log), I'm going to select the jets that fulfill the criteria established in the log
+
+        Float_t backToback_lowerLimit = 7*TMath::Pi()/8;
+        Float_t backToback_upperLimit = 11*TMath::Pi()/8;
+
+        fastjet::PseudoJet event_strange_jet;
+        fastjet::PseudoJet event_charmed_jet;
+        Double_t max_pt_c = -1.0; // We use a negative value so the fist jet in the vector will always be the macimum pT jet
+        Double_t max_pt_s = -1.0;
+
+        for (const fastjet::PseudoJet &jet : good_c_jets)
+        {
+            if (jet.pt() > max_pt_c)
+            {
+                max_pt_c = jet.pt();
+                event_charmed_jet = jet;
+            }
         }
+        for (const fastjet::PseudoJet &jet : good_s_jets)
+        {
+            if (jet.pt() > max_pt_s)
+            {
+                max_pt_s = jet.pt();
+                event_strange_jet = jet;
+            }
+        }
+
+        // For more information about the cuts in physical quantities associated to jets, please refer to November 10th, 2025 research log
+
+        Float_t deltaPhi = TMath::Abs(event_charmed_jet.phi() - event_strange_jet.phi());
+
+        //Float_t charmJet_absEta = TMath::Abs(event_charmed_jet.eta());
+        //Float_t strangeJet_absEta = TMath::Abs(event_strange_jet.eta());
+
+        //if ( charmJet_absEta < 1 || strangeJet_absEta < 1) continue;
+
+        if (deltaPhi >= backToback_lowerLimit || deltaPhi < backToback_upperLimit)
+        {
+            Float_t F_sc = event_strange_jet.pt() / event_charmed_jet.pt(); // New observable - for more information, check November 6th, 2025 research log
+            observable_F_sc_Distribution->Fill(F_sc);
+        }
+        
 
         particles_fastjet.clear();
         jets.clear();
@@ -390,7 +446,7 @@ void jetClassification1(const char* fileName)
     c1->Divide(1, 1);
 
     c1->cd(1);
-    invariantMass->SetTitle("Jet's invariant mass spectrum");
+    invariantMass->SetTitle("Boson W^{#pm} invariant mass spectrum");
     invariantMass->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     invariantMass->GetYaxis()->SetTitle("Frequency");
     invariantMass->DrawCopy();
@@ -399,27 +455,32 @@ void jetClassification1(const char* fileName)
     c2->Divide(1, 1);
 
     c2->cd(1);
-    secondary_CharmRatioHist->SetTitle("Charm jet and quark p_{T} ratio");
-    secondary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
-    secondary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
-    secondary_CharmRatioHist->SetLineColor(kBlue);
-    secondary_CharmRatioHist->Draw();
+    //secondary_CharmRatioHist->SetTitle("Distribution of charm jet-to-quark p_{T} ratio with no p_{T} cut applied"); // (Title is correct when no cut is wanted!)
+    primary_CharmRatioHist->SetTitle("Distribution of charm jet-to-quark p_{T} ratio with a 5 GeV/c jet p_{T} cut"); // (Title is correct when a cut is wanted!)
+
+    primary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
+    primary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
+    primary_CharmRatioHist->SetLineColor(kGreen);
+    primary_CharmRatioHist->Draw();
 
     primary_CharmRatioHist->SetLineColor(kRed);
-    primary_CharmRatioHist->Draw("same");
+    secondary_CharmRatioHist->Draw("same");
 
     TCanvas *c3 = new TCanvas("c3", "Strange", 2500, 2500);
     c3->Divide(1, 1);
 
     c3->cd(1);
-    secondary_StrangeRatioHist->SetTitle("Strange jet and quark p_{T} ratio");
-    secondary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
-    secondary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
-    secondary_StrangeRatioHist->SetLineColor(kBlue);
-    secondary_StrangeRatioHist->Draw();
+    //secondary_StrangeRatioHist->SetTitle("Distribution of strange jet-to-quark p_{T} ratio with no p_{T} cut applied"); // (Title is correct when no cut is wanted!)
+
+    primary_StrangeRatioHist->SetTitle("Distribution of strange jet-to-quark p_{T} ratio with a 5 GeV/c jet p_{T} cut"); // (Title is correct when a cut is wanted!)
     
-    primary_StrangeRatioHist->SetLineColor(kRed);
-    primary_StrangeRatioHist->Draw("same");
+    primary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
+    primary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
+    primary_StrangeRatioHist->SetLineColor(kGreen);
+    primary_StrangeRatioHist->Draw();
+    
+    secondary_StrangeRatioHist->SetLineColor(kRed);
+    secondary_StrangeRatioHist->Draw("same");
 
     TCanvas *c4 = new TCanvas("c4", "Missing particles PDG", 2500, 2500);
     c4->Divide(1, 2);
@@ -443,6 +504,17 @@ void jetClassification1(const char* fileName)
     primary_StrangeRatioHist->Write();
     secondary_StrangeRatioHist->Write();
     outputFile->Close();
+
+    TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distribution", 2500, 2500);
+    c5->Divide(1, 1);
+
+    c5->cd(1);
+    observable_F_sc_Distribution->SetTitle("Observable F_{sc} distribution");
+    observable_F_sc_Distribution->GetXaxis()->SetTitle("Ratio (dimensionless)");
+    observable_F_sc_Distribution->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution->DrawCopy();
+
+    
 
     file->Close();
 }
