@@ -11,12 +11,39 @@
 #include "MyQuark.h"
 #include "TCanvas.h"
 #include "TPythia8.h"
+#include "TRandom3.h"
 #include "TParticle.h"
 #include <unordered_set>
 #include "TClonesArray.h"
 #include <TLorentzVector.h>
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
+
+
+fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE)
+{
+    Double_t E_old = jet.E();
+    Double_t E_new = E_old - deltaE;
+
+    Double_t m  = jet.m();
+    Double_t p2 = jet.px()*jet.px() + jet.py()*jet.py() + jet.pz()*jet.pz();
+    Double_t p  = std::sqrt(p2);
+
+    Double_t p_new2 = E_new*E_new - m*m;
+
+    // We suppose that the energy loss does not change the direction of the new 3-momentum vector that shows compatibility (within the Minkowski metric) with the new energy.
+    // Thus, we calculate the factor that keeps the proportionality between the old and new momentum vectors and then apply it to each component of the old momentum vector.
+    Double_t p_new = std::sqrt(p_new2);
+    Double_t scale = p_new / p;
+
+    Double_t px_new = scale * jet.px();
+    Double_t py_new = scale * jet.py();
+    Double_t pz_new = scale * jet.pz();
+
+    fastjet::PseudoJet q(px_new, py_new, pz_new, E_new); // This composes the new 4-momentum of the quenched jet with redefined energy and momentum
+    return q;
+}
+
 
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
@@ -64,9 +91,13 @@ void jetClassification1(const char* fileName)
     Int_t finalParticleMotherPdg = 0;
     Int_t finalParticleSecondMotherPdg = 0;
     Int_t finalParticleThirdMotherPdg = 0;
+    Int_t wPtFlag;
+    Float_t PbNucleusRadius = 7; // fm
     
     TLorentzVector vec_s(0,0,0,0);
     TLorentzVector vec_c(0,0,0,0);
+
+    TRandom3 generator(0);
 
     //---------------------------------------------------------------------------------------------------------
     // Initialization of histograms
@@ -82,7 +113,14 @@ void jetClassification1(const char* fileName)
     TH1F *missingStrangeConstituentsPdgMap = new TH1F("strangeMissingMap","Potential particles' PDGs missing in the strange list", 5000, -2500, 2500);
     TH1F *missingCharmConstituentsPdgMap = new TH1F("charmMissingMap","Potential particles' PDGs missing in the charm list", 5000, -2500, 2500);
 
-    TH1F *observable_F_sc_Distribution = new TH1F("observable_F_sc_Distribution", "Strange jet by charm jet p_{T} - F_{sc} distribution", 100, 0, 10);
+    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10 = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10", 100, 0, 10);    
+    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10 = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10", 100, 0, 10);
+
+    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss funtions", 100, 0, 10);    
+    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss funtions", 100, 0, 10);
+
+    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function", 100, 0, 10);    
+    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function", 100, 0, 10);
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -116,11 +154,6 @@ void jetClassification1(const char* fileName)
 
     for ( Long64_t ni = 0; ni < ne; ni++)
     {
-
-        //std::cout << std::endl;
-        //std::cout << "NEW EVENT ITERATION" << std::endl;
-        //std::cout << std::endl;
-
         ttree->GetEntry(ni);
 
         vec_s.SetPtEtaPhiM(10,0,0,(3.141592));
@@ -159,6 +192,8 @@ void jetClassification1(const char* fileName)
         {
             MyJet *fp = static_cast<MyJet *>(jets_array->At(nj));
 
+            
+            wPtFlag = fp->wPtFlag; // Again, even though it is rewritten for each (final) particle kept in the TTree, it is the same for all particles within the event nj
             fpPx = fp->fPx;
             fpPy = fp->fPy;
             fpPz = fp->fPz;
@@ -386,7 +421,9 @@ void jetClassification1(const char* fileName)
             }
         } // Notice how it was a very straight forward implementation: all jets of charm were combined with all jets of strange in the same event
 
-        // Before proceding into a similar loop to fill F_sc (check on November 6th, 2025 research log), I'm going to select the jets that fulfill the criteria established in the log
+        //---------------------------------------------------------------------------------------------------------
+        // F_sc observable calculation
+        //---------------------------------------------------------------------------------------------------------
 
         Float_t backToback_lowerLimit = 7*TMath::Pi()/8;
         Float_t backToback_upperLimit = 11*TMath::Pi()/8;
@@ -413,28 +450,110 @@ void jetClassification1(const char* fileName)
             }
         }
 
-        // For more information about the cuts in physical quantities associated to jets, please refer to November 10th, 2025 research log
+        // At this point, we have the leading jets for both flavors well defined
 
         Float_t deltaPhi = TMath::Abs(event_charmed_jet.phi() - event_strange_jet.phi());
 
-        //Float_t charmJet_absEta = TMath::Abs(event_charmed_jet.eta());
-        //Float_t strangeJet_absEta = TMath::Abs(event_strange_jet.eta());
+        if (deltaPhi >= backToback_lowerLimit || deltaPhi < backToback_upperLimit) // Ensuring the back-to-back condition is fulfilled for all jets from now on
+        { 
 
-        //if ( charmJet_absEta < 1 || strangeJet_absEta < 1) continue;
-
-        if (deltaPhi >= backToback_lowerLimit || deltaPhi < backToback_upperLimit)
-        {
+            //---------------------------------------------------------------------------------------------------------
+            // No energy loss block
+            //---------------------------------------------------------------------------------------------------------
+            
             Float_t F_sc = event_strange_jet.pt() / event_charmed_jet.pt(); // New observable - for more information, check November 6th, 2025 research log
-            observable_F_sc_Distribution->Fill(F_sc);
+
+            if (wPtFlag == 1) // Then the W boson pT is greater than 10 GeV/c
+            {
+                observable_F_sc_Distribution_wBosonPt_greaterThan10->Fill(F_sc);
+            }
+            else // Then the W boson pT is smaller than or equal to 10 GeV/c
+            {
+                observable_F_sc_Distribution_wBosonPt_smallerThan10->Fill(F_sc);
+            }
+            
+            // The plot above is the one without the QGP energy loss consideration
+            // Now, we shall procede to calculate the entries of a plot which contemplates the energy loss due to the medium created in an artificial Pb-Pb collision
+
+            //---------------------------------------------------------------------------------------------------------
+            // Energy loss block (b=0)
+            //---------------------------------------------------------------------------------------------------------
+
+            Float_t randomRho = generator.Uniform(0, PbNucleusRadius);
+            Float_t randomPhi = generator.Uniform(0, 2*TMath::Pi());
+
+            // We take the jets we own and place them into a new polar coordinate system. The jets are then placed in (randomRho, randomPhi).
+            // Since by hypotesis we'll take them as back to back, this point will be the starting point for both of them in this new system.
+            // Our intentions are to calculate the path lenght each jet would have within a Pb nucleus if they were created at this random point and traveled in opposite directions.
+            // We can account for two situations: either the impact parameter is zero (central collision) or it has a finite value (peripheral collision). For the time being, we'll take b = 0.
+
+            // Charm jet path length calculation
+            Float_t phi_tot_charm = randomPhi - event_charmed_jet.phi();
+            Float_t path_length_charm;
+            Float_t path_length_charm_1 = -randomRho * TMath::Cos(phi_tot_charm) + TMath::Sqrt( TMath::Power(PbNucleusRadius, 2) - TMath::Power(randomRho * TMath::Sin(phi_tot_charm), 2) );
+            Float_t path_length_charm_2 = -randomRho * TMath::Cos(phi_tot_charm) - TMath::Sqrt( TMath::Power(PbNucleusRadius, 2) - TMath::Power(randomRho * TMath::Sin(phi_tot_charm), 2) );
+
+            if (path_length_charm_1 > 0)
+            {
+                path_length_charm = path_length_charm_1;
+            }
+            else
+            {
+                path_length_charm = path_length_charm_2;
+            }
+
+            // Strange jet path length calculation
+            Float_t phi_tot_strange = randomPhi - event_strange_jet.phi();
+            Float_t path_length_strange;
+            Float_t path_length_strange_1 = -randomRho * TMath::Cos(phi_tot_strange) + TMath::Sqrt( TMath::Power(PbNucleusRadius, 2) - TMath::Power(randomRho * TMath::Sin(phi_tot_strange), 2) );
+            Float_t path_length_strange_2 = -randomRho * TMath::Cos(phi_tot_strange) - TMath::Sqrt( TMath::Power(PbNucleusRadius, 2) - TMath::Power(randomRho * TMath::Sin(phi_tot_strange), 2) );
+
+            if (path_length_strange_1 > 0)
+            {
+                path_length_strange = path_length_strange_1;
+            }
+            else
+            {
+                path_length_strange = path_length_strange_2;
+            }
+
+            // Applying a simplified energy loss model to check consistency
+            Float_t dE_dx_charm = 2; // GeV/fm
+            Float_t dE_dx_strange = 8; // GeV/fm
+            Float_t dE_dx_both = 4; // GeV/fm
+
+            Float_t deltaE_charm = dE_dx_charm * path_length_charm;
+            Float_t deltaE_strange = dE_dx_strange * path_length_strange;
+
+            Float_t deltaE_charm_both = dE_dx_both * path_length_charm;
+            Float_t deltaE_strange_both = dE_dx_both * path_length_strange;
+
+            //With the energy shift calculated, we can now redefine the jet 4-momenta accordingly using the quenchedJet function defined at the beginning of this code
+            fastjet::PseudoJet quenched_charm_jet = quenchedJet(event_charmed_jet, deltaE_charm);
+            fastjet::PseudoJet quenched_strange_jet = quenchedJet(event_strange_jet, deltaE_strange);
+            fastjet::PseudoJet quenched_charm_jet_both = quenchedJet(event_charmed_jet, deltaE_charm_both);
+            fastjet::PseudoJet quenched_strange_jet_both = quenchedJet(event_strange_jet, deltaE_strange_both);
+
+            // Now we can recalculate F_sc with the quenched jets
+            Float_t F_sc_quenched = quenched_strange_jet.pt() / quenched_charm_jet.pt();
+            Float_t F_sc_quenched_both = quenched_strange_jet_both.pt() / quenched_charm_jet_both.pt();
+
+            if (wPtFlag == 1) // Then the W boson pT is greater than 10 GeV/c
+            {
+                observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Fill(F_sc_quenched);
+                observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Fill(F_sc_quenched_both);
+            }
+            else // Then the W boson pT is smaller than or equal to 10 GeV/c
+            {
+                observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Fill(F_sc_quenched);
+                observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Fill(F_sc_quenched_both);
+            }
         }
-        
 
         particles_fastjet.clear();
         jets.clear();
         jets_array->Clear();
         quarks->Clear();
-        
-
     
     } // End of event loop equivalent
     
@@ -505,16 +624,50 @@ void jetClassification1(const char* fileName)
     secondary_StrangeRatioHist->Write();
     outputFile->Close();
 
-    TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distribution", 2500, 2500);
-    c5->Divide(1, 1);
+    TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distributions no energy losses", 2500, 2500);
+    c5->Divide(1, 2);
 
     c5->cd(1);
-    observable_F_sc_Distribution->SetTitle("Observable F_{sc} distribution");
-    observable_F_sc_Distribution->GetXaxis()->SetTitle("Ratio (dimensionless)");
-    observable_F_sc_Distribution->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->DrawCopy();
 
-    
+    c5->cd(2);
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->DrawCopy();
+
+    TCanvas *c6 = new TCanvas("c6", "Observable F_{sc} distributions different energy losses", 2500, 2500);
+    c6->Divide(1, 2);
+
+    c6->cd(1);
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->DrawCopy();
+
+    c6->cd(2);
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->DrawCopy();
+
+    TCanvas *c7 = new TCanvas("c7", "Observable F_{sc} distributions same energy losses", 2500, 2500);
+    c7->Divide(1, 2);
+
+    c7->cd(1);
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->DrawCopy();
+
+    c7->cd(2);
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->DrawCopy();
 
     file->Close();
 }

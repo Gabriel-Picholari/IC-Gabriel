@@ -29,6 +29,8 @@ class MyJet: public TObject
     Int_t       finalParticleSecondMotherPdg;
     Int_t       finalParticleThirdMotherPdg;
 
+    Int_t       wPtFlag; // 1 if W boson pT > 10 GeV/c, 0 otherwise
+
   ClassDef(MyJet, 6)
 };
 
