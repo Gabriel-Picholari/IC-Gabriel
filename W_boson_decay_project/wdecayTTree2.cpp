@@ -13,7 +13,7 @@
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 100, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -26,8 +26,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
 
-  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off_cutPT_10Gev_on.root", "RECREATE"); 
-  // cutPT_10Gev_on/off => trees filled with data regarding only final particles whose pT > 0 10 GeV or pT <= 10 GeV, respectively
+  TFile *outfile = new TFile("wdecay2_seed_1_100_hardQCD_all_off.root", "RECREATE"); 
 
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
@@ -39,9 +38,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   //---------------------------------------------------------------------------------------------------------
 
   TH1F *distanciaAngular = new TH1F("h1", "Angular separation between quarks cbar(c) and s(sbar)", 100, 0, 10);
-  TH1F *bosonW_rapidity_distribution = new TH1F("bosonW_rapidity", "Boson W^{+-} rapidity distribution", 100, 0, 100);
-  TH1F *bosonW_pT_distribution = new TH1F("bosonW_pT", "Boson W^{+-} transverse momentum distribution", 100, 0, 100);
-  TH1F *bosonW_pT_distribution_cut = new TH1F("bosonW_pT_cut", "Boson W^{+-} transverse momentum distribution with cut", 100, 0, 100);
+  TH1F *bosonW_rapidity_distribution = new TH1F("bosonW_rapidity", "Initial W^{+-} boson rapidity distribution", 100, 0, 100);
+  TH1F *bosonW_pT_distribution = new TH1F("bosonW_pT", "Initial W^{+-} boson transverse momentum distribution", 100, 0, 100);
 
 
   //---------------------------------------------------------------------------------------------------------
@@ -66,9 +64,14 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 
   TClonesArray *particles = new TClonesArray("TParticle", 1000);
 
+  Int_t wPtFlag = 0;
+
   // Event loop
   for ( Int_t iev = 0; iev < nev; iev++)
   {
+
+    wPtFlag = 0;    // By default, we set the flag to 0 at the beginning of each event, that is, we assume the W boson pT is <= 10 GeV/c
+
     pythia8.GenerateEvent();
     if (iev == 0) pythia8.EventListing();
     pythia8.ImportParticles(particles, "All");
@@ -78,10 +81,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
     Int_t nfp = 0;
     Int_t nfp2 = 0;
     
-    //std::cout << std::endl;
-    //std::cout << "NEW EVENT ITERATION" << std::endl;
-    //std::cout << std::endl;
-
+    bool foundW = false;
 
     // Particle loop
     for (Int_t ip = 0; ip < np; ip++)
@@ -90,35 +90,27 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       Int_t ist = part->GetStatusCode();
       Int_t partPdg = part->GetPdgCode();
 
-      /*
-      std::cout << "ip = " << ip << "\t PDG = " << partPdg << "\t firstDaughter = " << part->GetFirstDaughter() << std::endl;
-      Int_t fd = 0, ld = 0;
-      if (abs(partPdg) == 24) 
-      {
-        fd = part->GetFirstDaughter();
-        ld = part->GetLastDaughter();
-        TParticle *partFD = (TParticle*) particles->At(fd);
-        TParticle *partLD = (TParticle*) particles->At(ld);
-        std::cout << "Stack number: " << ip << " ; First daughter: " << fd << " ; Last daughter: " << ld << std::endl;
-        std::cout << "PDG first daughter: " << partFD->GetPdgCode() << "; PDG last daughter: " << partLD->GetPdgCode() << std::endl;
-        std::cout << "------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-      }
-      */
-
-      if (abs(partPdg) == 24)
+      if (!foundW && abs(partPdg) == 24)
       {
         TLorentzVector vec;
         vec.SetPxPyPzE(part->Px(), part->Py(), part->Pz(), part->Energy());
-
-        Float_t bosonW_rapidity = vec.Rapidity();
-        bosonW_rapidity_distribution->Fill(bosonW_rapidity);
-
         Float_t bosonW_pT = vec.Pt();
-        bosonW_pT_distribution->Fill(bosonW_pT);
-        //if (bosonW_pT > 10) continue;    // Regarding cut_pT_10Gev_off
-        if (bosonW_pT <= 10) continue; // Regarding cut_pT_10Gev_on
-        bosonW_pT_distribution_cut->Fill(bosonW_pT);
 
+        if (bosonW_pT > 0.0)
+        {
+
+        foundW = true;
+
+          Float_t bosonW_rapidity = vec.Rapidity();
+          bosonW_rapidity_distribution->Fill(bosonW_rapidity);
+
+          bosonW_pT_distribution->Fill(bosonW_pT);
+
+          if (bosonW_pT > 10)
+          { 
+            wPtFlag = 1;
+          }
+        }
       }
 
       if (ist > 0)
@@ -137,6 +129,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         fp->fVx   = part->Vx();
         fp->fVy   = part->Vy();
         fp->fVz   = part->Vz();
+        fp->wPtFlag = wPtFlag; // Even thoug it is rewritten for each particle, it is the same for all particles within the event
 
         fp->finalParticlePdg = partPdg; 
         Int_t motherIndex = part->GetFirstMother();
@@ -159,8 +152,6 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         
         Int_t index = ip;
 
-        Bool_t hasCharmedHadron, hasStrangeHadron = false;
-
         while (index > 1)                                                      // The loop continues until the particle reaches the proton
         {
           TParticle *ipPart = (TParticle*)particles->At(index);
@@ -169,10 +160,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 
           Int_t motherIdx1st = ipPart->GetFirstMother();                       // Takes the index of the particle's mother
           TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);     // Creates a pointer to the mother
-          Int_t motherPdg= motherPart->GetPdgCode();                           // Takes the pdg of the mother
-
-          //std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
-          //std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx1st << "; " << "Mother PDG: " << motherPdg << std::endl;                   
+          Int_t motherPdg= motherPart->GetPdgCode();                           // Takes the pdg of the mother               
 
           Double_t deltaR_s, deltaR_c = 0;
           Double_t daughterEta_c, daughterPhi_c = 0;
@@ -277,7 +265,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   bosonW_rapidity_distribution->DrawCopy();
 
   TCanvas *c3 = new TCanvas("c3", "W^{+-} p_{T} distribution", 2500, 2500);
-  c3->Divide(1, 2);
+  c3->Divide(1, 1);
 
   c3->cd(1);
   bosonW_pT_distribution->SetTitle("W^{+-} boson p_{T} distribution");
@@ -285,108 +273,5 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   bosonW_pT_distribution->GetYaxis()->SetTitle("Frequency");
   bosonW_pT_distribution->DrawCopy();
 
-  c3->cd(2);
-  bosonW_pT_distribution_cut->SetTitle("W^{+-} boson p_{T} distribution with cut");
-  bosonW_pT_distribution_cut->GetXaxis()->SetTitle("p_{T} [GeV/c]");
-  bosonW_pT_distribution_cut->GetYaxis()->SetTitle("Frequency");
-  bosonW_pT_distribution_cut->DrawCopy();
-
   outfile->Close();
 }
-
-/*
-
-while (index > 1)                                                    // O loop continua até que a partícula 
-{
-  TParticle *ipPart = (TParticle*)particles->At(index);
-  Int_t ipPdg = ipPart->GetPdgCode();                                // Toma o pdg da particula atual 
-  Int_t motherIdx1st = ipPart->GetFirstMother();                     // Toma o índice da mãe da particula
-  TParticle *motherPart = (TParticle*)particles->At(motherIdx1st);   // Cria um ponteiro na mãe
-  Int_t motherPdg= motherPart->GetPdgCode();                         // Toma o pdg da mãe
-
-  std::cout << "--------------------------------------------------------------------------------------------------------------------------" << std::endl;
-  std::cout << "Particle Index:" << index << ";" << "Particle PDG: " << ipPdg << ";" << "Mother Index: " <<  motherIdx1st << "; " << "Mother PDG: " << motherPdg << std::endl;
-
-  if (abs(ipPdg) != 4 && abs(ipPdg) != 3)                          // Verifica se a particula atual é tipo sinal
-  {
-    index = motherIdx1st;
-    continue;
-  }                         
-
-  if(abs(motherPdg) == 24)                                         // Verifica se a particula é de fato sinal
-  {
-    MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
-
-    mq->qPdg  = ipPdg;
-    mq->qpT = ipPart->Pt();
-    mq->qEta = ipPart->Eta();
-    mq->qPhi = ipPart->Phi();
-
-    count++;
-  
-    if (abs(ipPdg) == 3) fp->signalType = "strange";
-    if (abs(ipPdg) == 4) fp->signalType = "charm";
-  }
-  else
-  {
-    index = motherIdx1st;
-  }
-}
-
-*/
-
-/*
-while (index > 1) 
-{
-
-  TParticle *ipPart = (TParticle*)particles->At(index);
-  Int_t ipPdg = ipPart->GetPdgCode();
-
-  std::vector<int> motherList = pythia8.event[index]->motherList();      // Vetor das partículas mães
-  Int_t bestMotherIdx = -1;                                             // Inicialização da mãe sinal            
-  Double_t minDeltaR = std::numeric_limits<double>::max();              // Inicialização do Delta
-
-  for (Int_t motherIdx : motherList) 
-  {
-    TParticle *motherPart = (TParticle*)particles->At(motherIdx);
-    Int_t motherPdg = motherPart->GetPdgCode();
-
-    Int_t grandmotherIdx = motherPart->GetFirstMother();                        //Verifica se a mãe do quark de interesse é um bóson W (o que configura o quark como sinal)
-    TParticle *grandmotherPart = (TParticle*)particles->At(grandmotherIdx);
-    Int_t grandmotherPdg = grandmotherPart->GetPdgCode();
-
-    if ( (abs(motherPdg) == 4 || abs(motherPdg) == 3) && abs(grandmotherPdg) == 24 )
-    {
-      Double_t deltaR = sqrt( pow(ipPart->Eta() - motherPart->Eta(), 2) + pow(ipPart->Phi() - motherPart->Phi(), 2) );        // Matching geométrico
-
-      if (deltaR < minDeltaR) 
-      {
-        minDeltaR = deltaR;
-        bestMotherIdx = motherIdx;
-      }
-    }
-  }
-
-  if (bestMotherIdx != -1)          // Se a partícula passou pela verificação e é sinal, então fazemos o tagging
-  {
-    TParticle *bestMother = (TParticle*)particles->At(bestMotherIdx);
-    Int_t bestMotherPdg = bestMother->GetPdgCode();
-
-    MyQuark *mq = static_cast<MyQuark *>(quarks->New(nfp2++));
-    mq->qPdg  = bestMotherPdg;
-    mq->qpT = bestMother->Pt();
-    mq->qEta = bestMother->Eta();
-    mq->qPhi = bestMother->Phi();
-
-    if (abs(bestMotherPdg) == 3) fp->signalType = "strange";
-    if (abs(bestMotherPdg) == 4) fp->signalType = "charm";
-    break;
-
-  } 
-  else          // Se o índice da mãe não foi modificado (permanece -1, como foi inicializado) então a partícula não é sinal e devemos subir
-  {
-    Int_t motherIdx1st = ipPart->GetFirstMother();
-    index = motherIdx1st;
-  }
-}
-*/
