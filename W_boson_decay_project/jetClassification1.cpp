@@ -10,6 +10,7 @@
 #include "TSystem.h"
 #include "MyQuark.h"
 #include "TCanvas.h"
+#include <algorithm>
 #include "TPythia8.h"
 #include "TRandom3.h"
 #include "TParticle.h"
@@ -116,11 +117,42 @@ void jetClassification1(const char* fileName)
     TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10 = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10", 100, 0, 10);    
     TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10 = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10", 100, 0, 10);
 
-    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss funtions", 100, 0, 10);    
-    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss funtions", 100, 0, 10);
+    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss funtions and null impact parameter", 100, 0, 10);    
+    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss funtions and null impact parameter", 100, 0, 10);
 
-    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function", 100, 0, 10);    
-    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function", 100, 0, 10);
+    TH1F *observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function and null impact parameter", 100, 0, 10);    
+    TH1F *observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses = new TH1F("observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function and null impact parameter", 100, 0, 10);
+
+    TH1F *second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss funtions and non null impact parameter", 100, 0, 10);    
+    TH1F *second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss funtions and non null impact parameter", 100, 0, 10);
+
+    TH1F *second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function and non null impact parameter", 100, 0, 10);    
+    TH1F *second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function and non null impact parameter", 100, 0, 10);
+
+
+    auto normalize = [](TH1F* h) {
+        Double_t integral = h->Integral();
+        if (integral > 0) h->Scale(1.0 / integral);
+    };
+
+    auto path_length_in_circle = [&](Double_t xc, Double_t yc, Double_t x0, Double_t y0, Double_t phi, Double_t R) -> Double_t
+    {
+        Double_t dx = x0 - xc;
+        Double_t dy = y0 - yc;
+
+        Double_t A = dx * std::cos(phi) + dy * std::sin(phi);
+        Double_t B = dx*dx + dy*dy - R*R;
+
+        Double_t Delta = A*A - B;
+        if (Delta < 0.0) 
+        {
+            return 0.0;
+        }
+
+        Double_t t_exit = -A + std::sqrt(Delta);
+        return t_exit;
+    };
+
 
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
@@ -454,8 +486,11 @@ void jetClassification1(const char* fileName)
 
         Float_t deltaPhi = TMath::Abs(event_charmed_jet.phi() - event_strange_jet.phi());
 
-        if (deltaPhi >= backToback_lowerLimit || deltaPhi < backToback_upperLimit) // Ensuring the back-to-back condition is fulfilled for all jets from now on
-        { 
+        if (deltaPhi >= backToback_lowerLimit && deltaPhi < backToback_upperLimit) // Ensuring the back-to-back condition is fulfilled for all jets from now on
+        {
+            //---------------------------------------------------------------------------------------------------------
+            // IMPACT PARAMETER ZERO SECTION
+            //---------------------------------------------------------------------------------------------------------
 
             //---------------------------------------------------------------------------------------------------------
             // No energy loss block
@@ -548,6 +583,74 @@ void jetClassification1(const char* fileName)
                 observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Fill(F_sc_quenched);
                 observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Fill(F_sc_quenched_both);
             }
+
+            //---------------------------------------------------------------------------------------------------------
+            // NON NULL IMPACT PARAMETER SECTION
+            //---------------------------------------------------------------------------------------------------------
+
+            Double_t bmax = 2.0 * PbNucleusRadius;
+            Double_t u = generator.Uniform(0.0, 1.0);
+            Double_t b = bmax * std::sqrt(u);
+
+            Double_t x0, y0;
+
+            while (true) 
+            {
+                // 1) Initial guess for (x0, y0)
+                x0 = generator.Uniform(-PbNucleusRadius, PbNucleusRadius);
+                y0 = generator.Uniform(-PbNucleusRadius, PbNucleusRadius);
+
+                // 2) Check if the point is inside both nuclei (overlap region)
+                Double_t dxA = x0 + 0.5 * b;
+                Double_t dyA = y0;
+                Double_t dxB = x0 - 0.5 * b;
+                Double_t dyB = y0;
+
+                bool insideA = (dxA*dxA + dyA*dyA <= PbNucleusRadius*PbNucleusRadius);
+                bool insideB = (dxB*dxB + dyB*dyB <= PbNucleusRadius*PbNucleusRadius);
+
+                if (insideA && insideB) break; // Valid point encontered
+            }
+
+            Double_t xcA = -0.5 * b;
+            Double_t ycA = 0.0;
+            Double_t xcB = +0.5 * b;
+            Double_t ycB = 0.0;
+
+            Double_t L_A_charm = path_length_in_circle(xcA, ycA, x0, y0, event_charmed_jet.phi(), PbNucleusRadius);
+            Double_t L_B_charm = path_length_in_circle(xcB, ycB, x0, y0, event_charmed_jet.phi(), PbNucleusRadius);
+            Double_t L_charm = std::min(L_A_charm, L_B_charm);
+
+            Double_t L_A_strange = path_length_in_circle(xcA, ycA, x0, y0, event_strange_jet.phi(), PbNucleusRadius);
+            Double_t L_B_strange = path_length_in_circle(xcB, ycB, x0, y0, event_strange_jet.phi(), PbNucleusRadius);
+            Double_t L_strange = std::min(L_A_strange, L_B_strange);
+
+            Float_t second_deltaE_charm = dE_dx_charm * L_charm;
+            Float_t second_deltaE_strange = dE_dx_strange * L_strange;
+
+            Float_t second_deltaE_charm_both = dE_dx_both * L_charm;
+            Float_t second_deltaE_strange_both = dE_dx_both * L_strange;
+
+            fastjet::PseudoJet second_quenched_charm_jet = quenchedJet(event_charmed_jet, second_deltaE_charm);
+            fastjet::PseudoJet second_quenched_strange_jet = quenchedJet(event_strange_jet, second_deltaE_strange);
+            fastjet::PseudoJet second_quenched_charm_jet_both = quenchedJet(event_charmed_jet, second_deltaE_charm_both);
+            fastjet::PseudoJet second_quenched_strange_jet_both = quenchedJet(event_strange_jet, second_deltaE_strange_both);
+
+            // Now we can recalculate F_sc with the quenched jets
+            Float_t second_F_sc_quenched = second_quenched_strange_jet.pt() / second_quenched_charm_jet.pt();
+            Float_t second_F_sc_quenched_both = second_quenched_strange_jet_both.pt() / second_quenched_charm_jet_both.pt();
+
+            if (wPtFlag == 1) // Then the W boson pT is greater than 10 GeV/c
+            {
+                second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Fill(second_F_sc_quenched);
+                second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Fill(second_F_sc_quenched_both);
+            }
+            else // Then the W boson pT is smaller than or equal to 10 GeV/c
+            {
+                second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Fill(second_F_sc_quenched);
+                second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Fill(second_F_sc_quenched_both);
+            }
+
         }
 
         particles_fastjet.clear();
@@ -556,6 +659,59 @@ void jetClassification1(const char* fileName)
         quarks->Clear();
     
     } // End of event loop equivalent
+
+
+    TH1F* observable_F_sc_g10_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_greaterThan10->Clone("observable_F_sc_g10_norm");
+    TH1F* observable_F_sc_l10_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_smallerThan10->Clone("observable_F_sc_l10_norm");
+    TH1F* observable_F_sc_g10_diff_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Clone("observable_F_sc_g10_diff_norm");
+    TH1F* observable_F_sc_l10_diff_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Clone("observable_F_sc_l10_diff_norm");
+
+    TH1F* observable_F_sc_g10_same_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Clone("observable_F_sc_g10_same_norm");
+    TH1F* observable_F_sc_l10_same_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Clone("observable_F_sc_l10_same_norm");
+
+    // Normalize the copies
+    normalize(observable_F_sc_g10_norm);
+    normalize(observable_F_sc_l10_norm);
+    normalize(observable_F_sc_g10_diff_norm);
+    normalize(observable_F_sc_l10_diff_norm);
+    normalize(observable_F_sc_g10_same_norm);
+    normalize(observable_F_sc_l10_same_norm);
+
+    TH1F* ratio_greater10_diff = (TH1F*) observable_F_sc_g10_diff_norm->Clone("ratio_greater10_diff");
+    ratio_greater10_diff->Divide(observable_F_sc_g10_norm);
+
+    TH1F* ratio_smaller10_diff = (TH1F*) observable_F_sc_l10_diff_norm->Clone("ratio_smaller10_diff");
+    ratio_smaller10_diff->Divide(observable_F_sc_l10_norm);
+
+    TH1F* ratio_greater10_same = (TH1F*) observable_F_sc_g10_same_norm->Clone("ratio_greater10_same");
+    ratio_greater10_same->Divide(observable_F_sc_g10_norm);
+
+    TH1F* ratio_smaller10_same = (TH1F*) observable_F_sc_l10_same_norm->Clone("ratio_smaller10_same");
+    ratio_smaller10_same->Divide(observable_F_sc_l10_norm);
+
+    // ---------------------------------------------------------------------------------------------------------
+
+    TH1F* second_F_sc_g10_diff_norm = (TH1F*) second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Clone("second_F_sc_g10_diff_norm");
+    TH1F* second_F_sc_l10_diff_norm = (TH1F*) second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Clone("second_F_sc_l10_diff_norm");
+    TH1F* second_F_sc_g10_same_norm = (TH1F*) second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Clone("second_F_sc_g10_same_norm");
+    TH1F* second_F_sc_l10_same_norm = (TH1F*) second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Clone("second_F_sc_l10_same_norm");
+
+    normalize(second_F_sc_g10_diff_norm);
+    normalize(second_F_sc_l10_diff_norm);
+    normalize(second_F_sc_g10_same_norm);
+    normalize(second_F_sc_l10_same_norm);
+
+    TH1F* second_ratio_greater10_diff = (TH1F*) second_F_sc_g10_diff_norm->Clone("second_ratio_greater10_diff");
+    second_ratio_greater10_diff->Divide(observable_F_sc_g10_norm);
+
+    TH1F* second_ratio_smaller10_diff = (TH1F*) second_F_sc_l10_diff_norm->Clone("second_ratio_smaller10_diff");
+    second_ratio_smaller10_diff->Divide(observable_F_sc_l10_norm);
+
+    TH1F* second_ratio_greater10_same = (TH1F*) second_F_sc_g10_same_norm->Clone("second_ratio_greater10_same");
+    second_ratio_greater10_same->Divide(observable_F_sc_g10_norm);
+
+    TH1F* second_ratio_smaller10_same = (TH1F*) second_F_sc_l10_same_norm->Clone("second_ratio_smaller10_same");
+    second_ratio_smaller10_same->Divide(observable_F_sc_l10_norm);
     
     //---------------------------------------------------------------------------------------------------------
     // Plotting histograms
@@ -616,14 +772,6 @@ void jetClassification1(const char* fileName)
     missingCharmConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
     missingCharmConstituentsPdgMap->Draw();
 
-    TFile *outputFile = new TFile("histogramas_jetR_07_fullList.root", "RECREATE");
-    invariantMass->Write();
-    primary_CharmRatioHist->Write();
-    secondary_CharmRatioHist->Write();
-    primary_StrangeRatioHist->Write();
-    secondary_StrangeRatioHist->Write();
-    outputFile->Close();
-
     TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distributions no energy losses", 2500, 2500);
     c5->Divide(1, 2);
 
@@ -631,43 +779,154 @@ void jetClassification1(const char* fileName)
     observable_F_sc_Distribution_wBosonPt_greaterThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->Draw();
 
     c5->cd(2);
     observable_F_sc_Distribution_wBosonPt_smallerThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10");
     observable_F_sc_Distribution_wBosonPt_smallerThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->Draw();
 
-    TCanvas *c6 = new TCanvas("c6", "Observable F_{sc} distributions different energy losses", 2500, 2500);
+    TCanvas *c6 = new TCanvas("c6", "Observable F_{sc} distributions different energy losses for null impact parameter", 2500, 2500);
     c6->Divide(1, 2);
 
     c6->cd(1);
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Draw();
 
     c6->cd(2);
     observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Draw();
 
-    TCanvas *c7 = new TCanvas("c7", "Observable F_{sc} distributions same energy losses", 2500, 2500);
+    TCanvas *c7 = new TCanvas("c7", "Observable F_{sc} distributions same energy losses for null impact parameter", 2500, 2500);
     c7->Divide(1, 2);
 
     c7->cd(1);
     observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Draw();
 
     c7->cd(2);
     observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->DrawCopy();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Draw();
+
+    TCanvas *c8 = new TCanvas("c8", "Observable F_{sc} distributions of normalized ratio for same energy losses and null impact parameter", 2500, 2500);
+    c8->Divide(1, 2);
+
+    c8->cd(1);
+    ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions");
+    ratio_greater10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    ratio_greater10_same->GetYaxis()->SetTitle("Frequency");
+    ratio_greater10_same->Draw();
+
+    c8->cd(2);
+    ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions");
+    ratio_smaller10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    ratio_smaller10_same->GetYaxis()->SetTitle("Frequency");
+    ratio_smaller10_same->Draw();
+
+    TCanvas *c9 = new TCanvas("c9", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and null impact parameter", 2500, 2500);
+    c9->Divide(1, 2);
+
+    c9->cd(1);
+    ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    ratio_greater10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    ratio_greater10_diff->GetYaxis()->SetTitle("Frequency");
+    ratio_greater10_diff->Draw();
+
+    c9->cd(2);
+    ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    ratio_smaller10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    ratio_smaller10_diff->GetYaxis()->SetTitle("Frequency");
+    ratio_smaller10_diff->Draw();
+
+    TCanvas *c10 = new TCanvas("c10", "Observable F_{sc} distributions different energy losses for non null impact parameter", 2500, 2500);
+    c10->Divide(1, 2);
+
+    c10->cd(1);
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions and non null impact parameter");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Draw();
+
+    c10->cd(2);
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions and non null impact parameter");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Draw();
+
+    TCanvas *c11 = new TCanvas("c11", "Observable F_{sc} distributions same energy losses for non null impact parameter", 2500, 2500);
+    c11->Divide(1, 2);
+
+    c11->cd(1);
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function and non null impact parameter");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Draw();
+
+    c11->cd(2);
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function and non null impact parameter");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Draw();
+
+    TCanvas *c12 = new TCanvas("c12", "Observable F_{sc} distributions of normalized ratio for same energy losses and non null impact parameter", 2500, 2500);
+    c12->Divide(1, 2);
+
+    c12->cd(1);
+    second_ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions");
+    second_ratio_greater10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_ratio_greater10_same->GetYaxis()->SetTitle("Frequency");
+    second_ratio_greater10_same->Draw();
+
+    c12->cd(2);
+    second_ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions");
+    second_ratio_smaller10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_ratio_smaller10_same->GetYaxis()->SetTitle("Frequency");
+    second_ratio_smaller10_same->Draw();
+
+    TCanvas *c13 = new TCanvas("c13", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and non null impact parameter", 2500, 2500);
+    c13->Divide(1, 2);
+
+    c13->cd(1);
+    second_ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    second_ratio_greater10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_ratio_greater10_diff->GetYaxis()->SetTitle("Frequency");
+    second_ratio_greater10_diff->Draw();
+
+    c13->cd(2);
+    second_ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    second_ratio_smaller10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
+    second_ratio_smaller10_diff->GetYaxis()->SetTitle("Frequency");
+    second_ratio_smaller10_diff->Draw();
+
+    TFile *outputFile = new TFile("histogramas_jetR_07_fullList.root", "RECREATE");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->Write();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->Write();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Write();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Write();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Write();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Write();
+    ratio_greater10_same->Write();
+    ratio_smaller10_same->Write();
+    ratio_greater10_diff->Write();
+    ratio_smaller10_diff->Write();
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Write();
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Write();
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Write();
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Write();
+    second_ratio_greater10_same->Write();
+    second_ratio_smaller10_same->Write();
+    second_ratio_greater10_diff->Write();
+    second_ratio_smaller10_diff->Write();
+    outputFile->Close();
 
     file->Close();
 }
