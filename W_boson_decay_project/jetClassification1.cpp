@@ -23,28 +23,16 @@
 
 fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE)
 {
-    Double_t E_old = jet.E();
-    Double_t E_new = E_old - deltaE;
+    TLorentzVector jetVec(jet.px(), jet.py(), jet.pz(), jet.E());
 
-    Double_t m  = jet.m();
-    Double_t p2 = jet.px()*jet.px() + jet.py()*jet.py() + jet.pz()*jet.pz();
-    Double_t p  = std::sqrt(p2);
+    Double_t dPt = deltaE / TMath::CosH(jet.eta());
+    TLorentzVector dEVec;
+    dEVec.SetPtEtaPhiE(dPt, jet.eta(), jet.phi(), deltaE);
+    TLorentzVector quenchedVec = jetVec - dEVec;
+    fastjet::PseudoJet q(quenchedVec.Px(), quenchedVec.Py(), quenchedVec.Pz(), quenchedVec.E());
 
-    Double_t p_new2 = E_new*E_new - m*m;
-
-    // We suppose that the energy loss does not change the direction of the new 3-momentum vector that shows compatibility (within the Minkowski metric) with the new energy.
-    // Thus, we calculate the factor that keeps the proportionality between the old and new momentum vectors and then apply it to each component of the old momentum vector.
-    Double_t p_new = std::sqrt(p_new2);
-    Double_t scale = p_new / p;
-
-    Double_t px_new = scale * jet.px();
-    Double_t py_new = scale * jet.py();
-    Double_t pz_new = scale * jet.pz();
-
-    fastjet::PseudoJet q(px_new, py_new, pz_new, E_new); // This composes the new 4-momentum of the quenched jet with redefined energy and momentum
     return q;
 }
-
 
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
@@ -137,6 +125,16 @@ void jetClassification1(const char* fileName)
 
     TH2F* xy_b0_jetSpawningCoordinates = new TH2F("xy_b0_jetSpawningCoordinates", "Jet Spawning Coordinates (b=0)", 100, -10, 10, 100, -10, 10);
     TH2F* xy_b_jetSpawningCoordinates = new TH2F("xy_b_jetSpawningCoordinates", "Jet Spawning Coordinates (b#neq0)", 100, -10, 10, 100, -10, 10);
+
+    TH1F* pT_charmDistribution_beforeQuenching = new TH1F("pT_charmDistribution_beforeQuenching", "Charm Jet p_{T} Distribution before Quenching; p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* pT_strangeDistribution_beforeQuenching = new TH1F("pT_strangeDistribution_beforeQuenching", "Strange Jet p_{T} Distribution before Quenching; p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    
+
+    TH1F* null_b_pT_charmDistribution_afterQuenching_diff = new TH1F("null_b_pT_charmDistribution_afterQuenching_diff", "Charm Jet p_{T} Distribution after Quenching with Different Energy Losses (b=0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* null_b_pT_strangeDistribution_afterQuenching_diff = new TH1F("null_b_pT_strangeDistribution_afterQuenching_diff", "Strange Jet p_{T} Distribution after Quenching with Different Energy Losses (b=0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+
+    TH1F* non_null_b_pT_charmDistribution_afterQuenching_diff = new TH1F("non_null_b_pT_charmDistribution_afterQuenching_diff", "Charm Jet p_{T} Distribution after Quenching Different Energy Losses (b#neq0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* non_null_b_pT_strangeDistribution_afterQuenching_diff = new TH1F("non_null_b_pT_strangeDistribution_afterQuenching_diff", "Strange Jet p_{T} Distribution after Quenching Different Energy Losses (b#neq0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
 
     auto normalize = [](TH1F* h) {
         Double_t integral = h->Integral();
@@ -361,7 +359,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.6) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            if (hasCharmConstituent && charmRatio > 0.60) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
@@ -419,7 +417,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.6) // Same as before
+            if (hasStrangeConstituent && strangeRatio > 0.60) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -498,14 +496,13 @@ void jetClassification1(const char* fileName)
         if (deltaPhi >= backToback_lowerLimit && deltaPhi < backToback_upperLimit) // Ensuring the back-to-back condition is fulfilled for all jets from now on
         {
             //---------------------------------------------------------------------------------------------------------
-            // IMPACT PARAMETER ZERO SECTION
-            //---------------------------------------------------------------------------------------------------------
-
-            //---------------------------------------------------------------------------------------------------------
             // No energy loss block
             //---------------------------------------------------------------------------------------------------------
             
             Float_t F_sc = event_strange_jet.pt() / event_charmed_jet.pt(); // New observable - for more information, check November 6th, 2025 research log
+
+            pT_charmDistribution_beforeQuenching->Fill(event_charmed_jet.pt());
+            pT_strangeDistribution_beforeQuenching->Fill(event_strange_jet.pt());
 
             if (wPtFlag == 1) // Then the W boson pT is greater than 10 GeV/c
             {
@@ -641,6 +638,9 @@ void jetClassification1(const char* fileName)
             fastjet::PseudoJet quenched_charm_jet_both = quenchedJet(event_charmed_jet, deltaE_charm_both);
             fastjet::PseudoJet quenched_strange_jet_both = quenchedJet(event_strange_jet, deltaE_strange_both);
 
+            null_b_pT_charmDistribution_afterQuenching_diff->Fill(quenched_charm_jet.pt());
+            null_b_pT_strangeDistribution_afterQuenching_diff->Fill(quenched_strange_jet.pt());
+
             // Now we can recalculate F_sc with the quenched jets
             Float_t F_sc_quenched = quenched_strange_jet.pt() / quenched_charm_jet.pt();
             Float_t F_sc_quenched_both = quenched_strange_jet_both.pt() / quenched_charm_jet_both.pt();
@@ -657,7 +657,7 @@ void jetClassification1(const char* fileName)
             }
 
             //---------------------------------------------------------------------------------------------------------
-            // NON NULL IMPACT PARAMETER SECTION
+            // Energy loss block (b different from 0)
             //---------------------------------------------------------------------------------------------------------
 
             Float_t b = 9; // Since the radius is approximately 7 fm, b ranges from 0 to 14 fm
@@ -753,6 +753,9 @@ void jetClassification1(const char* fileName)
             fastjet::PseudoJet second_quenched_strange_jet = quenchedJet(event_strange_jet, second_deltaE_strange);
             fastjet::PseudoJet second_quenched_charm_jet_both = quenchedJet(event_charmed_jet, second_deltaE_charm_both);
             fastjet::PseudoJet second_quenched_strange_jet_both = quenchedJet(event_strange_jet, second_deltaE_strange_both);
+
+            non_null_b_pT_charmDistribution_afterQuenching_diff->Fill(second_quenched_charm_jet.pt());
+            non_null_b_pT_strangeDistribution_afterQuenching_diff->Fill(second_quenched_strange_jet.pt());
 
             // Now we can recalculate F_sc with the quenched jets
             Float_t second_F_sc_quenched = second_quenched_strange_jet.pt() / second_quenched_charm_jet.pt();
@@ -1071,6 +1074,33 @@ void jetClassification1(const char* fileName)
     xy_b_jetSpawningCoordinates->GetYaxis()->SetTitle("y [fm]");
     xy_b_jetSpawningCoordinates->DrawCopy("colz");
 
+    TCanvas *c16 = new TCanvas("c16", "pT distributions before/after quenching", 2500, 2500);
+
+    c16->Divide(2,3);
+
+    c16->cd(1);
+    pT_charmDistribution_beforeQuenching->SetTitle("Charm jet p_{T} distribution prior to the quenching");
+    pT_charmDistribution_beforeQuenching->DrawCopy();
+
+    c16->cd(2);
+    pT_strangeDistribution_beforeQuenching->SetTitle("Strange jet p_{T} distribution prior to the quenching");
+    pT_strangeDistribution_beforeQuenching->DrawCopy();
+
+    c16->cd(3);
+    null_b_pT_charmDistribution_afterQuenching_diff->SetTitle("Charm jet p_{T} distribution after quenching (b = 0, different energy losses)");
+    null_b_pT_charmDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(4);
+    null_b_pT_strangeDistribution_afterQuenching_diff->SetTitle("Strange jet p_{T} distribution after quenching (b = 0, different energy losses)");
+    null_b_pT_strangeDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(5);
+    non_null_b_pT_charmDistribution_afterQuenching_diff->SetTitle("Charm jet p_{T} distribution after quenching (b #neq 0, different energy losses)");
+    non_null_b_pT_charmDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(6);
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->SetTitle("Strange jet p_{T} distribution after quenching (b #neq 0, different energy losses)");
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->DrawCopy();
 
     TFile *second_outputFile = new TFile("modified2_histogramas_jetR_07_fullList.root", "RECREATE");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->Write();
@@ -1095,6 +1125,14 @@ void jetClassification1(const char* fileName)
     h_phi_b0->Write();
     h_rho_bn0->Write();
     h_phi_bn0->Write();
+    xy_b0_jetSpawningCoordinates->Write();
+    xy_b_jetSpawningCoordinates->Write();
+    pT_charmDistribution_beforeQuenching->Write();
+    pT_strangeDistribution_beforeQuenching->Write();
+    null_b_pT_charmDistribution_afterQuenching_diff->Write();
+    null_b_pT_strangeDistribution_afterQuenching_diff->Write();
+    non_null_b_pT_charmDistribution_afterQuenching_diff->Write();
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->Write();
     second_outputFile->Close();
 
     file->Close();
