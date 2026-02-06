@@ -23,28 +23,16 @@
 
 fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE)
 {
-    Double_t E_old = jet.E();
-    Double_t E_new = E_old - deltaE;
+    TLorentzVector jetVec(jet.px(), jet.py(), jet.pz(), jet.E());
 
-    Double_t m  = jet.m();
-    Double_t p2 = jet.px()*jet.px() + jet.py()*jet.py() + jet.pz()*jet.pz();
-    Double_t p  = std::sqrt(p2);
+    Double_t dPt = deltaE / TMath::CosH(jet.eta());
+    TLorentzVector dEVec;
+    dEVec.SetPtEtaPhiE(dPt, jet.eta(), jet.phi(), deltaE);
+    TLorentzVector quenchedVec = jetVec - dEVec;
+    fastjet::PseudoJet q(quenchedVec.Px(), quenchedVec.Py(), quenchedVec.Pz(), quenchedVec.E());
 
-    Double_t p_new2 = E_new*E_new - m*m;
-
-    // We suppose that the energy loss does not change the direction of the new 3-momentum vector that shows compatibility (within the Minkowski metric) with the new energy.
-    // Thus, we calculate the factor that keeps the proportionality between the old and new momentum vectors and then apply it to each component of the old momentum vector.
-    Double_t p_new = std::sqrt(p_new2);
-    Double_t scale = p_new / p;
-
-    Double_t px_new = scale * jet.px();
-    Double_t py_new = scale * jet.py();
-    Double_t pz_new = scale * jet.pz();
-
-    fastjet::PseudoJet q(px_new, py_new, pz_new, E_new); // This composes the new 4-momentum of the quenched jet with redefined energy and momentum
     return q;
 }
-
 
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
@@ -129,6 +117,24 @@ void jetClassification1(const char* fileName)
     TH1F *second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function and non null impact parameter", 100, 0, 10);    
     TH1F *second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses = new TH1F("second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses", "Strange jet by charm jet p_{T} - F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function and non null impact parameter", 100, 0, 10);
 
+    TH1F* h_rho_b0  = new TH1F("h_rho_b0",  "#rho (b=0);#rho [fm];Counts", 100, 0, 10);
+    TH1F* h_phi_b0  = new TH1F("h_phi_b0",  "#phi (b=0);#phi;Counts",     100, -4, 4);
+
+    TH1F* h_rho_bn0 = new TH1F("h_rho_bn0", "#rho (b#neq0);#rho [fm];Counts", 100, 0, 10);
+    TH1F* h_phi_bn0 = new TH1F("h_phi_bn0", "#phi (b#neq0);#phi;Counts",      100, -4, 4);
+
+    TH2F* xy_b0_jetSpawningCoordinates = new TH2F("xy_b0_jetSpawningCoordinates", "Jet Spawning Coordinates (b=0)", 100, -10, 10, 100, -10, 10);
+    TH2F* xy_b_jetSpawningCoordinates = new TH2F("xy_b_jetSpawningCoordinates", "Jet Spawning Coordinates (b#neq0)", 100, -10, 10, 100, -10, 10);
+
+    TH1F* pT_charmDistribution_beforeQuenching = new TH1F("pT_charmDistribution_beforeQuenching", "Charm Jet p_{T} Distribution before Quenching; p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* pT_strangeDistribution_beforeQuenching = new TH1F("pT_strangeDistribution_beforeQuenching", "Strange Jet p_{T} Distribution before Quenching; p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    
+
+    TH1F* null_b_pT_charmDistribution_afterQuenching_diff = new TH1F("null_b_pT_charmDistribution_afterQuenching_diff", "Charm Jet p_{T} Distribution after Quenching with Different Energy Losses (b=0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* null_b_pT_strangeDistribution_afterQuenching_diff = new TH1F("null_b_pT_strangeDistribution_afterQuenching_diff", "Strange Jet p_{T} Distribution after Quenching with Different Energy Losses (b=0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+
+    TH1F* non_null_b_pT_charmDistribution_afterQuenching_diff = new TH1F("non_null_b_pT_charmDistribution_afterQuenching_diff", "Charm Jet p_{T} Distribution after Quenching Different Energy Losses (b#neq0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
+    TH1F* non_null_b_pT_strangeDistribution_afterQuenching_diff = new TH1F("non_null_b_pT_strangeDistribution_afterQuenching_diff", "Strange Jet p_{T} Distribution after Quenching Different Energy Losses (b#neq0); p_{T} [GeV/c]; Frequency", 100, 0, 100);
 
     auto normalize = [](TH1F* h) {
         Double_t integral = h->Integral();
@@ -353,7 +359,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.6) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            if (hasCharmConstituent && charmRatio > 0.60) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
@@ -411,7 +417,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.6) // Same as before
+            if (hasStrangeConstituent && strangeRatio > 0.60) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -426,7 +432,7 @@ void jetClassification1(const char* fileName)
 
                 // If the event reaches this point, it means we have a jet that does not have any hadron within our list. We are, then, interested in the constituents related to this jet in particular
                 // Since we're only interested in the jets that "went missing" with more than, let' say, 75% of the quark's pT, we can place our attention to jets that go above this number
-                // Thus, I guess we can just reopen the jet into it's constituents and get them from directly from there
+                // Thus, I guess we can just reopen the jet into it's constituents and get them directly from there
 
                 if (strangeRatio < 0.85) continue;
                 for (const fastjet::PseudoJet &constituent : jet.constituents())
@@ -462,7 +468,7 @@ void jetClassification1(const char* fileName)
 
         fastjet::PseudoJet event_strange_jet;
         fastjet::PseudoJet event_charmed_jet;
-        Double_t max_pt_c = -1.0; // We use a negative value so the fist jet in the vector will always be the macimum pT jet
+        Double_t max_pt_c = -1.0; // We use a negative value so the fist jet in the vector will always be the maximum pT jet
         Double_t max_pt_s = -1.0;
 
         for (const fastjet::PseudoJet &jet : good_c_jets)
@@ -473,6 +479,7 @@ void jetClassification1(const char* fileName)
                 event_charmed_jet = jet;
             }
         }
+        
         for (const fastjet::PseudoJet &jet : good_s_jets)
         {
             if (jet.pt() > max_pt_s)
@@ -489,14 +496,13 @@ void jetClassification1(const char* fileName)
         if (deltaPhi >= backToback_lowerLimit && deltaPhi < backToback_upperLimit) // Ensuring the back-to-back condition is fulfilled for all jets from now on
         {
             //---------------------------------------------------------------------------------------------------------
-            // IMPACT PARAMETER ZERO SECTION
-            //---------------------------------------------------------------------------------------------------------
-
-            //---------------------------------------------------------------------------------------------------------
             // No energy loss block
             //---------------------------------------------------------------------------------------------------------
             
             Float_t F_sc = event_strange_jet.pt() / event_charmed_jet.pt(); // New observable - for more information, check November 6th, 2025 research log
+
+            pT_charmDistribution_beforeQuenching->Fill(event_charmed_jet.pt());
+            pT_strangeDistribution_beforeQuenching->Fill(event_strange_jet.pt());
 
             if (wPtFlag == 1) // Then the W boson pT is greater than 10 GeV/c
             {
@@ -511,16 +517,79 @@ void jetClassification1(const char* fileName)
             // Now, we shall procede to calculate the entries of a plot which contemplates the energy loss due to the medium created in an artificial Pb-Pb collision
 
             //---------------------------------------------------------------------------------------------------------
-            // Energy loss block (b=0)
+            // Ignorable block - outdated rho and phi generation for (b=0)
             //---------------------------------------------------------------------------------------------------------
 
-            Float_t randomRho = generator.Uniform(0, PbNucleusRadius);
-            Float_t randomPhi = generator.Uniform(0, 2*TMath::Pi());
+            // For more information on the equations implemented bellow, check on January 13th, 2026 research log
+
+            //Float_t U = generator.Uniform(0, 1);
+            //Float_t V = generator.Uniform(0, 1);
+            //Float_t randomPhi = 2*TMath::Pi()*V;
+            //Float_t randomRho = PbNucleusRadius * TMath::Sqrt(1 - TMath::Power(1 - U, 2/3));
+
+            //---------------------------------------------------------------------------------------------------------
+            // General rho and phi generation method breakdown:
+            //---------------------------------------------------------------------------------------------------------
+
+            // Since the method above is analytical and limited when the interest raises to non null impact parameter energy loss regions, I will implement a more general one whose steps are explained below:
+
+            // First step:  we define a region D of energy loss given by the overlapping area of two circles of radius R (Pb nucleus radius) separated by a distance b (impact parameter). Notice that
+            // this region will explicitly depend on the impact parameter, thus making it usable for both central and peripheral collisions
+
+            // Second step: we uniformly generate points (x,y) within a box going from -R to R and check if they belong to the region D. If positive, we keep the point, if negative, 
+            // we discard it and generate a new one 
+
+            // Third step: we apply a weight function, w(x,y), to the points kept. The functional form of this function is yet to be defined. In any case, we find the maximum of w(r), w_max, which
+            // will be used as reference point. In this step we generate another uniform random number u_4 and impose the condition u_4 < w(r) / w_max to finally accept or reject the point.
+
+            // Fourth step: with a valid point in hands, we project it to the xy plane and calculate the rho and phi as usual to be used in further calculations
+
+            // Note: In first intance, we will only work with x and y coordinates
+
+            //---------------------------------------------------------------------------------------------------------
 
             // We take the jets we own and place them into a new polar coordinate system. The jets are then placed in (randomRho, randomPhi).
             // Since by hypotesis we'll take them as back to back, this point will be the starting point for both of them in this new system.
             // Our intentions are to calculate the path lenght each jet would have within a Pb nucleus if they were created at this random point and traveled in opposite directions.
             // We can account for two situations: either the impact parameter is zero (central collision) or it has a finite value (peripheral collision). For the time being, we'll take b = 0.
+
+            //---------------------------------------------------------------------------------------------------------
+            // Energy loss block (b=0)
+            //---------------------------------------------------------------------------------------------------------
+
+            Float_t randomRho, randomPhi;
+            Float_t xMain, yMain;
+            
+            while(true)
+            {
+                Float_t u1 = generator.Uniform(0, 1);
+                Float_t u2 = generator.Uniform(0, 1);
+
+                Float_t x, y;
+
+                x = - PbNucleusRadius + (2 * PbNucleusRadius) * u1;
+                y = - PbNucleusRadius + (2 * PbNucleusRadius) * u2;
+                // This way, we're mapping U in X or U in [c, d] to X in [a, b] by X = a + (b-a)*U, making sure X is uniform as well as U
+
+                if ( x*x + y*y > PbNucleusRadius*PbNucleusRadius) continue; // In the b=0 case, only one inequality will make it
+
+                Float_t w = 1;
+                Float_t w_max = 1;
+                Float_t u4 = generator.Uniform(0, 1);
+
+                if (u4 > w / w_max) continue; // Trivially satisfied and shown here only for consistency with the non null impact parameter case we shall get in detail next
+
+                randomRho = std::sqrt(x*x + y*y);
+                randomPhi   = std::atan2(y, x);
+                xMain = x;
+                yMain = y;
+
+                break;
+            }
+            
+            h_rho_b0->Fill(randomRho);
+            h_phi_b0->Fill(randomPhi);
+            xy_b0_jetSpawningCoordinates->Fill(xMain, yMain);
 
             // Charm jet path length calculation
             Float_t phi_tot_charm = randomPhi - event_charmed_jet.phi();
@@ -569,6 +638,9 @@ void jetClassification1(const char* fileName)
             fastjet::PseudoJet quenched_charm_jet_both = quenchedJet(event_charmed_jet, deltaE_charm_both);
             fastjet::PseudoJet quenched_strange_jet_both = quenchedJet(event_strange_jet, deltaE_strange_both);
 
+            null_b_pT_charmDistribution_afterQuenching_diff->Fill(quenched_charm_jet.pt());
+            null_b_pT_strangeDistribution_afterQuenching_diff->Fill(quenched_strange_jet.pt());
+
             // Now we can recalculate F_sc with the quenched jets
             Float_t F_sc_quenched = quenched_strange_jet.pt() / quenched_charm_jet.pt();
             Float_t F_sc_quenched_both = quenched_strange_jet_both.pt() / quenched_charm_jet_both.pt();
@@ -585,13 +657,58 @@ void jetClassification1(const char* fileName)
             }
 
             //---------------------------------------------------------------------------------------------------------
-            // NON NULL IMPACT PARAMETER SECTION
+            // Energy loss block (b different from 0)
             //---------------------------------------------------------------------------------------------------------
+
+            Float_t b = 9; // Since the radius is approximately 7 fm, b ranges from 0 to 14 fm
+            Float_t x0, y0;
+
+            while(true)
+            {
+                Float_t u1 = generator.Uniform(0, 1);
+                Float_t u2 = generator.Uniform(0, 1);
+
+                Float_t x, y;
+
+                x = - PbNucleusRadius + (2 * PbNucleusRadius) * u1;
+                y = - PbNucleusRadius + (2 * PbNucleusRadius) * u2;
+                // This way, we're mapping U in X or U in [c, d] to X in [a, b] by X = a + (b-a)*U, making sure X is uniform as well as U
+
+                // Inside the sphere A with center in x = -b/2
+                Float_t dxA = x + 0.5f*b;
+                bool insideA = (dxA*dxA + y*y <= PbNucleusRadius*PbNucleusRadius);
+
+                // Inside the sphere B with center in x = +b/2
+                Float_t dxB = x - 0.5f*b;
+                bool insideB = (dxB*dxB + y*y <= PbNucleusRadius*PbNucleusRadius);
+
+                if (!(insideA && insideB)) continue;
+
+                Float_t w = 1;
+                Float_t w_max = 1;
+                Float_t u4 = generator.Uniform(0, 1);
+
+                if (u4 > w / w_max) continue; // Trivially satisfied and shown here only for consistency with the non null impact parameter case we shall get in detail next
+
+                x0 = x;
+                y0 = y;
+
+                break;
+            }
+
+            Float_t rho_bn0 = std::sqrt(x0*x0 + y0*y0);
+            Float_t phi_bn0 = std::atan2(y0, x0);
+
+            h_rho_bn0->Fill(rho_bn0);
+            h_phi_bn0->Fill(phi_bn0);
+            xy_b_jetSpawningCoordinates->Fill(x0, y0);
+
+            /* Previous method for (x0, y0) generation - outdated
 
             Double_t bmax = 2.0 * PbNucleusRadius;
             Double_t u = generator.Uniform(0.0, 1.0);
             Double_t b = bmax * std::sqrt(u);
-
+            
             Double_t x0, y0;
 
             while (true) 
@@ -611,6 +728,7 @@ void jetClassification1(const char* fileName)
 
                 if (insideA && insideB) break; // Valid point encontered
             }
+            */
 
             Double_t xcA = -0.5 * b;
             Double_t ycA = 0.0;
@@ -635,6 +753,9 @@ void jetClassification1(const char* fileName)
             fastjet::PseudoJet second_quenched_strange_jet = quenchedJet(event_strange_jet, second_deltaE_strange);
             fastjet::PseudoJet second_quenched_charm_jet_both = quenchedJet(event_charmed_jet, second_deltaE_charm_both);
             fastjet::PseudoJet second_quenched_strange_jet_both = quenchedJet(event_strange_jet, second_deltaE_strange_both);
+
+            non_null_b_pT_charmDistribution_afterQuenching_diff->Fill(second_quenched_charm_jet.pt());
+            non_null_b_pT_strangeDistribution_afterQuenching_diff->Fill(second_quenched_strange_jet.pt());
 
             // Now we can recalculate F_sc with the quenched jets
             Float_t second_F_sc_quenched = second_quenched_strange_jet.pt() / second_quenched_charm_jet.pt();
@@ -736,10 +857,10 @@ void jetClassification1(const char* fileName)
     primary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
     primary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
     primary_CharmRatioHist->SetLineColor(kGreen);
-    primary_CharmRatioHist->Draw();
+    primary_CharmRatioHist->DrawCopy();
 
     primary_CharmRatioHist->SetLineColor(kRed);
-    secondary_CharmRatioHist->Draw("same");
+    secondary_CharmRatioHist->DrawCopy("same");
 
     TCanvas *c3 = new TCanvas("c3", "Strange", 2500, 2500);
     c3->Divide(1, 1);
@@ -752,10 +873,10 @@ void jetClassification1(const char* fileName)
     primary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
     primary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
     primary_StrangeRatioHist->SetLineColor(kGreen);
-    primary_StrangeRatioHist->Draw();
+    primary_StrangeRatioHist->DrawCopy();
     
     secondary_StrangeRatioHist->SetLineColor(kRed);
-    secondary_StrangeRatioHist->Draw("same");
+    secondary_StrangeRatioHist->DrawCopy("same");
 
     TCanvas *c4 = new TCanvas("c4", "Missing particles PDG", 2500, 2500);
     c4->Divide(1, 2);
@@ -764,13 +885,13 @@ void jetClassification1(const char* fileName)
     missingStrangeConstituentsPdgMap->SetTitle("Potentially missing particles PDGs for strange jets list");
     missingStrangeConstituentsPdgMap->GetXaxis()->SetTitle("PDG");
     missingStrangeConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
-    missingStrangeConstituentsPdgMap->Draw();
+    missingStrangeConstituentsPdgMap->DrawCopy();
 
     c4->cd(2);
     missingCharmConstituentsPdgMap->SetTitle("Potentially missing particles PDGs for charm jets list");
     missingCharmConstituentsPdgMap->GetXaxis()->SetTitle("PDG");
     missingCharmConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
-    missingCharmConstituentsPdgMap->Draw();
+    missingCharmConstituentsPdgMap->DrawCopy();
 
     TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distributions no energy losses", 2500, 2500);
     c5->Divide(1, 2);
@@ -779,73 +900,75 @@ void jetClassification1(const char* fileName)
     observable_F_sc_Distribution_wBosonPt_greaterThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10->Draw();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10->DrawCopy();
 
     c5->cd(2);
     observable_F_sc_Distribution_wBosonPt_smallerThan10->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10");
     observable_F_sc_Distribution_wBosonPt_smallerThan10->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10->Draw();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10->DrawCopy();
 
-    TCanvas *c6 = new TCanvas("c6", "Observable F_{sc} distributions different energy losses for null impact parameter", 2500, 2500);
+    // The "modified" plots are those with the updated randomization method in rho and phi for the jet production point in the energy loss region
+
+    TCanvas *c6 = new TCanvas("c6", "Observable F_{sc} distributions different energy losses for null impact parameter (modified)", 2500, 2500);
     c6->Divide(1, 2);
 
     c6->cd(1);
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions (modified)");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Draw();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->DrawCopy();
 
     c6->cd(2);
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions (modified)");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Draw();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->DrawCopy();
 
-    TCanvas *c7 = new TCanvas("c7", "Observable F_{sc} distributions same energy losses for null impact parameter", 2500, 2500);
+    TCanvas *c7 = new TCanvas("c7", "Observable F_{sc} distributions same energy losses for null impact parameter (modified)", 2500, 2500);
     c7->Divide(1, 2);
 
     c7->cd(1);
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function");
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function (modified)");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Draw();
+    observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->DrawCopy();
 
     c7->cd(2);
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function");
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function (modified)");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Draw();
+    observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->DrawCopy();
 
-    TCanvas *c8 = new TCanvas("c8", "Observable F_{sc} distributions of normalized ratio for same energy losses and null impact parameter", 2500, 2500);
+    TCanvas *c8 = new TCanvas("c8", "Observable F_{sc} distributions of normalized ratio for same energy losses and null impact parameter (modified)", 2500, 2500);
     c8->Divide(1, 2);
 
     c8->cd(1);
-    ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions");
+    ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions (modified)");
     ratio_greater10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     ratio_greater10_same->GetYaxis()->SetTitle("Frequency");
-    ratio_greater10_same->Draw();
+    ratio_greater10_same->DrawCopy();
 
     c8->cd(2);
-    ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions");
+    ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions (modified)");
     ratio_smaller10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     ratio_smaller10_same->GetYaxis()->SetTitle("Frequency");
-    ratio_smaller10_same->Draw();
+    ratio_smaller10_same->DrawCopy();
 
-    TCanvas *c9 = new TCanvas("c9", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and null impact parameter", 2500, 2500);
+    TCanvas *c9 = new TCanvas("c9", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and null impact parameter (modified)", 2500, 2500);
     c9->Divide(1, 2);
 
     c9->cd(1);
-    ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions (modified)");
     ratio_greater10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     ratio_greater10_diff->GetYaxis()->SetTitle("Frequency");
-    ratio_greater10_diff->Draw();
+    ratio_greater10_diff->DrawCopy();
 
     c9->cd(2);
-    ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions (modified)");
     ratio_smaller10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     ratio_smaller10_diff->GetYaxis()->SetTitle("Frequency");
-    ratio_smaller10_diff->Draw();
+    ratio_smaller10_diff->DrawCopy();
 
     TCanvas *c10 = new TCanvas("c10", "Observable F_{sc} distributions different energy losses for non null impact parameter", 2500, 2500);
     c10->Divide(1, 2);
@@ -854,13 +977,13 @@ void jetClassification1(const char* fileName)
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for different energy loss functions and non null impact parameter");
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Draw();
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->DrawCopy();
 
     c10->cd(2);
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for different energy loss functions and non null impact parameter");
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->Draw();
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_diffEnergyLosses->DrawCopy();
 
     TCanvas *c11 = new TCanvas("c11", "Observable F_{sc} distributions same energy losses for non null impact parameter", 2500, 2500);
     c11->Divide(1, 2);
@@ -869,45 +992,117 @@ void jetClassification1(const char* fileName)
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} > 10 for the same energy loss function and non null impact parameter");
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->Draw();
+    second_observable_F_sc_Distribution_wBosonPt_greaterThan10_sameEnergyLosses->DrawCopy();
 
     c11->cd(2);
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->SetTitle("Observable F_{sc} distribution for events with W^{+-} boson p_{T} <= 10 for the same energy loss function and non null impact parameter");
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->GetYaxis()->SetTitle("Frequency");
-    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->Draw();
+    second_observable_F_sc_Distribution_wBosonPt_smallerThan10_sameEnergyLosses->DrawCopy();
 
-    TCanvas *c12 = new TCanvas("c12", "Observable F_{sc} distributions of normalized ratio for same energy losses and non null impact parameter", 2500, 2500);
+    TCanvas *c12 = new TCanvas("c12", "Observable F_{sc} distributions of normalized ratio for same energy losses and non null impact parameter (modified)", 2500, 2500);
     c12->Divide(1, 2);
 
     c12->cd(1);
-    second_ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions");
+    second_ratio_greater10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for same energy loss functions (modified)");
     second_ratio_greater10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_ratio_greater10_same->GetYaxis()->SetTitle("Frequency");
-    second_ratio_greater10_same->Draw();
+    second_ratio_greater10_same->DrawCopy();
 
     c12->cd(2);
-    second_ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions");
+    second_ratio_smaller10_same->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for same energy loss functions (modified)");
     second_ratio_smaller10_same->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_ratio_smaller10_same->GetYaxis()->SetTitle("Frequency");
-    second_ratio_smaller10_same->Draw();
+    second_ratio_smaller10_same->DrawCopy();
 
-    TCanvas *c13 = new TCanvas("c13", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and non null impact parameter", 2500, 2500);
+    TCanvas *c13 = new TCanvas("c13", "Observable F_{sc} distributions of normalized ratio for distinct energy losses and non null impact parameter (modified)", 2500, 2500);
     c13->Divide(1, 2);
 
     c13->cd(1);
-    second_ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions");
+    second_ratio_greater10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} > 10 for different energy loss functions (modified)");
     second_ratio_greater10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_ratio_greater10_diff->GetYaxis()->SetTitle("Frequency");
-    second_ratio_greater10_diff->Draw();
+    second_ratio_greater10_diff->DrawCopy();
 
     c13->cd(2);
-    second_ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions");
+    second_ratio_smaller10_diff->SetTitle("Normalized ratio of F_{sc} distributions for events with W^{+-} boson p_{T} <= 10 for different energy loss functions (modified)");
     second_ratio_smaller10_diff->GetXaxis()->SetTitle("p_{T s}^{jet} / p_{T c}^{jet}");
     second_ratio_smaller10_diff->GetYaxis()->SetTitle("Frequency");
-    second_ratio_smaller10_diff->Draw();
+    second_ratio_smaller10_diff->DrawCopy();
 
-    TFile *outputFile = new TFile("histogramas_jetR_07_fullList.root", "RECREATE");
+    TCanvas *c14 = new TCanvas("c14", "Distributions of rho and phi (b=0 and b#neq0)", 2500, 2500);
+
+    c14->Divide(2,2);
+
+    c14->cd(1);
+    h_rho_b0->SetTitle("#rho distribution (b = 0)");
+    h_rho_b0->GetXaxis()->SetTitle("#rho [fm]");
+    h_rho_b0->GetYaxis()->SetTitle("Counts");
+    h_rho_b0->DrawCopy();
+
+    c14->cd(2);
+    h_phi_b0->SetTitle("#phi distribution (b = 0)");
+    h_phi_b0->GetXaxis()->SetTitle("#phi");
+    h_phi_b0->GetYaxis()->SetTitle("Counts");
+    h_phi_b0->DrawCopy();
+
+    c14->cd(3);
+    h_rho_bn0->SetTitle("#rho distribution (b #neq 0)");
+    h_rho_bn0->GetXaxis()->SetTitle("#rho [fm]");
+    h_rho_bn0->GetYaxis()->SetTitle("Counts");
+    h_rho_bn0->DrawCopy();
+
+    c14->cd(4);
+    h_phi_bn0->SetTitle("#phi distribution (b #neq 0)");
+    h_phi_bn0->GetXaxis()->SetTitle("#phi");
+    h_phi_bn0->GetYaxis()->SetTitle("Counts");
+    h_phi_bn0->DrawCopy();
+
+    TCanvas *c15 = new TCanvas("c15", "Distributions of (x,y) jet spawning coordinates", 2500, 2500);
+
+    c15->Divide(2,1);
+
+    c15->cd(1);
+    xy_b0_jetSpawningCoordinates->SetTitle("(x,y) jet spawning coordinates distribution (b = 0)");
+    xy_b0_jetSpawningCoordinates->GetXaxis()->SetTitle("x [fm]");
+    xy_b0_jetSpawningCoordinates->GetYaxis()->SetTitle("y [fm]");
+    xy_b0_jetSpawningCoordinates->DrawCopy("colz");
+
+    c15->cd(2);
+    xy_b_jetSpawningCoordinates->SetTitle("(x,y) jet spawning coordinates distribution (b #neq 0)");
+    xy_b_jetSpawningCoordinates->GetXaxis()->SetTitle("x [fm]");
+    xy_b_jetSpawningCoordinates->GetYaxis()->SetTitle("y [fm]");
+    xy_b_jetSpawningCoordinates->DrawCopy("colz");
+
+    TCanvas *c16 = new TCanvas("c16", "pT distributions before/after quenching", 2500, 2500);
+
+    c16->Divide(2,3);
+
+    c16->cd(1);
+    pT_charmDistribution_beforeQuenching->SetTitle("Charm jet p_{T} distribution prior to the quenching");
+    pT_charmDistribution_beforeQuenching->DrawCopy();
+
+    c16->cd(2);
+    pT_strangeDistribution_beforeQuenching->SetTitle("Strange jet p_{T} distribution prior to the quenching");
+    pT_strangeDistribution_beforeQuenching->DrawCopy();
+
+    c16->cd(3);
+    null_b_pT_charmDistribution_afterQuenching_diff->SetTitle("Charm jet p_{T} distribution after quenching (b = 0, different energy losses)");
+    null_b_pT_charmDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(4);
+    null_b_pT_strangeDistribution_afterQuenching_diff->SetTitle("Strange jet p_{T} distribution after quenching (b = 0, different energy losses)");
+    null_b_pT_strangeDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(5);
+    non_null_b_pT_charmDistribution_afterQuenching_diff->SetTitle("Charm jet p_{T} distribution after quenching (b #neq 0, different energy losses)");
+    non_null_b_pT_charmDistribution_afterQuenching_diff->DrawCopy();
+
+    c16->cd(6);
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->SetTitle("Strange jet p_{T} distribution after quenching (b #neq 0, different energy losses)");
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->DrawCopy();
+
+    TFile *second_outputFile = new TFile("modified2_histogramas_jetR_07_fullList.root", "RECREATE");
     observable_F_sc_Distribution_wBosonPt_greaterThan10->Write();
     observable_F_sc_Distribution_wBosonPt_smallerThan10->Write();
     observable_F_sc_Distribution_wBosonPt_greaterThan10_diffEnergyLosses->Write();
@@ -926,7 +1121,19 @@ void jetClassification1(const char* fileName)
     second_ratio_smaller10_same->Write();
     second_ratio_greater10_diff->Write();
     second_ratio_smaller10_diff->Write();
-    outputFile->Close();
+    h_rho_b0->Write();
+    h_phi_b0->Write();
+    h_rho_bn0->Write();
+    h_phi_bn0->Write();
+    xy_b0_jetSpawningCoordinates->Write();
+    xy_b_jetSpawningCoordinates->Write();
+    pT_charmDistribution_beforeQuenching->Write();
+    pT_strangeDistribution_beforeQuenching->Write();
+    null_b_pT_charmDistribution_afterQuenching_diff->Write();
+    null_b_pT_strangeDistribution_afterQuenching_diff->Write();
+    non_null_b_pT_charmDistribution_afterQuenching_diff->Write();
+    non_null_b_pT_strangeDistribution_afterQuenching_diff->Write();
+    second_outputFile->Close();
 
     file->Close();
 }
