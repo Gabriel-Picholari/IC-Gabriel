@@ -359,7 +359,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.60) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            if (hasCharmConstituent && charmRatio > 0.70) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
@@ -417,7 +417,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.60) // Same as before
+            if (hasStrangeConstituent && strangeRatio > 0.70) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -488,6 +488,8 @@ void jetClassification1(const char* fileName)
                 event_strange_jet = jet;
             }
         }
+
+        if (max_pt_c < 0 || max_pt_s < 0) continue; // For more information on this condition, refer to the February 11th, 2026 research log
 
         // At this point, we have the leading jets for both flavors well defined
 
