@@ -21,15 +21,30 @@
 #include "fastjet/ClusterSequence.hh"
 
 
-fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE)
+fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE, double pathLength, string jetType = "", double dE_dx = 0)
 {
     TLorentzVector jetVec(jet.px(), jet.py(), jet.pz(), jet.E());
 
     Double_t dPt = deltaE / TMath::CosH(jet.eta());
+
     TLorentzVector dEVec;
     dEVec.SetPtEtaPhiE(dPt, jet.eta(), jet.phi(), deltaE);
+    fastjet::PseudoJet dEJet(dEVec.Px(), dEVec.Py(), dEVec.Pz(), dEVec.E()); // Created for investigation purposes
+
     TLorentzVector quenchedVec = jetVec - dEVec;
     fastjet::PseudoJet q(quenchedVec.Px(), quenchedVec.Py(), quenchedVec.Pz(), quenchedVec.E());
+
+    std::cout << jetType << ": original Jet: pT = " << jet.pt() << ", eta = " << jet.eta() << ", phi = " << jet.phi() << ", E = " << jet.E() << std::endl;
+    std::cout << "dE Jet: pT = " << dEJet.pt() << ", eta = " << dEJet.eta() << ", phi = " << dEJet.phi() << ", E = " << dEJet.E() << std::endl;
+    std::cout << "Quenched Jet: pT = " << q.pt() << ", eta = " << q.eta() << ", phi = " << q.phi() << ", E = " << q.E() << std::endl;
+    std::cout << "Energy loss (deltaE): " << deltaE << std::endl;
+    std::cout << "dE/dx: " << dE_dx << std::endl;
+    std::cout << "Path length (L): " << pathLength << std::endl;
+    std::cout << "Original pT: " << jet.pt() << "-------- Quenched pT: " << q.pt() << " -------- pT loss " << jet.pt() - q.pt() << std::endl;
+
+    std::cout << "Original jet components: (" << jet.px() << ", " << jet.py() << ", " << jet.pz() << ")" << std::endl;
+    std::cout << "Quenched jet components: (" << q.px() << ", " << q.py() << ", " << q.pz() << ")" << std::endl;
+    std::cout << std::endl;
 
     return q;
 }
@@ -359,7 +374,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.70) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            if (hasCharmConstituent && charmRatio > 0.60) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
@@ -417,7 +432,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.70) // Same as before
+            if (hasStrangeConstituent && strangeRatio > 0.60) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -635,10 +650,10 @@ void jetClassification1(const char* fileName)
             Float_t deltaE_strange_both = dE_dx_both * path_length_strange;
 
             //With the energy shift calculated, we can now redefine the jet 4-momenta accordingly using the quenchedJet function defined at the beginning of this code
-            fastjet::PseudoJet quenched_charm_jet = quenchedJet(event_charmed_jet, deltaE_charm);
-            fastjet::PseudoJet quenched_strange_jet = quenchedJet(event_strange_jet, deltaE_strange);
-            fastjet::PseudoJet quenched_charm_jet_both = quenchedJet(event_charmed_jet, deltaE_charm_both);
-            fastjet::PseudoJet quenched_strange_jet_both = quenchedJet(event_strange_jet, deltaE_strange_both);
+            fastjet::PseudoJet quenched_charm_jet = quenchedJet(event_charmed_jet, deltaE_charm, path_length_charm, "charm", dE_dx_charm);
+            fastjet::PseudoJet quenched_strange_jet = quenchedJet(event_strange_jet, deltaE_strange, path_length_strange, "strange", dE_dx_strange);
+            fastjet::PseudoJet quenched_charm_jet_both = quenchedJet(event_charmed_jet, deltaE_charm_both, path_length_charm, "charm", dE_dx_both);
+            fastjet::PseudoJet quenched_strange_jet_both = quenchedJet(event_strange_jet, deltaE_strange_both, path_length_strange, "strange", dE_dx_both);
 
             null_b_pT_charmDistribution_afterQuenching_diff->Fill(quenched_charm_jet.pt());
             null_b_pT_strangeDistribution_afterQuenching_diff->Fill(quenched_strange_jet.pt());
@@ -751,10 +766,10 @@ void jetClassification1(const char* fileName)
             Float_t second_deltaE_charm_both = dE_dx_both * L_charm;
             Float_t second_deltaE_strange_both = dE_dx_both * L_strange;
 
-            fastjet::PseudoJet second_quenched_charm_jet = quenchedJet(event_charmed_jet, second_deltaE_charm);
-            fastjet::PseudoJet second_quenched_strange_jet = quenchedJet(event_strange_jet, second_deltaE_strange);
-            fastjet::PseudoJet second_quenched_charm_jet_both = quenchedJet(event_charmed_jet, second_deltaE_charm_both);
-            fastjet::PseudoJet second_quenched_strange_jet_both = quenchedJet(event_strange_jet, second_deltaE_strange_both);
+            fastjet::PseudoJet second_quenched_charm_jet = quenchedJet(event_charmed_jet, second_deltaE_charm, L_charm, "charm", dE_dx_charm);
+            fastjet::PseudoJet second_quenched_strange_jet = quenchedJet(event_strange_jet, second_deltaE_strange, L_strange, "strange", dE_dx_strange);
+            fastjet::PseudoJet second_quenched_charm_jet_both = quenchedJet(event_charmed_jet, second_deltaE_charm_both, L_charm, "charm", dE_dx_both);
+            fastjet::PseudoJet second_quenched_strange_jet_both = quenchedJet(event_strange_jet, second_deltaE_strange_both, L_strange, "strange", dE_dx_both);
 
             non_null_b_pT_charmDistribution_afterQuenching_diff->Fill(second_quenched_charm_jet.pt());
             non_null_b_pT_strangeDistribution_afterQuenching_diff->Fill(second_quenched_strange_jet.pt());
