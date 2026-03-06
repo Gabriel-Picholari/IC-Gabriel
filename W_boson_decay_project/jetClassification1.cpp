@@ -299,7 +299,7 @@ void jetClassification1(const char* fileName)
             jetEta = jet.eta();
 
             Float_t absEta = TMath::Abs(jetEta);
-            if (absEta < 1) continue; // Basic cut on jet eta
+            if (absEta > 2) continue; // Correct cut on eta -> we must ignore any jet with eta superior to 2 (not detectable in ALICE, for example)
             
             // It seems that the cut on eta causes the number of jet entries with null pT to increase drastically
 
