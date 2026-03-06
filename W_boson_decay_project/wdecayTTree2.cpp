@@ -13,7 +13,7 @@
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
+void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
 {
   Long_t count = 0;
   gSystem->Load("libEG");
@@ -25,13 +25,21 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
 
   TClonesArray *jets_array =  new TClonesArray("MyJet");
   TClonesArray *quarks = new TClonesArray("MyQuark");
+  Float_t boson_pT, boson_eta, boson_phi, boson_energy, boson_eventID;
 
-  TFile *outfile = new TFile("wdecay2_seed_1_30K_hardQCD_all_off.root", "RECREATE"); 
+  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off.root", "RECREATE"); 
 
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
   ttree->Branch("jets_array", &jets_array);
   ttree->Branch("quarks", &quarks);
+
+  TTree *boson_ttree = new TTree("boson_TTree", "W boson TTree");
+  boson_ttree->Branch("boson_pT", &boson_pT);
+  boson_ttree->Branch("boson_eta", &boson_eta);
+  boson_ttree->Branch("boson_phi", &boson_phi);
+  boson_ttree->Branch("boson_energy", &boson_energy);
+  boson_ttree->Branch("boson_eventID", &boson_eventID);
 
   //---------------------------------------------------------------------------------------------------------
   // Initialization of histograms
@@ -40,7 +48,6 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
   TH1F *distanciaAngular = new TH1F("h1", "Angular separation between quarks cbar(c) and s(sbar)", 100, 0, 10);
   TH1F *bosonW_rapidity_distribution = new TH1F("bosonW_rapidity", "Initial W^{+-} boson rapidity distribution", 100, 0, 100);
   TH1F *bosonW_pT_distribution = new TH1F("bosonW_pT", "Initial W^{+-} boson transverse momentum distribution", 100, 0, 100);
-
 
   //---------------------------------------------------------------------------------------------------------
   // Pythia initializations and configurations:
@@ -64,7 +71,7 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
 
   TClonesArray *particles = new TClonesArray("TParticle", 1000);
 
-  Int_t wPtFlag = 0;
+  Int_t wPtFlag;
 
   // Event loop
   for ( Int_t iev = 0; iev < nev; iev++)
@@ -99,7 +106,14 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
         if (bosonW_pT > 0.0)
         {
 
-        foundW = true;
+          foundW = true;
+          boson_pT = bosonW_pT;
+          boson_eta = vec.Eta();
+          boson_phi = vec.Phi();
+          boson_energy = vec.Energy();
+          boson_eventID = iev;
+
+          boson_ttree->Fill();
 
           Float_t bosonW_rapidity = vec.Rapidity();
           bosonW_rapidity_distribution->Fill(bosonW_rapidity);
@@ -243,6 +257,7 @@ void wdecayTTree2(Int_t nev = 30000, Int_t ndeb = 1 /* Listing */ )
 
   pythia8.PrintStatistics();
   ttree->Write();
+  boson_ttree->Write();
 
   
   TCanvas *c1 = new TCanvas("c1", "Angular distance distribution", 2500, 2500);
