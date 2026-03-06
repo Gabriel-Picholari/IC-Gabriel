@@ -65,7 +65,7 @@ void wBoson_analysis(const char* fileName)
         TLorentzVector bosonVec;
         bosonVec.SetPtEtaPhiE(boson_pT, boson_eta, boson_phi, boson_energy);
         invariantMass->Fill(bosonVec.M());
-        if (abs(boson_eta) < 1) continue;
+        if (abs(boson_eta) > 2) continue;
         boson_energy_distribution->Fill(boson_energy);
         boson_eta_distribution->Fill(boson_eta);
         boson_pT_distribution->Fill(boson_pT);
