@@ -129,7 +129,7 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, /*const cha
     TH2F* signalC_set_correlation = new TH2F("signalC_corr", "Correlation between charmed and strange scores over the known charmed signal data", 100, -1, 1, 100, -1, 1);
     TH2F* backgroundC_set_correlation = new TH2F("backgroundC_corr", "Correlation between charmed and strange scores over the known charmed background data", 100, -1, 1, 100, -1, 1);
 
-    TH1F* h_massW = new TH1F("h_massW", "Invariant Mass of W;M_{cs} [GeV];Events", 100, 0, 100);
+    TH1F* h_massW = new TH1F("h_massW", "Invariant Mass of W;M_{cs} [GeV];Events", 140, 0, 140);
 
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
@@ -605,6 +605,8 @@ void invariantMassDistribution_3var_BTD(const char* inputFileName_c, /*const cha
     h_massW->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
     h_massW->GetYaxis()->SetTitle("Frequency");
     h_massW->DrawCopy();
+
+    c1->SaveAs("InvariantMassDistribution_3var_BTD.png");
 
     inputFile_c->Close();
     //inputFile_s->Close();
