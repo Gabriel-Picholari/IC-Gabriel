@@ -299,7 +299,7 @@ void jetClassification1(const char* fileName)
             jetEta = jet.eta();
 
             Float_t absEta = TMath::Abs(jetEta);
-            if (absEta < 1) continue; // Basic cut on jet eta
+            if (absEta > 2) continue; // Basic cut on jet eta
             
             // It seems that the cut on eta causes the number of jet entries with null pT to increase drastically
 
@@ -864,7 +864,7 @@ void jetClassification1(const char* fileName)
     // Plotting histograms
     //---------------------------------------------------------------------------------------------------------
 
-    /* 
+    
     TCanvas *c1 = new TCanvas("c1", "Invariant mass distribution", 2500, 2500);
     c1->Divide(1, 1);
 
@@ -919,7 +919,7 @@ void jetClassification1(const char* fileName)
     missingCharmConstituentsPdgMap->GetXaxis()->SetTitle("PDG");
     missingCharmConstituentsPdgMap->GetYaxis()->SetTitle("Frequency");
     missingCharmConstituentsPdgMap->DrawCopy();
-    */
+    
 
     TCanvas *c5 = new TCanvas("c5", "Observable F_{sc} distributions no energy losses", 2500, 2500);
     c5->Divide(1, 2);

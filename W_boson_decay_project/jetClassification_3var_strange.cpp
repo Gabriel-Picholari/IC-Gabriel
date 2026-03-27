@@ -135,7 +135,7 @@ void jetClassification_3var_strange(const char* fileName)
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
 
     TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
-    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_strange.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_strange.root", "RECREATE");
 
     TTree *signalTree_s = new TTree("SignalTree_s", "Tree with signal data from s quark");
     signalTree_s->Branch("pT_s", &pT_s);
@@ -238,6 +238,10 @@ void jetClassification_3var_strange(const char* fileName)
             if (jetPt < 5) continue;
 
             jetEta = jet.eta();
+
+            Float_t absEta = TMath::Abs(jetEta);
+            if (absEta > 2) continue;
+
             jetPhi = jet.phi();
             jetMass = jet.m();
             jetPx = jet.px();
@@ -345,7 +349,7 @@ void jetClassification_3var_strange(const char* fileName)
                 phi_s = jetPhi;
                 mass_s = jetMass;
                 nConst_s = jetNConst;
-                nRho_s = first_nRho;        // To be changed accordingly to the plots being examined -> It's going to be a particular choice
+                nRho_s = third_nRho;        // To be changed accordingly to the plots being examined -> It's going to be a particular choice
 
                 background_pTDistribution->Fill(pT_s);
                 background_nConstDistribution->Fill(nConst_s);
@@ -439,7 +443,7 @@ void jetClassification_3var_strange(const char* fileName)
                     */
                 }
 
-                nRho_s = first_nRho_s;
+                nRho_s = third_nRho_s;
 
                 signal_pTDistribution->Fill(pT_s);
                 signal_nConstDistribution->Fill(nConst_s);

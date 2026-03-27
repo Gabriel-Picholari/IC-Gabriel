@@ -145,11 +145,13 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
     h_background->SetLineColor(kRed);
     h_signal->SetLineColor(kGreen);
 
-    h_signal->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Number of Events");
-    h_background->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Number of Events");
+    h_signal->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Entries");
+    h_background->SetTitle("GradBoost Score Distribution for Charm Jets;Score;Entries");
 
     h_background->DrawCopy();
     h_signal->DrawCopy("same");
+
+    c1->SaveAs("GradBoost_Score_Distribution_charm.png");
 
     //---------------------------------------------------------------------------------------------------------
     // Scan em thresholds
@@ -214,7 +216,7 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
         hPur->SetBinContent(k+1, vPur[k]);
     }
 
-    TCanvas* c2 = new TCanvas("c2", "Efficiency and Purity vs Threshold (Charm)", 900, 700);
+    TCanvas* c2 = new TCanvas("c2", "Efficiency and Purity vs Threshold (Charm)", 2500, 2500);
     c2->SetGrid();  
 
     TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());
@@ -231,6 +233,8 @@ void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold 
     TLine* l1 = new TLine(threshold,0,threshold,1);
     l1->SetLineStyle(2);
     l1->Draw("same");
+
+    c2->SaveAs("Efficiency_Purity_vs_Threshold_charm.png");
 
     inputFile->Close();
     delete reader;

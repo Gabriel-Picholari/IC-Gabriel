@@ -134,8 +134,8 @@ void jetClassification_3var_charm(const char* fileName)
 
     Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c = 0;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
-    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelPreTesting_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -243,6 +243,10 @@ void jetClassification_3var_charm(const char* fileName)
             if (jetPt < 5) continue;
 
             jetEta = jet.eta();
+
+            Float_t absEta = TMath::Abs(jetEta);
+            if (absEta > 2) continue;
+
             jetPhi = jet.phi();
             jetMass = jet.m();
             jetPx = jet.px();
@@ -342,7 +346,7 @@ void jetClassification_3var_charm(const char* fileName)
                 }
             }
 
-            if (!isCharmTagged) // Then it' a background jet, that is, not a charmed jet (can be strange or any other jet)
+            if (!isCharmTagged) // Then it's a background jet, that is, not a charmed jet (can be strange or any other jet)
             { 
                 label_c = 0;
                 eventID_c = ni;
