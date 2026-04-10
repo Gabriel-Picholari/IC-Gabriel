@@ -1,7 +1,7 @@
 //===========================================================================================================================================================================
 // Classical purity and efficiency analysis:
 // This macro intends to study the performance of varios combinations of cuts on the discriminatory variables through the analysis of classical purity and efficiency
-// distributions.
+// distributions. The scan is performed on the pT variable.
 //===========================================================================================================================================================================
 
 #include <cmath>
@@ -26,7 +26,7 @@
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void purity_efficiency_analysis(std::string switch_string, const char* strange_file)
+void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* strange_file)
 {
     gSystem->Load("libEG");
     gSystem->Load("libEGPythia8");
@@ -72,25 +72,32 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
     // Histograms
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F* pT_cut_purity = new TH1F("pT_cut_purity", "Purity for pT cuts; pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_cut_efficiency = new TH1F("pT_cut_efficiency", "Efficiency for pT cuts; pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_cut_purity = new TH1F("pT_cut_purity", "Purity for pT scan; pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_cut_efficiency = new TH1F("pT_cut_efficiency", "Efficiency for pT scan; pT cut (GeV/c); Efficiency", 120, 0, 60);
 
 
-    TH1F* pT_nConst_cut_purity1 = new TH1F("pT_nConst_cut_purity1", "Purity for pT cuts with nConst cut (first cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_cut_efficiency1 = new TH1F("pT_nConst_cut_efficiency1", "Efficiency for pT cuts with nConst cut (first cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nConst_cut_purity1 = new TH1F("pT_nConst_cut_purity1", "Purity for pT scan with nConst cut (first cut); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nConst_cut_efficiency1 = new TH1F("pT_nConst_cut_efficiency1", "Efficiency for pT scan with nConst cut (first cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
 
-    TH1F* pT_nConst_cut_purity2 = new TH1F("pT_nConst_cut_purity2", "Purity for pT cuts with nConst cut (second cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_cut_efficiency2 = new TH1F("pT_nConst_cut_efficiency2", "Efficiency for pT cuts with nConst cut (second cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nConst_cut_purity2 = new TH1F("pT_nConst_cut_purity2", "Purity for pT scan with nConst cut (second cut); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nConst_cut_efficiency2 = new TH1F("pT_nConst_cut_efficiency2", "Efficiency for pT scan with nConst cut (second cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
 
 
-    TH1F* pT_nConst_nRho_cut_purity1 = new TH1F("pT_nConst_nRho_cut_purity1", "Purity for pT cuts with nConst and nRho cut (first cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency1 = new TH1F("pT_nConst_nRho_cut_efficiency1", "Efficiency for pT cuts with nConst and nRho cut (first cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nRho_cut_purity1 = new TH1F("pT_nRho_cut_purity1", "Purity for pT scan with nRho cut (first cut); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nRho_cut_efficiency1 = new TH1F("pT_nRho_cut_efficiency1", "Efficiency for pT scan with nRho cut (first cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
 
-    TH1F* pT_nConst_nRho_cut_purity2 = new TH1F("pT_nConst_nRho_cut_purity2", "Purity for pT cuts with nConst and nRho cut (second cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency2 = new TH1F("pT_nConst_nRho_cut_efficiency2", "Efficiency for pT cuts with nConst and nRho cut (second cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nRho_cut_purity2 = new TH1F("pT_nRho_cut_purity2", "Purity for pT scan with nRho cut (second cut); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nRho_cut_efficiency2 = new TH1F("pT_nRho_cut_efficiency2", "Efficiency for pT scan with nRho cut (second cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
 
-    TH1F* pT_nConst_nRho_cut_purity3 = new TH1F("pT_nConst_nRho_cut_purity3", "Purity for pT cuts with nConst and nRho cut (third cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency3 = new TH1F("pT_nConst_nRho_cut_efficiency3", "Efficiency for pT cuts with nConst and nRho cut (third cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity1 = new TH1F("pT_nConst_nRho_cut_purity1", "Purity for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency1 = new TH1F("pT_nConst_nRho_cut_efficiency1", "Efficiency for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity2 = new TH1F("pT_nConst_nRho_cut_purity2", "Purity for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency2 = new TH1F("pT_nConst_nRho_cut_efficiency2", "Efficiency for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity3 = new TH1F("pT_nConst_nRho_cut_purity3", "Purity for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Purity", 120, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency3 = new TH1F("pT_nConst_nRho_cut_efficiency3", "Efficiency for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
 
     //---------------------------------------------------------------------------------------------------------
     // Analysis
@@ -151,8 +158,18 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
         pT_cut_efficiency->Fill(pT_thr, efficiency);
     }
 
-    Float_t first_nConstCut = 10;
-    Float_t second_nConstCut = 20;
+    Float_t first_nConstCut = 0, second_nConstCut = 0;
+
+    if(switch_string == "strange")
+    {
+        first_nConstCut = 10;
+        second_nConstCut = 20;
+    }
+    else if(switch_string == "charm")
+    {
+        first_nConstCut = 10;
+        second_nConstCut = 20;
+    }
 
     // Unidimensional pT scan with nConst cuts
     for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
@@ -218,8 +235,82 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
 
     }
 
-    Float_t first_nRhoCut = 0.3;
-    Float_t second_nRhoCut = 0.6;
+    Float_t first_nRhoCut = 0, second_nRhoCut = 0;
+
+    if (switch_string == "strange") 
+    {
+        first_nRhoCut = 0.5;
+        second_nRhoCut = 1;
+    } 
+    else if (switch_string == "charm")
+    {
+        first_nRhoCut = 1;
+        second_nRhoCut = 2;
+    }
+
+
+    // Unidimensional pT scan with nConst cuts
+    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
+    {
+        Int_t TP1 = 0, FN1 = 0, TN1 = 0, FP1 = 0;
+        Int_t TP2 = 0, FN2 = 0, TN2 = 0, FP2 = 0;
+
+        for (Long64_t i = 0; i < signal_pT.size(); i++)
+        {
+            if (signal_pT[i] >= pT_thr && signal_nRho[i] >= first_nRhoCut)
+            {
+                TP1++;
+            }
+            else
+            {
+                FN1++;
+            }
+
+            if (signal_pT[i] >= pT_thr && signal_nRho[i] >= second_nRhoCut)
+            {
+                TP2++;
+            }
+            else
+            {
+                FN2++;
+            }
+
+        }
+
+        for (Long64_t i = 0; i < background_pT.size(); i++)
+        {
+            if (background_pT[i] >= pT_thr && background_nRho[i] >= first_nRhoCut)
+            {
+                FP1++;
+            }
+            else
+            {
+                TN1++;
+            }
+
+            if (background_pT[i] >= pT_thr && background_nRho[i] >= second_nRhoCut)
+            {
+                FP2++;
+            }
+            else
+            {
+                TN2++;
+            }
+
+        }
+
+        Float_t purity1 = (Float_t)TP1 / (TP1 + FP1);
+        Float_t efficiency1 = (Float_t)TP1 / (TP1 + FN1);
+
+        Float_t purity2 = (Float_t)TP2 / (TP2 + FP2);
+        Float_t efficiency2 = (Float_t)TP2 / (TP2 + FN2);
+
+        pT_nRho_cut_purity1->Fill(pT_thr, purity1);
+        pT_nRho_cut_efficiency1->Fill(pT_thr, efficiency1);
+
+        pT_nRho_cut_purity2->Fill(pT_thr, purity2);
+        pT_nRho_cut_efficiency2->Fill(pT_thr, efficiency2);
+    }
 
     // Unidimensional pT scan with nConst and nRho cuts
     for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
@@ -310,12 +401,12 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
 
     }
 
-    TCanvas *c1 = new TCanvas("c1", "Purity and efficiency for pT cuts only", 2500, 2500);
-    c1->Divide(1,3);
+    TCanvas *c1 = new TCanvas("c1", "Purity and efficiency: p_{T} scan", 2500, 2500);
+    c1->Divide(1,1);
 
     c1->cd(1);
-    pT_cut_efficiency->SetTitle(("Purity and Efficiency for pT cuts only (" + switch_string + " jets)").c_str());
-    pT_cut_efficiency->GetXaxis()->SetTitle("pT cut (GeV/c)");
+    pT_cut_efficiency->SetTitle(("Purity and Efficiency for p_{T} scan (" + switch_string + " jets)").c_str());
+    pT_cut_efficiency->GetXaxis()->SetTitle("p_{T} threshold (GeV/c)");
     pT_cut_efficiency->GetYaxis()->SetTitle("Purity and Efficiency");
     pT_cut_efficiency->SetLineColor(kRed);
     pT_cut_efficiency->DrawCopy("HIST");
@@ -328,9 +419,12 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
     legend1->AddEntry(pT_cut_efficiency, "Efficiency", "l");
     legend1->Draw();
 
-    c1->cd(2);
-    pT_nConst_cut_efficiency1->SetTitle(("Purity and Efficiency for pT cuts with nConst cuts (" + switch_string + " jets)").c_str());
-    pT_nConst_cut_efficiency1->GetXaxis()->SetTitle("pT cut (GeV/c)");
+    TCanvas *c2 = new TCanvas("c2", "Purity and efficiency: p_{T} scan with nConst cuts", 2500, 2500);
+    c2->Divide(1,1);
+
+    c2->cd(2);
+    pT_nConst_cut_efficiency1->SetTitle(("Purity and Efficiency for p_{T} scan with N_{const} cuts (" + switch_string + " jets)").c_str());
+    pT_nConst_cut_efficiency1->GetXaxis()->SetTitle("p_{T} threshold (GeV/c)");
     pT_nConst_cut_efficiency1->GetYaxis()->SetTitle("Purity and Efficiency");
     pT_nConst_cut_efficiency1->SetLineColor(kRed);
     pT_nConst_cut_efficiency1->DrawCopy("HIST");
@@ -347,15 +441,46 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
     pT_nConst_cut_purity2->DrawCopy("HIST P SAME");
 
     TLegend *legend2 = new TLegend(0.6, 0.7, 0.9, 0.9);
-    legend2->AddEntry(pT_nConst_cut_purity1, "Purity (nConst cut = 10)", "l");
-    legend2->AddEntry(pT_nConst_cut_efficiency1, "Efficiency (nConst cut = 10)", "l");
-    legend2->AddEntry(pT_nConst_cut_purity2, "Purity (nConst cut = 15)", "p");
-    legend2->AddEntry(pT_nConst_cut_efficiency2, "Efficiency (nConst cut = 15)", "p");
+    legend2->AddEntry(pT_nConst_cut_purity1, Form("Purity (N_{const} cut = %.1f)", first_nConstCut), "l");
+    legend2->AddEntry(pT_nConst_cut_efficiency1, Form("Efficiency (N_{const} cut = %.1f)", first_nConstCut), "l");
+    legend2->AddEntry(pT_nConst_cut_purity2, Form("Purity (N_{const} cut = %.1f)", second_nConstCut), "p");
+    legend2->AddEntry(pT_nConst_cut_efficiency2, Form("Efficiency (N_{const} cut = %.1f)", second_nConstCut), "p");
     legend2->Draw();
 
-    c1->cd(3);
-    pT_nConst_nRho_cut_efficiency1->SetTitle(("Purity and Efficiency for pT cuts with nConst and nRho cuts (" + switch_string + " jets)").c_str());
-    pT_nConst_nRho_cut_efficiency1->GetXaxis()->SetTitle("pT cut (GeV/c)");
+    TCanvas *c3 = new TCanvas("c3", "Purity and efficiency: p_{T} scan with N_{#rho} cuts", 2500, 2500);
+    c3->Divide(1,1);
+
+    c3->cd(1);
+    pT_nRho_cut_efficiency1->SetTitle(("Purity and Efficiency for p_{T} scan with N_{#rho} cuts (" + switch_string + " jets)").c_str());
+    pT_nRho_cut_efficiency1->GetXaxis()->SetTitle("p_{T} threshold (GeV/c)");
+    pT_nRho_cut_efficiency1->GetYaxis()->SetTitle("Purity and Efficiency");
+    pT_nRho_cut_efficiency1->SetLineColor(kMagenta);
+    pT_nRho_cut_efficiency1->DrawCopy("HIST"); 
+
+    pT_nRho_cut_purity1->SetLineColor(kBlue);
+    pT_nRho_cut_purity1->DrawCopy("HIST SAME");
+
+    pT_nRho_cut_efficiency2->SetMarkerStyle(25);
+    pT_nRho_cut_efficiency2->SetMarkerColor(kRed);
+    pT_nRho_cut_efficiency2->DrawCopy("HIST P SAME");
+
+    pT_nRho_cut_purity2->SetMarkerStyle(25);
+    pT_nRho_cut_purity2->SetMarkerColor(kSpring);
+    pT_nRho_cut_purity2->DrawCopy("HIST P SAME");
+
+    TLegend *legend3 = new TLegend(0.6, 0.7, 0.9, 0.9);
+    legend3->AddEntry(pT_nRho_cut_purity1, Form("Purity (N_{#rho} cut = %.1f)", first_nRhoCut), "l");
+    legend3->AddEntry(pT_nRho_cut_efficiency1, Form("Efficiency (N_{#rho} cut = %.1f)", first_nRhoCut), "l");
+    legend3->AddEntry(pT_nRho_cut_purity2, Form("Purity (N_{#rho} cut = %.1f)", second_nRhoCut), "p");
+    legend3->AddEntry(pT_nRho_cut_efficiency2, Form("Efficiency (N_{#rho} cut = %.1f)", second_nRhoCut), "p");
+    legend3->Draw();
+
+    TCanvas *c4 = new TCanvas("c4", "Purity and efficiency: pT scan with N_{const} and N_{#rho} cuts", 2500, 2500);
+    c4->Divide(1,1);
+
+    c4->cd(1);
+    pT_nConst_nRho_cut_efficiency1->SetTitle(("Purity and Efficiency for p_{T} scan with N_{const} and N_{#rho} cuts (" + switch_string + " jets)").c_str());
+    pT_nConst_nRho_cut_efficiency1->GetXaxis()->SetTitle("p_{T} threshold (GeV/c)");
     pT_nConst_nRho_cut_efficiency1->GetYaxis()->SetTitle("Purity and Efficiency");
     pT_nConst_nRho_cut_efficiency1->SetLineColor(kRed);
     pT_nConst_nRho_cut_efficiency1->DrawCopy("HIST");
@@ -379,13 +504,13 @@ void purity_efficiency_analysis(std::string switch_string, const char* strange_f
     pT_nConst_nRho_cut_purity3->SetMarkerColor(kBlack);
     pT_nConst_nRho_cut_purity3->DrawCopy("HIST P SAME");
 
-    TLegend *legend3 = new TLegend(0.6, 0.7, 0.9, 0.9);
-    legend3->AddEntry(pT_nConst_nRho_cut_purity1, "Purity (nConst cut = 10, nRho cut = 1)", "l");
-    legend3->AddEntry(pT_nConst_nRho_cut_efficiency1, "Efficiency (nConst cut = 10, nRho cut = 1)", "l");
-    legend3->AddEntry(pT_nConst_nRho_cut_purity2, "Purity (nConst cut = 10, nRho cut = 1.5)", "p");
-    legend3->AddEntry(pT_nConst_nRho_cut_efficiency2, "Efficiency (nConst cut = 10, nRho cut = 1.5)", "p");
-    legend3->AddEntry(pT_nConst_nRho_cut_purity3, "Purity (nConst cut = 20, nRho cut = 1.5)", "p");
-    legend3->AddEntry(pT_nConst_nRho_cut_efficiency3, "Efficiency (nConst cut = 20, nRho cut = 1.5)", "p");
-    legend3->Draw();
+    TLegend *legend4 = new TLegend(0.6, 0.7, 0.9, 0.9);
+    legend4->AddEntry(pT_nConst_nRho_cut_purity1, Form("Purity (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", first_nConstCut, first_nRhoCut), "l");
+    legend4->AddEntry(pT_nConst_nRho_cut_efficiency1, Form("Efficiency (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", first_nConstCut, first_nRhoCut), "l");
+    legend4->AddEntry(pT_nConst_nRho_cut_purity2, Form("Purity (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", first_nConstCut, second_nRhoCut), "p");
+    legend4->AddEntry(pT_nConst_nRho_cut_efficiency2, Form("Efficiency (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", first_nConstCut, second_nRhoCut), "p");
+    legend4->AddEntry(pT_nConst_nRho_cut_purity3, Form("Purity (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", second_nConstCut, second_nRhoCut), "p");
+    legend4->AddEntry(pT_nConst_nRho_cut_efficiency3, Form("Efficiency (N_{const} cut = %.1f, N_{#rho} cut = %.1f)", second_nConstCut, second_nRhoCut), "p");
+    legend4->Draw();
 
 }
