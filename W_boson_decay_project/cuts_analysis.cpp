@@ -38,6 +38,8 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     Float_t pT_s, nConst_s, nRho_s, eventID_s;
     Float_t pT_c, nConst_c, nRho_c, eventID_c;
+    std::vector<Float_t> *jetVerticesInvariantMasses_s = nullptr; 
+    std::vector<Float_t> *jetVerticesInvariantMasses_c = nullptr;
 
     TFile *s_file = TFile::Open(strange_file, "READ");
 
@@ -46,12 +48,14 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     signalTree_s->SetBranchAddress("nConst_s", &nConst_s);
     signalTree_s->SetBranchAddress("nRho_s", &nRho_s);
     signalTree_s->SetBranchAddress("eventID_s", &eventID_s);
+    signalTree_s->SetBranchAddress("jetVerticesInvariantMasses_s", &jetVerticesInvariantMasses_s);
 
     TTree *backgroundTree_s = dynamic_cast<TTree *>(s_file->Get("BackgroundTree_s")); 
     backgroundTree_s->SetBranchAddress("pT_s", &pT_s);
     backgroundTree_s->SetBranchAddress("nConst_s", &nConst_s);
     backgroundTree_s->SetBranchAddress("nRho_s", &nRho_s);
     backgroundTree_s->SetBranchAddress("eventID_s", &eventID_s);
+    backgroundTree_s->SetBranchAddress("jetVerticesInvariantMasses_s", &jetVerticesInvariantMasses_s);
 
     Long64_t ne_signal_s = signalTree_s->GetEntries();
     Long64_t ne_background_s = backgroundTree_s->GetEntries();
@@ -65,12 +69,14 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     signalTree_c->SetBranchAddress("nConst_c", &nConst_c);
     signalTree_c->SetBranchAddress("nRho_c", &nRho_c);
     signalTree_c->SetBranchAddress("eventID_c", &eventID_c);
+    signalTree_c->SetBranchAddress("jetVerticesInvariantMasses_c", &jetVerticesInvariantMasses_c);
 
     TTree *backgroundTree_c = dynamic_cast<TTree *>(c_file->Get("BackgroundTree_c"));
     backgroundTree_c->SetBranchAddress("pT_c", &pT_c);
     backgroundTree_c->SetBranchAddress("nConst_c", &nConst_c);
     backgroundTree_c->SetBranchAddress("nRho_c", &nRho_c);
     backgroundTree_c->SetBranchAddress("eventID_c", &eventID_c);
+    backgroundTree_c->SetBranchAddress("jetVerticesInvariantMasses_c", &jetVerticesInvariantMasses_c);
 
     Long64_t ne_signal_c = signalTree_c->GetEntries();
     Long64_t ne_background_c = backgroundTree_c->GetEntries();
@@ -85,10 +91,12 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     TH1F *strange_signal_pT = new TH1F("strange_signal_pT", "p_{T} distribution of strange jets; p_{T} [GeV/c]; Events", 100, 0, 100);
     TH1F *strange_signal_nConst = new TH1F("strange_signal_nConst", "Number of constituents distribution of strange jets; nConst; Events", 50, 0, 50);
     TH1F *strange_signal_nRho = new TH1F("strange_signal_nRho", "N_{#rho} distribution of strange jets; N_{#rho}; Events", 10, 0, 10);
+    TH1F *strange_signal_jetVerticesInvariantMasses = new TH1F("strange_signal_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of strange jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
 
     TH1F *strange_background_pT = new TH1F("strange_background_pT", "p_{T} distribution of non-strange jets; p_{T} [GeV/c]; Events", 100, 0, 100);
     TH1F *strange_background_nConst = new TH1F("strange_background_nConst", "Number of constituents distribution of non-strange jets; nConst; Events", 50, 0, 50);
     TH1F *strange_background_nRho = new TH1F("strange_background_nRho", "N_{#rho} distribution of non-strange jets; N_{#rho}; Events", 10, 0, 10);
+    TH1F *strange_background_jetVerticesInvariantMasses = new TH1F("strange_background_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of non-strange jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
 
     for (Long64_t i = 0; i < ne_signal_s; i++)
     {
@@ -96,6 +104,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
         strange_signal_pT->Fill(pT_s);
         strange_signal_nConst->Fill(nConst_s);
         strange_signal_nRho->Fill(nRho_s);
+
+        for (const Float_t &mass : *jetVerticesInvariantMasses_s)
+        {
+            strange_signal_jetVerticesInvariantMasses->Fill(mass);
+        }
     }
 
     for (Long64_t i = 0; i < ne_background_s; i++)
@@ -104,6 +117,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
         strange_background_pT->Fill(pT_s);
         strange_background_nConst->Fill(nConst_s);
         strange_background_nRho->Fill(nRho_s);
+
+        for (const Float_t &mass : *jetVerticesInvariantMasses_s)
+        {
+            strange_background_jetVerticesInvariantMasses->Fill(mass);
+        }
     }
 
     //---------------------------------------------------------------------------------------------------------
@@ -111,10 +129,12 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     TH1F *charm_signal_pT = new TH1F("charm_signal_pT", "p_{T} distribution of charm jets; p_{T} [GeV/c]; Events", 100, 0, 100);
     TH1F *charm_signal_nConst = new TH1F("charm_signal_nConst", "Number of constituents distribution of charm jets; nConst; Events", 50, 0, 50);
     TH1F *charm_signal_nRho = new TH1F("charm_signal_nRho", "N_{#rho} distribution of charm jets; N_{#rho}; Events", 10, 0, 10);
+    TH1F *charm_signal_jetVerticesInvariantMasses = new TH1F("charm_signal_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of charm jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
 
     TH1F *charm_background_pT = new TH1F("charm_background_pT", "p_{T} distribution of non-charm jets; p_{T} [GeV/c]; Events", 100, 0, 100);
     TH1F *charm_background_nConst = new TH1F("charm_background_nConst", "Number of constituents distribution of non-charm jets; nConst; Events", 50, 0, 50);
     TH1F *charm_background_nRho = new TH1F("charm_background_nRho", "N_{#rho} distribution of non-charm jets; N_{#rho}; Events", 10, 0, 10);
+    TH1F *charm_background_jetVerticesInvariantMasses = new TH1F("charm_background_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of charm jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
 
     for (Long64_t i = 0; i < ne_signal_c; i++)
     {
@@ -122,6 +142,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
         charm_signal_pT->Fill(pT_c);
         charm_signal_nConst->Fill(nConst_c);
         charm_signal_nRho->Fill(nRho_c);
+
+        for (const Float_t &mass : *jetVerticesInvariantMasses_c)
+        {
+            charm_signal_jetVerticesInvariantMasses->Fill(mass);
+        }
     }
 
     for (Long64_t i = 0; i < ne_background_c; i++)
@@ -130,6 +155,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
         charm_background_pT->Fill(pT_c);
         charm_background_nConst->Fill(nConst_c);
         charm_background_nRho->Fill(nRho_c);
+
+        for (const Float_t &mass : *jetVerticesInvariantMasses_c)
+        {
+            charm_background_jetVerticesInvariantMasses->Fill(mass);
+        }
 
     }
 
@@ -140,11 +170,13 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     strange_background_pT->Scale(scaleS);
     strange_background_nConst->Scale(scaleS);
     strange_background_nRho->Scale(scaleS);
+    strange_background_jetVerticesInvariantMasses->Scale(scaleS);
 
     Float_t scaleC = (Float_t)(ne_signal_c) / (Float_t)(ne_background_c);
     charm_background_pT->Scale(scaleC);
     charm_background_nConst->Scale(scaleC);
     charm_background_nRho->Scale(scaleC);
+    charm_background_jetVerticesInvariantMasses->Scale(scaleC);
 
 TCanvas *c1 = new TCanvas("c1", "Discriminatory variables distributions", 2500, 2500);
     c1->Divide(3, 2);
@@ -238,4 +270,37 @@ TCanvas *c1 = new TCanvas("c1", "Discriminatory variables distributions", 2500, 
     legend6->AddEntry(charm_signal_nRho, "Charm signal jets", "l");
     legend6->AddEntry(charm_background_nRho, "Charm background jets", "l");
     legend6->Draw();
+
+    TCanvas *c2 = new TCanvas("c2", "Discriminatory variables distributions", 2500, 2500);
+    c2->Divide(1, 2);
+
+    c2->cd(1);
+    strange_background_jetVerticesInvariantMasses->SetTitle("Strange jets: jet vertices invariant masses distribution; Jet vertices invariant mass (GeV/c^{2});Events");
+    strange_background_jetVerticesInvariantMasses->SetLineColor(kRed);
+    strange_background_jetVerticesInvariantMasses->SetLineStyle(1);
+    strange_background_jetVerticesInvariantMasses->DrawCopy();
+
+    strange_signal_jetVerticesInvariantMasses->SetLineColor(kBlue);
+    strange_signal_jetVerticesInvariantMasses->SetLineStyle(1);
+    strange_signal_jetVerticesInvariantMasses->DrawCopy("same");
+
+    TLegend *legend7 = new TLegend(0.6, 0.7, 0.9, 0.9);
+    legend7->AddEntry(strange_signal_jetVerticesInvariantMasses, "Strange signal jets", "l");
+    legend7->AddEntry(strange_background_jetVerticesInvariantMasses, "Strange background jets", "l");
+    legend7->Draw();
+
+    c2->cd(2);
+    charm_signal_jetVerticesInvariantMasses->SetTitle("Charm jets: jet vertices invariant masses distribution; Jet vertices invariant mass (GeV/c^{2});Events");
+    charm_signal_jetVerticesInvariantMasses->SetLineColor(kBlue);
+    charm_signal_jetVerticesInvariantMasses->SetLineStyle(1);
+    charm_signal_jetVerticesInvariantMasses->DrawCopy();
+
+    charm_background_jetVerticesInvariantMasses->SetLineColor(kRed);
+    charm_background_jetVerticesInvariantMasses->SetLineStyle(1);
+    charm_background_jetVerticesInvariantMasses->DrawCopy("same");
+
+    TLegend *legend8 = new TLegend(0.6, 0.7, 0.9, 0.9);
+    legend8->AddEntry(charm_signal_jetVerticesInvariantMasses, "Charm signal jets", "l");
+    legend8->AddEntry(charm_background_jetVerticesInvariantMasses, "Charm background jets", "l");
+    legend8->Draw();
 }

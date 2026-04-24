@@ -1,3 +1,4 @@
+#include <map>
 #include <cmath>
 #include <string>
 #include "TH1.h"
@@ -7,6 +8,7 @@
 #include "MyJet.h"
 #include "TFile.h"
 #include <iostream>
+#include <algorithm>
 #include "TSystem.h"
 #include "MyQuark.h"
 #include "TCanvas.h"
@@ -21,7 +23,7 @@
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
-        JetInfo(const Float_t& vx = 0, const Float_t& vy = 0, const Float_t& vz = 0, const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0, const Int_t& thirdMotherPdg = 0) : fpVx(vx), fpVy(vy), fpVz(vz), signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg), finalParticleThirdMotherPdg(thirdMotherPdg){}
+        JetInfo(const Float_t& vx, const Float_t& vy, const Float_t& vz, const TString& type = "", const Int_t& pdg = 0, const Int_t& motherPdg = 0, const Int_t& secondMotherPdg = 0, const Int_t& thirdMotherPdg = 0) : fpVx(vx), fpVy(vy), fpVz(vz), signalType(type), finalParticlePdg(pdg), finalParticleMotherPdg(motherPdg), finalParticleSecondMotherPdg(secondMotherPdg), finalParticleThirdMotherPdg(thirdMotherPdg){}
 
         void setVx(Float_t vx) { fpVx = vx; }
         Float_t getVx() const { return fpVx; }
@@ -102,6 +104,9 @@ void jetClassification_3var_strange(const char* fileName)
     TH1F* signal_nConstDistribution = new TH1F("signal_nConstDistribution", "Signal jets: number of constituents", 100, 0, 100);
     TH1F* background_nConstDistribution = new TH1F("background_nConstDistribution", "Background jets: number of constituents", 100, 0, 100);
 
+    TH1F* signal_jetConstituentsVertex_invariantMassDistribution = new TH1F("signal_jetConstituentsVertex_invariantMassDistribution", "Signal jets: invariant mass distribution of the jet constituents' vertices", 100, 0, 50);
+    TH1F* background_jetConstituentsVertex_invariantMassDistribution = new TH1F("background_jetConstituentsVertex_invariantMassDistribution", "Background jets: invariant mass distribution of the jet constituents' vertices", 100, 0, 50);
+
     //---------------------------------------------------------------------------------------------------------
     // Initializations and FastJet configurations:
     //---------------------------------------------------------------------------------------------------------
@@ -133,6 +138,7 @@ void jetClassification_3var_strange(const char* fileName)
     //---------------------------------------------------------------------------------------------------------
 
     Float_t eventID_s, pT_s, label_s, nConst_s, eta_s, phi_s, mass_s, nRho_s, first_nRho_s, second_nRho_s, third_nRho_s = 0;
+    std::vector<Float_t> jetVerticesInvariantMasses_s;
 
     TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_strange.root", "RECREATE");
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_strange.root", "RECREATE");
@@ -146,6 +152,7 @@ void jetClassification_3var_strange(const char* fileName)
     signalTree_s->Branch("nConst_s", &nConst_s);
     signalTree_s->Branch("nRho_s", &nRho_s);
     signalTree_s->Branch("eventID_s", &eventID_s);
+    signalTree_s->Branch("jetVerticesInvariantMasses_s", &jetVerticesInvariantMasses_s);
 
     TTree *backgroundTree_s = new TTree("BackgroundTree_s", "Tree with background data from s quark");
     backgroundTree_s->Branch("pT_s", &pT_s);
@@ -156,7 +163,7 @@ void jetClassification_3var_strange(const char* fileName)
     backgroundTree_s->Branch("nConst_s", &nConst_s);
     backgroundTree_s->Branch("nRho_s", &nRho_s);
     backgroundTree_s->Branch("eventID_s", &eventID_s);
-    
+    backgroundTree_s->Branch("jetVerticesInvariantMasses_s", &jetVerticesInvariantMasses_s);
 
     //---------------------------------------------------------------------------------------------------------
     // Event loop equivalent
@@ -253,20 +260,17 @@ void jetClassification_3var_strange(const char* fileName)
             first_nRho = 0; // Counter that will serve as the new discriminatory variable: it measures the amount of constituents, per jet, that have a vertex in a given interval [0, rhoUpperBound]
             second_nRho = 0;
             third_nRho = 0;
-            maxRho = 0;
             pT_LeadConst = 0;
-    
+            
+            // Declaração: map<TipoDaChave, TipoDoValor> nome;
+            std::map<Double_t, std::vector<fastjet::PseudoJet>> grupos_por_rho;
+
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 Float_t vx = constituent.user_info<JetInfo>().getVx();
                 Float_t vy = constituent.user_info<JetInfo>().getVy();
                 
                 Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
-
-                if (Rho > maxRho) 
-                {
-                    maxRho = Rho;
-                }
 
                 if (Rho >= rhoLowerBound && Rho < firstRhoUpperBound)
                 {
@@ -278,39 +282,37 @@ void jetClassification_3var_strange(const char* fileName)
                     second_nRho++;
                 }
 
-                if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
+                if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)   // Vou estabelecer que o thirdRhoUpperBound sempre será o definitivo para a contage. Os demais são testes.
                 {
                     third_nRho++;
+                    
+                    // Adiciona o constituinte ao grupo correspondente ao seu valor de rho
+                    grupos_por_rho[Rho].push_back(constituent); 
+                    
+                    // Caso a chave (Rho) ainda não exista, ela será criada automaticamente. Criamos grupos de constituintes com valores de rho distintos. 
+
                 }
 
                 if (constituent.pt() > pT_LeadConst)
                 {
                     pT_LeadConst = constituent.pt();
                 }
-
+            
             }
-            if (maxRho > 1)
+
+            // This vector contains the invariant mass of all vertices within a jet final particles that have rho in the interval of interest
+            std::vector<Float_t> vertices_masses;
+
+            for (auto const& [rho, constituintes] : grupos_por_rho) 
             {
-                maxRho = 1;
+                TLorentzVector constituinte(0, 0, 0, 0);
+                for (const auto& c : constituintes) 
+                {
+                    constituinte += TLorentzVector(c.px(), c.py(), c.pz(), c.E());
+                }
+                vertices_masses.push_back(constituinte.M());
             }
-
-            Float_t angAve = 0;
-            Float_t sigmaKT = 0;
-
-            for (Int_t i = 0; i < jetNConst; ++i) 
-            {
-                Double_t pt_constituentes = jet.constituents()[i].pt();
-                Double_t eta_constituentes = jet.constituents()[i].eta();
-                Double_t phi_constituentes = jet.constituents()[i].phi();
-
-                Double_t angPart = TMath::Sqrt(TMath::Power(TMath::Abs(phi_constituentes) - TMath::Abs(jetPhi), 2) + TMath::Power(eta_constituentes - jetEta, 2));
-
-                angAve = angAve + angPart;
-                sigmaKT = sigmaKT + (TMath::Power(pt_constituentes - (jetPt / jetNConst), 2));
-            }
-
-            angAve = angAve / jetNConst;
-            sigmaKT = sigmaKT / jetNConst;               
+            // If needed, I can also store the very TLorentzVectors in order to have access to more information about the vertices. For now, since its not required, I'll keep things this way
 
             //---------------------------------------------------------------------------------------------------------
             // Jet classification block (based on constituents info)
@@ -350,7 +352,8 @@ void jetClassification_3var_strange(const char* fileName)
                 mass_s = jetMass;
                 nConst_s = jetNConst;
                 nRho_s = third_nRho;        // To be changed accordingly to the plots being examined -> It's going to be a particular choice
-
+                
+                jetVerticesInvariantMasses_s = vertices_masses;
                 background_pTDistribution->Fill(pT_s);
                 background_nConstDistribution->Fill(nConst_s);
                 first_background_nRho_Distribution->Fill(first_nRho);
@@ -413,6 +416,8 @@ void jetClassification_3var_strange(const char* fileName)
                 second_nRho_s = 0;
                 third_nRho_s = 0;
 
+                std::map<Double_t, std::vector<fastjet::PseudoJet>> grupos_por_rho;
+
                 for (const fastjet::PseudoJet &constituent : jet.constituents())
                 {
                     Float_t vx = constituent.user_info<JetInfo>().getVx();
@@ -433,6 +438,8 @@ void jetClassification_3var_strange(const char* fileName)
                     if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
                     {
                         third_nRho_s++;
+
+                        grupos_por_rho[Rho].push_back(constituent); 
                     }
 
                     /*  Just uncomment and ajust if leadingPt is required
@@ -443,7 +450,20 @@ void jetClassification_3var_strange(const char* fileName)
                     */
                 }
 
+                std::vector<Float_t> vertices_masses;
+
+                for (auto const& [rho, constituintes] : grupos_por_rho) 
+                {
+                    TLorentzVector constituinte(0, 0, 0, 0);
+                    for (const auto& c : constituintes) 
+                    {
+                        constituinte += TLorentzVector(c.px(), c.py(), c.pz(), c.E());
+                    }
+                    vertices_masses.push_back(constituinte.M());
+                }
+
                 nRho_s = third_nRho_s;
+                jetVerticesInvariantMasses_s = vertices_masses;
 
                 signal_pTDistribution->Fill(pT_s);
                 signal_nConstDistribution->Fill(nConst_s);
