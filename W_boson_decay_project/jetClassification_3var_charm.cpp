@@ -85,7 +85,7 @@ void jetClassification_3var_charm(const char* fileName)
     TLorentzVector vec_c(0,0,0,0);
 
     //---------------------------------------------------------------------------------------------------------
-    // Histogramas
+    // Histograms initialization
     //---------------------------------------------------------------------------------------------------------
 
     TH1F* first_signal_nRho_Distribution = new TH1F("firstNRho_signal_hist", "Signal jets: nRho distribution (upper bound = 1)", 20, 0, 20);
@@ -132,10 +132,12 @@ void jetClassification_3var_charm(const char* fileName)
     // Initialization of TMVA TTrees
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c = 0;
+    Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c;
+    std::vector<Float_t> jetVerticesInvariantMasses_c;
 
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm_etaLimited.root", "RECREATE");
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_charm.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");
     signalTree_c->Branch("pT_c", &pT_c);
@@ -146,6 +148,7 @@ void jetClassification_3var_charm(const char* fileName)
     signalTree_c->Branch("nConst_c", &nConst_c);
     signalTree_c->Branch("nRho_c", &nRho_c);
     signalTree_c->Branch("eventID_c", &eventID_c);
+    signalTree_c->Branch("jetVerticesInvariantMasses_c", &jetVerticesInvariantMasses_c);
 
     TTree *backgroundTree_c = new TTree("BackgroundTree_c", "Tree with background data from c quark");
     backgroundTree_c->Branch("pT_c", &pT_c);
@@ -156,6 +159,7 @@ void jetClassification_3var_charm(const char* fileName)
     backgroundTree_c->Branch("nConst_c", &nConst_c);
     backgroundTree_c->Branch("nRho_c", &nRho_c);
     backgroundTree_c->Branch("eventID_c", &eventID_c);
+    backgroundTree_c->Branch("jetVerticesInvariantMasses_c", &jetVerticesInvariantMasses_c);
 
     //---------------------------------------------------------------------------------------------------------
     // Event loop equivalent
@@ -260,7 +264,10 @@ void jetClassification_3var_charm(const char* fileName)
             third_nRho = 0;
             maxRho = 0;
             pT_LeadConst = 0;
-    
+            
+            // Declaração: map<TipoDaChave, TipoDoValor> nome;
+            std::map<Double_t, std::vector<fastjet::PseudoJet>> grupos_por_rho;
+
             for (const fastjet::PseudoJet &constituent : jet.constituents())
             {
                 Float_t vx = constituent.user_info<JetInfo>().getVx();
@@ -286,6 +293,11 @@ void jetClassification_3var_charm(const char* fileName)
                 if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
                 {
                     third_nRho++;
+
+                    // Adiciona o constituinte ao grupo correspondente ao seu valor de rho
+                    grupos_por_rho[Rho].push_back(constituent); 
+                    
+                    // Caso a chave (Rho) ainda não exista, ela será criada automaticamente. Criamos grupos de constituintes com valores de rho distintos. 
                 }
 
                 if (constituent.pt() > pT_LeadConst)
@@ -294,28 +306,20 @@ void jetClassification_3var_charm(const char* fileName)
                 }
             }
 
-            if (maxRho > 1)
+            // This vector contains the invariant mass of all vertices within a jet final particles that have rho in the interval of interest
+            std::vector<Float_t> vertices_masses;
+
+            for (auto const& [rho, constituintes] : grupos_por_rho) 
             {
-                maxRho = 1;
+                TLorentzVector constituinte(0, 0, 0, 0);
+                for (const auto& c : constituintes) 
+                {
+                    constituinte += TLorentzVector(c.px(), c.py(), c.pz(), c.E());
+                }
+                vertices_masses.push_back(constituinte.M());
             }
-
-            Float_t angAve = 0;
-            Float_t sigmaKT = 0;
-
-            for (Int_t i = 0; i < jetNConst; ++i) 
-            {
-                Double_t pt_constituentes = jet.constituents()[i].pt();
-                Double_t eta_constituentes = jet.constituents()[i].eta();
-                Double_t phi_constituentes = jet.constituents()[i].phi();
-
-                Double_t angPart = TMath::Sqrt(TMath::Power(TMath::Abs(phi_constituentes) - TMath::Abs(jetPhi), 2) + TMath::Power(eta_constituentes - jetEta, 2));
-
-                angAve = angAve + angPart;
-                sigmaKT = sigmaKT + (TMath::Power(pt_constituentes - (jetPt / jetNConst), 2));
-            }
-
-            angAve = angAve / jetNConst;
-            sigmaKT = sigmaKT / jetNConst;               
+            // If needed, I can also store the very TLorentzVectors in order to have access to more information about the vertices. For now, since its not required, I'll keep things this way
+           
 
             //---------------------------------------------------------------------------------------------------------
             // Jet classification block (based on the extra constituents info we previously added)
@@ -356,6 +360,7 @@ void jetClassification_3var_charm(const char* fileName)
                 mass_c = jetMass;
                 nConst_c = jetNConst;
                 nRho_c = third_nRho;        // To be changed accordingly to the plots to be examined -> It's going to be a particular choice
+                jetVerticesInvariantMasses_c = vertices_masses;
 
                 background_pTDistribution->Fill(pT_c);
                 background_nConstDistribution->Fill(nConst_c);
@@ -367,6 +372,8 @@ void jetClassification_3var_charm(const char* fileName)
                 // Since we're dealing in this specific macro only with charmed jets, for a model dedicated to predicting charmed jets, anything else, that is, stranged jets
                 // or any other kind of jet is to be considered background.
             }
+            vertices_masses.clear();
+            grupos_por_rho.clear();
 
         } // End of individual jet creation
 
@@ -425,6 +432,8 @@ void jetClassification_3var_charm(const char* fileName)
                 second_nRho_c = 0;
                 third_nRho_c = 0;
 
+                std::map<Double_t, std::vector<fastjet::PseudoJet>> grupos_por_rho;
+
                 for (const fastjet::PseudoJet &constituent : jet.constituents())
                 {
                     Float_t vx = constituent.user_info<JetInfo>().getVx();
@@ -446,6 +455,8 @@ void jetClassification_3var_charm(const char* fileName)
                     if (Rho >= rhoLowerBound && Rho < thirdRhoUpperBound)
                     {
                         third_nRho_c++;
+
+                        grupos_por_rho[Rho].push_back(constituent); 
                     }
 
                     /*  Just uncomment if leadingPt is required
@@ -456,7 +467,20 @@ void jetClassification_3var_charm(const char* fileName)
                     */
                 }
 
+                std::vector<Float_t> vertices_masses;
+
+                for (auto const& [rho, constituintes] : grupos_por_rho) 
+                {
+                    TLorentzVector constituinte(0, 0, 0, 0);
+                    for (const auto& c : constituintes) 
+                    {
+                        constituinte += TLorentzVector(c.px(), c.py(), c.pz(), c.E());
+                    }
+                    vertices_masses.push_back(constituinte.M());
+                }
+                
                 nRho_c = third_nRho_c;
+                jetVerticesInvariantMasses_c = vertices_masses;
 
                 signal_pTDistribution->Fill(pT_c);
                 signal_nConstDistribution->Fill(nConst_c);
@@ -465,6 +489,8 @@ void jetClassification_3var_charm(const char* fileName)
                 third_signal_nRho_Distribution->Fill(third_nRho_c);
 
                 signalTree_c->Fill();
+                vertices_masses.clear();
+                grupos_por_rho.clear();
             }
             // If our second confirmation fails, then I suppose we can throw this jet into background. I'll get confirmation over that supposition and then execute this idea
         }

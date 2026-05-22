@@ -1,8 +1,9 @@
 #include <cmath>
-#include <string>
 #include "TH1.h"
 #include "TH1F.h"
 #include "TH1D.h"
+#include <string>
+#include <fstream>
 #include "TMath.h"
 #include "MyJet.h"
 #include "TFile.h"
@@ -19,6 +20,22 @@
 #include <TLorentzVector.h>
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
+
+void ExportHistogramToCSV(TH1F* hist, std::string filename) 
+{
+
+    std::ofstream csvFile(filename, std::ios::out | std::ios::trunc);
+    
+    // Cabeçalho: Valor do Bin (Massa/pT/etc), Conteúdo (Frequência) e Erro Estatístico
+    csvFile << "bin_center,content,error" << std::endl;
+
+    for (Int_t i = 1; i <= hist->GetNbinsX(); ++i) 
+    {
+        csvFile << hist->GetBinCenter(i) << "," << hist->GetBinContent(i) << "," << hist->GetBinError(i) << std::endl;
+    }
+
+    csvFile.close();
+}
 
 
 fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE, double pathLength, string jetType = "", double dE_dx = 0)
@@ -109,7 +126,7 @@ void jetClassification1(const char* fileName)
     // Initialization of histograms
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 100, 0, 100);
+    TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 600, 0, 120);
     TH1F *primary_CharmRatioHist = new TH1F("primaryCharmRatio", "Charm: Ratio between tagged jets (with correct hadron) and quark p_{T}", 50, 0, 2);
     TH1F *secondary_CharmRatioHist = new TH1F("secondaryCharmRatio", "Charm: Ratio between tagged jets (whitout correct hadron) and quark p_{T}", 50, 0, 2);
 
@@ -392,7 +409,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasCharmConstituent && charmRatio > 0.60) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
+            if (hasCharmConstituent && charmRatio > 0.80) // Please, refer to 5th september research log for the reasoning behind the 0.6 lower limit
             {
                 good_c_jets.push_back(jet);
             }
@@ -450,7 +467,7 @@ void jetClassification1(const char* fileName)
                 }
             }
 
-            if (hasStrangeConstituent && strangeRatio > 0.60) // Same as before
+            if (hasStrangeConstituent && strangeRatio > 0.80) // Same as before
             {
                 good_s_jets.push_back(jet);
             }
@@ -807,6 +824,7 @@ void jetClassification1(const char* fileName)
     
     } // End of event loop equivalent
 
+    //ExportHistogramToCSV(invariantMass, "invariantMass_2.csv");
 
     TH1F* observable_F_sc_g10_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_greaterThan10->Clone("observable_F_sc_g10_norm");
     TH1F* observable_F_sc_l10_norm = (TH1F*) observable_F_sc_Distribution_wBosonPt_smallerThan10->Clone("observable_F_sc_l10_norm");

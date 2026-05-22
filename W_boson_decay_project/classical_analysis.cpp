@@ -199,7 +199,7 @@ void classical_analysis(const char* fileName)
             jetEta = jet.eta();
 
             Float_t absEta = TMath::Abs(jetEta);
-            //if (absEta > 2) continue; // Standard cut on jet eta
+            if (absEta > 2) continue; // Standard cut on jet eta
         
             // It seems that the cut on eta causes the number of jet entries with null pT to increase drastically
 
@@ -242,29 +242,29 @@ void classical_analysis(const char* fileName)
             nRho_distribution->Fill(nRho);
 
             Float_t pT_cut_pT = jetPt;
-            if (pT_cut_pT > 15)
+            if (pT_cut_pT > 20)
             {
                 pT_cut_selectedJets.push_back(jet);
             }
 
             Float_t nConst_cut_nConst = jetNConst;
-            if (nConst_cut_nConst > 15)
+            if (nConst_cut_nConst > 20)
             {
                 nConst_cut_selectedJets.push_back(jet);
             }
 
             Float_t nRho_cut_nRho = nRho;
-            if (nRho_cut_nRho > 1)
+            if (nRho_cut_nRho > 2)
             {
                 nRho_cut_selectedJets.push_back(jet);
             }
 
-            if (pT_cut_pT > 15 && nConst_cut_nConst > 15)
+            if (pT_cut_pT > 20 && nConst_cut_nConst > 20)
             {
                 pT_and_nConst_cuts_selectedJets.push_back(jet);
             }
 
-            if (pT_cut_pT > 15 && nConst_cut_nConst > 15 && nRho_cut_nRho > 1)
+            if (pT_cut_pT > 20 && nConst_cut_nConst > 20 && nRho_cut_nRho > 2)
             {
                 combined_cuts_selectedJets.push_back(jet);
             }
