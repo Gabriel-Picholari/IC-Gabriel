@@ -135,7 +135,8 @@ void jetClassification_3var_charm(const char* fileName)
     Float_t eventID_c, pT_c, label_c, nConst_c, eta_c, phi_c, mass_c, nRho_c, first_nRho_c, second_nRho_c, third_nRho_c;
     std::vector<Float_t> jetVerticesInvariantMasses_c;
 
-    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
+    TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm_etaLimited.root", "RECREATE");
+    //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTraining_charm.root", "RECREATE");
     //TFile *filteredDataFile = new TFile("filteredOutput_3var_modelTesting_charm.root", "RECREATE");
 
     TTree *signalTree_c = new TTree("SignalTree_c", "Tree with signal data from c quark");

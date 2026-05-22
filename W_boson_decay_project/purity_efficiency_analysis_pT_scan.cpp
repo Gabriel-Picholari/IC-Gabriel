@@ -26,7 +26,7 @@
 #include "fastjet/PseudoJet.hh"
 #include "fastjet/ClusterSequence.hh"
 
-void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* strange_file)
+void purity_efficiency_analysis_pT_scan(const char* strange_file, std::string switch_string)
 {
     gSystem->Load("libEG");
     gSystem->Load("libEGPythia8");
@@ -72,32 +72,32 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
     // Histograms
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F* pT_cut_purity = new TH1F("pT_cut_purity", "Purity for pT scan; pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_cut_efficiency = new TH1F("pT_cut_efficiency", "Efficiency for pT scan; pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_cut_purity = new TH1F("pT_cut_purity", "Purity for pT scan; pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_cut_efficiency = new TH1F("pT_cut_efficiency", "Efficiency for pT scan; pT cut (GeV/c); Efficiency", 60, 0, 60);
 
 
-    TH1F* pT_nConst_cut_purity1 = new TH1F("pT_nConst_cut_purity1", "Purity for pT scan with nConst cut (first cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_cut_efficiency1 = new TH1F("pT_nConst_cut_efficiency1", "Efficiency for pT scan with nConst cut (first cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nConst_cut_purity1 = new TH1F("pT_nConst_cut_purity1", "Purity for pT scan with nConst cut (first cut); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nConst_cut_efficiency1 = new TH1F("pT_nConst_cut_efficiency1", "Efficiency for pT scan with nConst cut (first cut); pT cut (GeV/c); Efficiency", 60, 0, 60);
 
-    TH1F* pT_nConst_cut_purity2 = new TH1F("pT_nConst_cut_purity2", "Purity for pT scan with nConst cut (second cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_cut_efficiency2 = new TH1F("pT_nConst_cut_efficiency2", "Efficiency for pT scan with nConst cut (second cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
-
-
-    TH1F* pT_nRho_cut_purity1 = new TH1F("pT_nRho_cut_purity1", "Purity for pT scan with nRho cut (first cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nRho_cut_efficiency1 = new TH1F("pT_nRho_cut_efficiency1", "Efficiency for pT scan with nRho cut (first cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
-
-    TH1F* pT_nRho_cut_purity2 = new TH1F("pT_nRho_cut_purity2", "Purity for pT scan with nRho cut (second cut); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nRho_cut_efficiency2 = new TH1F("pT_nRho_cut_efficiency2", "Efficiency for pT scan with nRho cut (second cut); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nConst_cut_purity2 = new TH1F("pT_nConst_cut_purity2", "Purity for pT scan with nConst cut (second cut); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nConst_cut_efficiency2 = new TH1F("pT_nConst_cut_efficiency2", "Efficiency for pT scan with nConst cut (second cut); pT cut (GeV/c); Efficiency", 60, 0, 60);
 
 
-    TH1F* pT_nConst_nRho_cut_purity1 = new TH1F("pT_nConst_nRho_cut_purity1", "Purity for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency1 = new TH1F("pT_nConst_nRho_cut_efficiency1", "Efficiency for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nRho_cut_purity1 = new TH1F("pT_nRho_cut_purity1", "Purity for pT scan with nRho cut (first cut); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nRho_cut_efficiency1 = new TH1F("pT_nRho_cut_efficiency1", "Efficiency for pT scan with nRho cut (first cut); pT cut (GeV/c); Efficiency", 60, 0, 60);
 
-    TH1F* pT_nConst_nRho_cut_purity2 = new TH1F("pT_nConst_nRho_cut_purity2", "Purity for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency2 = new TH1F("pT_nConst_nRho_cut_efficiency2", "Efficiency for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+    TH1F* pT_nRho_cut_purity2 = new TH1F("pT_nRho_cut_purity2", "Purity for pT scan with nRho cut (second cut); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nRho_cut_efficiency2 = new TH1F("pT_nRho_cut_efficiency2", "Efficiency for pT scan with nRho cut (second cut); pT cut (GeV/c); Efficiency", 60, 0, 60);
 
-    TH1F* pT_nConst_nRho_cut_purity3 = new TH1F("pT_nConst_nRho_cut_purity3", "Purity for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Purity", 120, 0, 60);
-    TH1F* pT_nConst_nRho_cut_efficiency3 = new TH1F("pT_nConst_nRho_cut_efficiency3", "Efficiency for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Efficiency", 120, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity1 = new TH1F("pT_nConst_nRho_cut_purity1", "Purity for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency1 = new TH1F("pT_nConst_nRho_cut_efficiency1", "Efficiency for pT scan with nConst and nRho cut (first cuts); pT cut (GeV/c); Efficiency", 60, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity2 = new TH1F("pT_nConst_nRho_cut_purity2", "Purity for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency2 = new TH1F("pT_nConst_nRho_cut_efficiency2", "Efficiency for pT scan with nConst and nRho cut (second cuts); pT cut (GeV/c); Efficiency", 60, 0, 60);
+
+    TH1F* pT_nConst_nRho_cut_purity3 = new TH1F("pT_nConst_nRho_cut_purity3", "Purity for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Purity", 60, 0, 60);
+    TH1F* pT_nConst_nRho_cut_efficiency3 = new TH1F("pT_nConst_nRho_cut_efficiency3", "Efficiency for pT scan with nConst and nRho cut (third cuts); pT cut (GeV/c); Efficiency", 60, 0, 60);
 
     //---------------------------------------------------------------------------------------------------------
     // Analysis
@@ -123,9 +123,12 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
     }
     
     Float_t pT_maxThreshold = 100;
-    
+    Float_t threshold_increment = 1;
+
+    // Notice the threshold increment must be compatible with the binning of the histograms, otherwise, all bins will be filled multiple times, leading to unpredictable results in the purity and efficiency distributions.
+
     // Unidimensional pT scan (no cuts included)
-    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
+    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += threshold_increment)
     {
         Int_t TP = 0, FN = 0, TN = 0, FP = 0;
         for (Long64_t i = 0; i < signal_pT.size(); i++)
@@ -172,7 +175,7 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
     }
 
     // Unidimensional pT scan with nConst cuts
-    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
+    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += threshold_increment)
     {
         Int_t TP1 = 0, FN1 = 0, TN1 = 0, FP1 = 0;
         Int_t TP2 = 0, FN2 = 0, TN2 = 0, FP2 = 0;
@@ -239,8 +242,8 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
 
     if (switch_string == "strange") 
     {
-        first_nRhoCut = 0.5;
-        second_nRhoCut = 1;
+        first_nRhoCut = 1;
+        second_nRhoCut = 2;
     } 
     else if (switch_string == "charm")
     {
@@ -250,7 +253,7 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
 
 
     // Unidimensional pT scan with nConst cuts
-    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
+    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += threshold_increment)
     {
         Int_t TP1 = 0, FN1 = 0, TN1 = 0, FP1 = 0;
         Int_t TP2 = 0, FN2 = 0, TN2 = 0, FP2 = 0;
@@ -313,7 +316,7 @@ void purity_efficiency_analysis_pT_scan(std::string switch_string, const char* s
     }
 
     // Unidimensional pT scan with nConst and nRho cuts
-    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += 0.1)
+    for (Float_t pT_thr = 0; pT_thr <= pT_maxThreshold; pT_thr += threshold_increment)
     {
         Int_t TP1 = 0, FN1 = 0, TN1 = 0, FP1 = 0;
         Int_t TP2 = 0, FN2 = 0, TN2 = 0, FP2 = 0;
