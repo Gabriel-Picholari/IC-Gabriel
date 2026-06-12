@@ -1,12 +1,3 @@
-//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-/*
-
-  This code determines the cuts for multiple potential discriminating variables through cumulative histograms. The differences from the previous version include the addition of a new discriminating 
-variable and the creation of cumulative histograms for each of them. This macro is intended to be used in conjunction with wdecayTTree2.cpp.
-
-*/
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 #include <cmath>
 #include <string>
 #include "TH1.h"

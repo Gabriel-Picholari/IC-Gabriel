@@ -1,12 +1,3 @@
-//---------------------------------------------------------------------------------------------------------//
-//                                                                                                         //
-// This code reads the original data from the pp collision and is currently being developed to perform an  //
-// introductory classical analysis of the data, so it can be compared with the TMVA analysis when          //
-// available. In summary, it determines successive and cumulative cuts in the appropriate data histograms  //
-// so we can better separate signal and background information.                                            //
-//                                                                                                         //
-//---------------------------------------------------------------------------------------------------------//
-
 #include <cmath>
 #include <string>
 #include "TH1.h"
