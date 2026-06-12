@@ -9,7 +9,7 @@
 #include <vector>
 #include <TLine.h>
 
-void applyAndAnalyzeModel_3var_charm(const char* inputFileName, float threshold = 0.7) {
+void modelStatistics_multiVariable_charm(const char* inputFileName, float threshold = 0.7) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 

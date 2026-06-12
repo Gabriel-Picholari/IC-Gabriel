@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_strange(const char* inputFileName, float threshold = 0.0) {
+void modelStatistics_2var_strange(const char* inputFileName, float threshold = 0.0) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 

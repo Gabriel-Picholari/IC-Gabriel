@@ -11,7 +11,7 @@
 #include <TLine.h>
 #include <vector>
 
-void applyAndAnalyzeModel_3var_strange(const char* inputFileName, float threshold = 0.5) {
+void modelStatistics_multiVariable_strange(const char* inputFileName, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 

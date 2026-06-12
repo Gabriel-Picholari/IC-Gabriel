@@ -5,7 +5,7 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_strange(const char *fileName) {
+void modelTrainment_2var_strange(const char *fileName) {
     
     TFile* outputFile = TFile::Open("TMVAOutput_2var_strange.root", "RECREATE");
     TFile* inputFile = TFile::Open(fileName, "READ");

@@ -5,7 +5,7 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_charm(const char *fileName) 
+void modelTrainment_2var_charm(const char *fileName) 
 {
     TFile* outputFile = TFile::Open("TMVAOutput_2var_charm.root", "RECREATE");
     TFile* inputFile = TFile::Open(fileName, "READ");

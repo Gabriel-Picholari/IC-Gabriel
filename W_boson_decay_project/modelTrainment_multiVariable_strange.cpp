@@ -5,9 +5,9 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_3var_strange(const char *fileName) 
+void modelTrainment_multiVariable_strange(const char *fileName) 
 {
-    TFile* outputFile = TFile::Open("TMVAOutput_3var_strange.root", "RECREATE");
+    TFile* outputFile = TFile::Open("TMVAOutput_multiVariable_strange.root", "RECREATE");
 
     TFile* inputFile = TFile::Open(fileName, "READ");
 
@@ -15,7 +15,7 @@ void modelTrainment_3var_strange(const char *fileName)
     TTree* backgroundTree_s = dynamic_cast<TTree *>(inputFile->Get("BackgroundTree_s"));
 
     TMVA::Factory factory("TMVAClassification", outputFile, "AnalysisType=Classification");
-    TMVA::DataLoader loader("dataset_s_3var");
+    TMVA::DataLoader loader("dataset_s_multiVariable");
 
     // Variáveis de entrada
     loader.AddVariable("pT_s", 'F');

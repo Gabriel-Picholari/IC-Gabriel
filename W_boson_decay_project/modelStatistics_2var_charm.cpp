@@ -6,7 +6,7 @@
 #include <TLegend.h>
 #include <TMVA/Reader.h>
 
-void applyAndAnalyzeModel_charm(const char* inputFileName, float threshold = 0.2) {
+void modelStatistics_2var_charm(const char* inputFileName, float threshold = 0.2) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação do objeto Reader para leitura de resultados 

@@ -57,7 +57,7 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         Float_t fpVz;
 };
 
-void classical_analysis(const char* fileName)
+void invariantMass_classicalReconstruction(const char* fileName)
 {
 
     gSystem->Load("libEG");

@@ -29,7 +29,7 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMassDistribution_BTD(const char* inputFileName_c, const char* inputFileName_s, float threshold = 0.5) {
+void invariantMass_2var_BTDReconstruction(const char* inputFileName_c, const char* inputFileName_s, float threshold = 0.5) {
 
     //---------------------------------------------------------------------------------------------------------
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
