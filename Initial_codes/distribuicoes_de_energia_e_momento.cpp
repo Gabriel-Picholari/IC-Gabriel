@@ -8,7 +8,7 @@
 #include "TMath.h"
 #include "TH1F.h"
 
-void energia_e_momento_distribuicoes(Int_t nev = 100000, Int_t ndeb = 1 /* Listagem */ )
+void distribuicoes_de_energia_e_momento(Int_t nev = 10000, Int_t ndeb = 1 /* Listagem */ )
 {
   gSystem->Load("libEG");
   gSystem->Load("libEgPythia8");
@@ -21,8 +21,8 @@ void energia_e_momento_distribuicoes(Int_t nev = 100000, Int_t ndeb = 1 /* Lista
 
   TH1F *hist_soma_energia_final = new TH1F("hist_soma_energia_final", "Soma das energias das particulas de estado final do evento", 100, 1, 1);
   TH1F *hist_momentos_particulas_finais = new TH1F("hist_pt_part_final", "Distribuicao dos momentos transversais das particulas de estado final", 100, 1, 1);
-  TH1F *hist_ptx_part_final = new TH1F("hist_ptx_part_final", "Momentos transversais das particulas finais no eixo X", 100, 1, 1);
-  TH1F *hist_pty_part_final = new TH1F("hist_pty_part_final", "Momentos transversais das particulas finais no eixo Y", 100, 1, 1);
+  TH1F *hist_px_part_final = new TH1F("hist_px_part_final", "Momentos transversais das particulas finais no eixo X", 100, 1, 1);
+  TH1F *hist_py_part_final = new TH1F("hist_py_part_final", "Momentos transversais das particulas finais no eixo Y", 100, 1, 1);
   TH1F *hist_soma_momento = new TH1F("hist_soma_momento","Soma dos momentos das particulas finais dos eventos", 100, 1, 1);
   TH2F *dispersao_momentos = new TH2F("dispersao_momentos", "Dispersao dos momentos de estado central e final", 100, 1, 1, 100, 1, 1);
 
@@ -72,8 +72,8 @@ void energia_e_momento_distribuicoes(Int_t nev = 100000, Int_t ndeb = 1 /* Lista
         soma_de_energia += energia_part_final;
         cont_pt += 1;
         hist_momentos_particulas_finais->Fill(pt);
-        hist_ptx_part_final->Fill(px);
-        hist_pty_part_final->Fill(py);
+        hist_px_part_final->Fill(px);
+        hist_py_part_final->Fill(py);
 
         if ( -0.9 < eta && eta < 0.9 )
         {
@@ -98,22 +98,22 @@ void energia_e_momento_distribuicoes(Int_t nev = 100000, Int_t ndeb = 1 /* Lista
   hist_soma_energia_final->Draw();
 
   c1->cd(2);
-  hist_momentos_particulas_finais->SetTitle("Distribuicao de momento das particulas de estado final do evento");
+  hist_momentos_particulas_finais->SetTitle("Distribuicao de momento transversal das particulas de estado final do evento");
   hist_momentos_particulas_finais->GetXaxis()->SetTitle("Momento");
   hist_momentos_particulas_finais->GetYaxis()->SetTitle("Frequencia");
   hist_momentos_particulas_finais->Draw();
 
   c1->cd(3);
-  hist_ptx_part_final->SetTitle("Distribuicao dos momentos transversais em X das particulas finais");
-  hist_ptx_part_final->GetXaxis()->SetTitle("Px");
-  hist_ptx_part_final->GetYaxis()->SetTitle("Frequencia");
-  hist_ptx_part_final->Draw();
+  hist_px_part_final->SetTitle("Distribuicao dos momentos em X das particulas finais");
+  hist_px_part_final->GetXaxis()->SetTitle("Px");
+  hist_px_part_final->GetYaxis()->SetTitle("Frequencia");
+  hist_px_part_final->Draw();
 
   c1->cd(4);
-  hist_pty_part_final->SetTitle("Distribuicao dos momentos transversais em Y das particulas finais");
-  hist_pty_part_final->GetXaxis()->SetTitle("Py");
-  hist_pty_part_final->GetYaxis()->SetTitle("Frequencia");
-  hist_pty_part_final->Draw();
+  hist_py_part_final->SetTitle("Distribuicao dos momentos em Y das particulas finais");
+  hist_py_part_final->GetXaxis()->SetTitle("Py");
+  hist_py_part_final->GetYaxis()->SetTitle("Frequencia");
+  hist_py_part_final->Draw();
 
   c1->cd(5);
   hist_soma_momento->SetTitle("Soma momentos das particulas finais");
