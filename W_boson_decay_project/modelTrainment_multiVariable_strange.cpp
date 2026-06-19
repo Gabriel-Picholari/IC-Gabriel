@@ -5,20 +5,23 @@
 #include <TMVA/Factory.h>
 #include <TMVA/DataLoader.h>
 
-void modelTrainment_strange(const char *fileName) {
-    
-    TFile* outputFile = TFile::Open("TMVAOutput_2var_strange.root", "RECREATE");
+void modelTrainment_multiVariable_strange(const char *fileName) 
+{
+    TFile* outputFile = TFile::Open("TMVAOutput_multiVariable_strange.root", "RECREATE");
+
     TFile* inputFile = TFile::Open(fileName, "READ");
 
     TTree* signalTree_s = dynamic_cast<TTree *>(inputFile->Get("SignalTree_s"));
     TTree* backgroundTree_s = dynamic_cast<TTree *>(inputFile->Get("BackgroundTree_s"));
 
     TMVA::Factory factory("TMVAClassification", outputFile, "AnalysisType=Classification");
-    TMVA::DataLoader loader("dataset_s_2var");
+    TMVA::DataLoader loader("dataset_s_multiVariable");
 
     // Variáveis de entrada
     loader.AddVariable("pT_s", 'F');
+    loader.AddVariable("nRho_s", 'I');
     loader.AddVariable("nConst_s", 'F');
+    //loader.AddVariable("maxRho_s", 'F'); Discontinued
 
     // Variáveis espectadoras
     loader.AddSpectator("eta_s", "F");

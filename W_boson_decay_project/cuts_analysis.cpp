@@ -379,6 +379,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c1->cd(1);
     strange_background_pT->SetTitle("Strange jets: p_{T} distribution;p_{T} [GeV/c];Events");
+    strange_background_pT->GetYaxis()->SetRangeUser(std::min(strange_background_pT->GetMinimum(), strange_signal_pT->GetMinimum()) * 1.5, std::max(strange_background_pT->GetMaximum(), strange_signal_pT->GetMaximum()) * 1.5);
     strange_background_pT->SetLineColor(kRed);
     strange_background_pT->SetLineStyle(1);
     strange_background_pT->DrawCopy(); // Desenha o fundo primeiro
@@ -392,8 +393,14 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend1->AddEntry(strange_background_pT, "Strange background jets", "l");
     legend1->Draw();
 
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << pTCut;
+
+    std::string title = "Strange jets: p_{T} distribution (p_{T} > " + oss.str() + " GeV/c);p_{T} [GeV/c];Events";
+
     c1->cd(2);
-    strange_background_pT_pTCut->SetTitle(("Strange jets: p_{T} distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);p_{T} [GeV/c];Events").c_str());
+    strange_background_pT_pTCut->SetTitle(title.c_str());
+    strange_background_pT_pTCut->GetYaxis()->SetRangeUser(std::min(strange_background_pT_pTCut->GetMinimum(), strange_signal_pT_pTCut->GetMinimum()) * 1.5, std::max(strange_background_pT_pTCut->GetMaximum(), strange_signal_pT_pTCut->GetMaximum()) * 1.5);
     strange_background_pT_pTCut->SetLineColor(kRed);
     strange_background_pT_pTCut->SetLineStyle(1);
     strange_background_pT_pTCut->DrawCopy();
@@ -409,6 +416,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c1->cd(3);
     strange_background_pT_nConstCut->SetTitle(("Strange jets: p_{T} distribution (N_{const} > " + std::to_string(nConstCut) + ");p_{T} [GeV/c];Events").c_str());
+    strange_background_pT_nConstCut->GetYaxis()->SetRangeUser(std::min(strange_background_pT_nConstCut->GetMinimum(), strange_signal_pT_nConstCut->GetMinimum()) * 1.5, std::max(strange_background_pT_nConstCut->GetMaximum(), strange_signal_pT_nConstCut->GetMaximum()) * 1.5);
     strange_background_pT_nConstCut->SetLineColor(kRed);
     strange_background_pT_nConstCut->SetLineStyle(1);
     strange_background_pT_nConstCut->DrawCopy();
@@ -424,6 +432,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c1->cd(4);
     strange_background_pT_nRhoCut->SetTitle(("Strange jets: p_{T} distribution (N_{#rho} > " + std::to_string(nRhoCut) + ");p_{T} [GeV/c];Events").c_str());
+    strange_background_pT_nRhoCut->GetYaxis()->SetRangeUser(std::min(strange_background_pT_nRhoCut->GetMinimum(), strange_signal_pT_nRhoCut->GetMinimum()) * 1.5, std::max(strange_background_pT_nRhoCut->GetMaximum(), strange_signal_pT_nRhoCut->GetMaximum()) * 1.5);
     strange_background_pT_nRhoCut->SetLineColor(kRed);
     strange_background_pT_nRhoCut->SetLineStyle(1);
     strange_background_pT_nRhoCut->DrawCopy();
@@ -442,6 +451,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c2->cd(1);
     strange_background_nConst->SetTitle("Strange jets: number of constituents distribution;N_{const};Events");
+    strange_background_nConst->GetYaxis()->SetRangeUser(std::min(strange_background_nConst->GetMinimum(), strange_signal_nConst->GetMinimum()) * 1.5, std::max(strange_background_nConst->GetMaximum(), strange_signal_nConst->GetMaximum()) * 1.5);
     strange_background_nConst->SetLineColor(kRed);
     strange_background_nConst->SetLineStyle(1);
     strange_background_nConst->DrawCopy();
@@ -455,8 +465,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend2->AddEntry(strange_background_nConst, "Strange background jets", "l");
     legend2->Draw();
 
+    std::string title2 ="Strange jets: number of constituents distribution (p_{T} > " + oss.str() + " GeV/c);N_{const};Events";
+
     c2->cd(2);
-    strange_background_nConst_pTCut->SetTitle(("Strange jets: number of constituents distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);N_{const};Events").c_str());
+    strange_background_nConst_pTCut->SetTitle(title2.c_str());
+    strange_background_nConst_pTCut->GetYaxis()->SetRangeUser(std::min(strange_background_nConst_pTCut->GetMinimum(), strange_signal_nConst_pTCut->GetMinimum()) * 1.5, std::max(strange_background_nConst_pTCut->GetMaximum(), strange_signal_nConst_pTCut->GetMaximum()) * 1.5);
     strange_background_nConst_pTCut->SetLineColor(kRed);
     strange_background_nConst_pTCut->SetLineStyle(1);
     strange_background_nConst_pTCut->DrawCopy();
@@ -471,7 +484,8 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend6->Draw();
 
     c2->cd(3);
-    strange_background_nConst_nConstCut->SetTitle(("Strange jets: number of constituents distribution (N_{const} > " + std::to_string(nConstCut) + ");N_{const};Events").c_str());
+    strange_background_nConst_nConstCut->SetTitle(("Strange jets: number of constituents distribution (N_{const} > " + std::to_string((Int_t)nConstCut) + ");N_{const};Events").c_str());
+    strange_background_nConst_nConstCut->GetYaxis()->SetRangeUser(std::min(strange_background_nConst_nConstCut->GetMinimum(), strange_signal_nConst_nConstCut->GetMinimum()) * 1.5, std::max(strange_background_nConst_nConstCut->GetMaximum(), strange_signal_nConst_nConstCut->GetMaximum()) * 1.5);
     strange_background_nConst_nConstCut->SetLineColor(kRed);
     strange_background_nConst_nConstCut->SetLineStyle(1);
     strange_background_nConst_nConstCut->DrawCopy();
@@ -487,6 +501,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c2->cd(4);
     strange_background_nConst_nRhoCut->SetTitle(("Strange jets: number of constituents distribution (N_{#rho} > " + std::to_string(nRhoCut) + ");N_{const};Events").c_str());
+    strange_background_nConst_nRhoCut->GetYaxis()->SetRangeUser(std::min(strange_background_nConst_nRhoCut->GetMinimum(), strange_signal_nConst_nRhoCut->GetMinimum()) * 1.5, std::max(strange_background_nConst_nRhoCut->GetMaximum(), strange_signal_nConst_nRhoCut->GetMaximum()) * 1.5);
     strange_background_nConst_nRhoCut->SetLineColor(kRed);
     strange_background_nConst_nRhoCut->SetLineStyle(1);
     strange_background_nConst_nRhoCut->DrawCopy();
@@ -505,6 +520,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c3->cd(1);
     strange_background_nRho->SetTitle("Strange jets: N_{#rho} distribution;N_{#rho};Events");
+    strange_background_nRho->GetYaxis()->SetRangeUser(std::min(strange_background_nRho->GetMinimum(), strange_signal_nRho->GetMinimum()) * 1.5, std::max(strange_background_nRho->GetMaximum(), strange_signal_nRho->GetMaximum()) * 1.5);
     strange_background_nRho->SetLineColor(kRed);
     strange_background_nRho->SetLineStyle(1);
     strange_background_nRho->DrawCopy();
@@ -518,8 +534,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend9->AddEntry(strange_background_nRho, "Strange background jets", "l");
     legend9->Draw();
 
+    std::string title3 ="Strange jets: N_{#rho} distribution (p_{T} > " + oss.str() + " GeV/c);N_{#rho};Events";
+
     c3->cd(2);
-    strange_background_nRho_pTCut->SetTitle(("Strange jets: N_{#rho} distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);N_{#rho};Events").c_str());
+    strange_background_nRho_pTCut->SetTitle(title3.c_str());
+    strange_background_nRho_pTCut->GetYaxis()->SetRangeUser(std::min(strange_background_nRho_pTCut->GetMinimum(), strange_signal_nRho_pTCut->GetMinimum()) * 1.5, std::max(strange_background_nRho_pTCut->GetMaximum(), strange_signal_nRho_pTCut->GetMaximum()) * 1.5);
     strange_background_nRho_pTCut->SetLineColor(kRed);
     strange_background_nRho_pTCut->SetLineStyle(1);
     strange_background_nRho_pTCut->DrawCopy();
@@ -535,6 +554,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c3->cd(3);
     strange_background_nRho_nConstCut->SetTitle(("Strange jets: N_{#rho} distribution (N_{const} > " + std::to_string(nConstCut) + ");N_{#rho};Events").c_str());
+    strange_background_nRho_nConstCut->GetYaxis()->SetRangeUser(std::min(strange_background_nRho_nConstCut->GetMinimum(), strange_signal_nRho_nConstCut->GetMinimum()) * 1.5, std::max(strange_background_nRho_nConstCut->GetMaximum(), strange_signal_nRho_nConstCut->GetMaximum()) * 1.5);
     strange_background_nRho_nConstCut->SetLineColor(kRed);
     strange_background_nRho_nConstCut->SetLineStyle(1);
     strange_background_nRho_nConstCut->DrawCopy();
@@ -550,6 +570,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c3->cd(4);
     strange_background_nRho_nRhoCut->SetTitle(("Strange jets: N_{#rho} distribution (N_{#rho} > " + std::to_string(nRhoCut) + " GeV/c);N_{#rho};Events").c_str());
+    strange_background_nRho_nRhoCut->GetYaxis()->SetRangeUser(std::min(strange_background_nRho_nRhoCut->GetMinimum(), strange_signal_nRho_nRhoCut->GetMinimum()) * 1.5, std::max(strange_background_nRho_nRhoCut->GetMaximum(), strange_signal_nRho_nRhoCut->GetMaximum()) * 1.5);
     strange_background_nRho_nRhoCut->SetLineColor(kRed);
     strange_background_nRho_nRhoCut->SetLineStyle(1);
     strange_background_nRho_nRhoCut->DrawCopy();
@@ -572,6 +593,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c4->cd(1);
     charm_background_pT->SetTitle("Charm jets: p_{T} distribution;p_{T} [GeV/c];Events");
+    charm_background_pT->GetYaxis()->SetRangeUser(std::min(charm_background_pT->GetMinimum(), charm_signal_pT->GetMinimum()) * 1.5, std::max(charm_background_pT->GetMaximum(), charm_signal_pT->GetMaximum()) * 1.5);
     charm_background_pT->SetLineColor(kRed);
     charm_background_pT->DrawCopy();
 
@@ -583,8 +605,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend13->AddEntry(charm_background_pT, "Charm background jets", "l");
     legend13->Draw();
 
+    std::string title4 ="Charm jets: p_{T} distribution (p_{T} > " + oss.str() + " GeV/c);p_{T} [GeV/c];Events";
+
     c4->cd(2);
-    charm_background_pT_pTCut->SetTitle(("Charm jets: p_{T} distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);p_{T} [GeV/c];Events").c_str());
+    charm_background_pT_pTCut->SetTitle(title4.c_str());
+    charm_background_pT_pTCut->GetYaxis()->SetRangeUser(std::min(charm_background_pT_pTCut->GetMinimum(), charm_signal_pT_pTCut->GetMinimum()) * 1.5, std::max(charm_background_pT_pTCut->GetMaximum(), charm_signal_pT_pTCut->GetMaximum()) * 1.5);
     charm_background_pT_pTCut->SetLineColor(kRed);
     charm_background_pT_pTCut->DrawCopy();
 
@@ -598,6 +623,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c4->cd(3);
     charm_background_pT_nConstCut->SetTitle(("Charm jets: p_{T} distribution (N_{const} > " + std::to_string(nConstCut) + ");p_{T} [GeV/c];Events").c_str());
+    charm_background_pT_nConstCut->GetYaxis()->SetRangeUser(std::min(charm_background_pT_nConstCut->GetMinimum(), charm_signal_pT_nConstCut->GetMinimum()) * 1.5, std::max(charm_background_pT_nConstCut->GetMaximum(), charm_signal_pT_nConstCut->GetMaximum()) * 1.5);
     charm_background_pT_nConstCut->SetLineColor(kRed);
     charm_background_pT_nConstCut->DrawCopy();
 
@@ -611,6 +637,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c4->cd(4);
     charm_background_pT_nRhoCut->SetTitle(("Charm jets: p_{T} distribution (N_{#rho} > " + std::to_string(nRhoCut) + ");p_{T} [GeV/c];Events").c_str());
+    charm_background_pT_nRhoCut->GetYaxis()->SetRangeUser(std::min(charm_background_pT_nRhoCut->GetMinimum(), charm_signal_pT_nRhoCut->GetMinimum()) * 1.5, std::max(charm_background_pT_nRhoCut->GetMaximum(), charm_signal_pT_nRhoCut->GetMaximum()) * 1.5);
     charm_background_pT_nRhoCut->SetLineColor(kRed);
     charm_background_pT_nRhoCut->DrawCopy();
 
@@ -629,6 +656,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c5->cd(1);
     charm_background_nConst->SetTitle("Charm jets: number of constituents distribution;N_{const};Events");
+    charm_background_nConst->GetYaxis()->SetRangeUser(std::min(charm_background_nConst->GetMinimum(), charm_signal_nConst->GetMinimum()) * 1.5, std::max(charm_background_nConst->GetMaximum(), charm_signal_nConst->GetMaximum()) * 1.5);
     charm_background_nConst->SetLineColor(kRed);
     charm_background_nConst->DrawCopy();
 
@@ -640,8 +668,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend17->AddEntry(charm_background_nConst, "Charm background jets", "l");
     legend17->Draw();
 
+    std::string title5 ="Charm jets: number of constituents distribution (p_{T} > " + oss.str() + " GeV/c);N_{const};Events";
+
     c5->cd(2);
-    charm_background_nConst_pTCut->SetTitle(("Charm jets: number of constituents distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);N_{const};Events").c_str());
+    charm_background_nConst_pTCut->SetTitle(title5.c_str());
+    charm_background_nConst_pTCut->GetYaxis()->SetRangeUser(std::min(charm_background_nConst_pTCut->GetMinimum(), charm_signal_nConst_pTCut->GetMinimum()) * 1.5, std::max(charm_background_nConst_pTCut->GetMaximum(), charm_signal_nConst_pTCut->GetMaximum()) * 1.5);
     charm_background_nConst_pTCut->SetLineColor(kRed);
     charm_background_nConst_pTCut->DrawCopy();
 
@@ -655,6 +686,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c5->cd(3);
     charm_background_nConst_nConstCut->SetTitle(("Charm jets: number of constituents distribution (N_{const} > " + std::to_string(nConstCut) + ");N_{const};Events").c_str());
+    charm_background_nConst_nConstCut->GetYaxis()->SetRangeUser(std::min(charm_background_nConst_nConstCut->GetMinimum(), charm_signal_nConst_nConstCut->GetMinimum()) * 1.5, std::max(charm_background_nConst_nConstCut->GetMaximum(), charm_signal_nConst_nConstCut->GetMaximum()) * 1.5);
     charm_background_nConst_nConstCut->SetLineColor(kRed);
     charm_background_nConst_nConstCut->DrawCopy();
 
@@ -668,6 +700,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c5->cd(4);
     charm_background_nConst_nRhoCut->SetTitle(("Charm jets: number of constituents distribution (N_{#rho} > " + std::to_string(nRhoCut) + ");N_{const};Events").c_str());
+    charm_background_nConst_nRhoCut->GetYaxis()->SetRangeUser(std::min(charm_background_nConst_nRhoCut->GetMinimum(), charm_signal_nConst_nRhoCut->GetMinimum()) * 1.5, std::max(charm_background_nConst_nRhoCut->GetMaximum(), charm_signal_nConst_nRhoCut->GetMaximum()) * 1.5);
     charm_background_nConst_nRhoCut->SetLineColor(kRed);
     charm_background_nConst_nRhoCut->DrawCopy();
 
@@ -687,6 +720,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     c6->cd(1);
     charm_background_nRho->SetTitle("Charm jets: N_{#rho} distribution;N_{#rho};Events");
     charm_background_nRho->SetLineColor(kRed);
+    charm_background_nRho->GetYaxis()->SetRangeUser(std::min(charm_background_nRho->GetMinimum(), charm_signal_nRho->GetMinimum()) * 1.5, std::max(charm_background_nRho->GetMaximum(), charm_signal_nRho->GetMaximum()) * 1.5);
     charm_background_nRho->DrawCopy();
 
     charm_signal_nRho->SetLineColor(kBlue);
@@ -697,9 +731,12 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend21->AddEntry(charm_background_nRho, "Charm background jets", "l");
     legend21->Draw();
 
+    std::string title6 = "Charm jets: N_{#rho} distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);N_{#rho};Events";
+
     c6->cd(2);
-    charm_background_nRho_pTCut->SetTitle(("Charm jets: N_{#rho} distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);N_{#rho};Events").c_str());
+    charm_background_nRho_pTCut->SetTitle(title6.c_str());
     charm_background_nRho_pTCut->SetLineColor(kRed);
+    charm_background_nRho_pTCut->GetYaxis()->SetRangeUser(std::min(charm_background_nRho_pTCut->GetMinimum(), charm_signal_nRho_pTCut->GetMinimum()) * 1.5, std::max(charm_background_nRho_pTCut->GetMaximum(), charm_signal_nRho_pTCut->GetMaximum()) * 1.5);
     charm_background_nRho_pTCut->DrawCopy();
 
     charm_signal_nRho_pTCut->SetLineColor(kBlue);
@@ -712,7 +749,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c6->cd(3);
     charm_background_nRho_nConstCut->SetTitle(("Charm jets: N_{#rho} distribution (N_{const} > " + std::to_string(nConstCut) + ");N_{#rho};Events").c_str());
-    charm_background_nRho_nConstCut->SetLineColor(kRed);
+    charm_background_nRho_nConstCut->GetYaxis()->SetRangeUser(std::min(charm_background_nRho_nConstCut->GetMinimum(), charm_signal_nRho_nConstCut->GetMinimum()) * 1.5, std::max(charm_background_nRho_nConstCut->GetMaximum(), charm_signal_nRho_nConstCut->GetMaximum()) * 1.5);
     charm_background_nRho_nConstCut->DrawCopy();
 
     charm_signal_nRho_nConstCut->SetLineColor(kBlue);
@@ -725,7 +762,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     c6->cd(4);
     charm_background_nRho_nRhoCut->SetTitle(("Charm jets: N_{#rho} distribution (N_{#rho} > " + std::to_string(nRhoCut) + ");N_{#rho};Events").c_str());
-    charm_background_nRho_nRhoCut->SetLineColor(kRed);
+    charm_background_nRho_nRhoCut->GetYaxis()->SetRangeUser(std::min(charm_background_nRho_nRhoCut->GetMinimum(), charm_signal_nRho_nRhoCut->GetMinimum()) * 1.5, std::max(charm_background_nRho_nRhoCut->GetMaximum(), charm_signal_nRho_nRhoCut->GetMaximum()) * 1.5);
     charm_background_nRho_nRhoCut->DrawCopy();
 
     charm_signal_nRho_nRhoCut->SetLineColor(kBlue);
@@ -739,11 +776,11 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     //=====================================================================
 
     TCanvas *c7 = new TCanvas("c7", "Jet vertices invariant masses charm distributions", 2500, 2500);
-    c7->Divide(2, 2);
+    c7->Divide(1, 1);
 
     c7->cd(1);
     charm_background_jetVerticesInvariantMasses->SetTitle("Charm jets: jet vertices invariant masses distribution;Jet vertices invariant mass (GeV/c^{2});Events");
-    charm_background_jetVerticesInvariantMasses->SetLineColor(kRed);
+    charm_background_jetVerticesInvariantMasses->GetYaxis()->SetRangeUser(std::min(charm_background_jetVerticesInvariantMasses->GetMinimum(), charm_signal_jetVerticesInvariantMasses->GetMinimum()) * 1.5, std::max(charm_background_jetVerticesInvariantMasses->GetMaximum(), charm_signal_jetVerticesInvariantMasses->GetMaximum()) * 1.5);
     charm_background_jetVerticesInvariantMasses->DrawCopy();
 
     charm_signal_jetVerticesInvariantMasses->SetLineColor(kBlue);
@@ -754,8 +791,10 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend25->AddEntry(charm_background_jetVerticesInvariantMasses, "Charm background jets", "l");
     legend25->Draw();
 
+    /*
     c7->cd(2);
     charm_background_jetVerticesInvariantMasses_pTCut->SetTitle(("Charm jets: jet vertices invariant masses distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);Jet vertices invariant mass (GeV/c^{2});Events").c_str());
+    
     charm_background_jetVerticesInvariantMasses_pTCut->SetLineColor(kRed);
     charm_background_jetVerticesInvariantMasses_pTCut->DrawCopy();
 
@@ -792,4 +831,5 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend28->AddEntry(charm_signal_jetVerticesInvariantMasses_nRhoCut, "Charm signal jets", "l");
     legend28->AddEntry(charm_background_jetVerticesInvariantMasses_nRhoCut, "Charm background jets", "l");
     legend28->Draw();
+    */ // Not a discriminatory variable, cuts not applied
 }

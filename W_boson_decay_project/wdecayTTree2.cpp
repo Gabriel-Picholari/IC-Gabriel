@@ -27,7 +27,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *quarks = new TClonesArray("MyQuark");
   Float_t boson_pT, boson_eta, boson_phi, boson_energy, boson_eventID;
 
-  TFile *outfile = new TFile("wdecay2_seed_10_100K_hardQCD_all_off_etaLimitated.root", "RECREATE"); 
+  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off_etaLimitated.root", "RECREATE"); 
 
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
@@ -56,7 +56,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TPythia8 pythia8 = new TPythia8();
   pythia8.ReadString("HardQCD:all = off");
   pythia8.ReadString("Random:setSeed = on");
-  pythia8.ReadString("Random:seed = 10");
+  pythia8.ReadString("Random:seed = 1");
 
   pythia8.ReadString("WeakSingleBoson:ffbar2W = on");
   
