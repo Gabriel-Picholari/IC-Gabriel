@@ -49,7 +49,8 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
 
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT, nConst, eta, phi, mass, label, eventID, score, nRho = 0;
+    Float_t pT, nConst, eta, phi, mass, label, eventID, score, nRho;
+    Int_t flavor;
 
     reader->AddVariable(("pT" + sfx).c_str(), &pT);
     reader->AddVariable(("nRho" + sfx).c_str(), &nRho);
@@ -59,6 +60,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     reader->AddSpectator(("phi" + sfx).c_str(), &phi);
     reader->AddSpectator(("label" + sfx).c_str(), &label);
     reader->AddSpectator(("eventID" + sfx).c_str(), &eventID);
+    reader->AddSpectator(("flavor" + sfx).c_str(), &flavor);
     reader->BookMVA("GradBoost", (datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     //---------------------------------------------------------------------------------------------------------
@@ -76,6 +78,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     signalTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
     signalTree->SetBranchAddress(("label" + sfx).c_str(), &label);
     signalTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+    signalTree->SetBranchAddress(("flavor" + sfx).c_str(), &flavor);
 
     backgroundTree->SetBranchAddress(("pT" + sfx).c_str(), &pT);
     backgroundTree->SetBranchAddress(("eta" + sfx).c_str(), &eta);
@@ -84,6 +87,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     backgroundTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
     backgroundTree->SetBranchAddress(("label" + sfx).c_str(), &label);
     backgroundTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+    backgroundTree->SetBranchAddress(("flavor" + sfx).c_str(), &flavor);
 
     //---------------------------------------------------------------------------------------------------------
     // Analise de desempenho (threshold único)
