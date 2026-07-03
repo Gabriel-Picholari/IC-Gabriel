@@ -27,8 +27,22 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, /*const char* inputFileName_s, */ float t_c = 0.7, float t_s = 0.5) 
-{
+void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, /*const char* inputFileName_s, */, const std::string contaminatingGluonMode, float t_c = 0.7, float t_s = 0.5) 
+{   
+
+    std::string charm_datasetName;
+    std::string strange_datasetName;
+
+    if (contaminatingGluonMode == "include")
+    {
+        charm_datasetName = "dataset_c_multiVariable_gluonJetsIncluded";
+        strange_datasetName = "dataset_s_multiVariable_gluonJetsIncluded";
+    } 
+    if (contaminatingGluonMode == "exclude")
+    {
+        charm_datasetName = "dataset_c_multiVariable_gluonJetsExcluded";
+        strange_datasetName = "dataset_s_multiVariable_gluonJetsExcluded";
+    } 
 
     //---------------------------------------------------------------------------------------------------------
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
@@ -47,10 +61,9 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
 
     reader_c->AddSpectator("eta_c", &eta);
     reader_c->AddSpectator("phi_c", &phi);
-    reader_c->AddSpectator("mass_c", &mass);
     reader_c->AddSpectator("label_c", &label);
     reader_c->AddSpectator("eventID_c", &eventID);
-    reader_c->BookMVA("GradBoost", "dataset_c_3var/weights/TMVAClassification_GradBoost.weights.xml");
+    reader_c->BookMVA("GradBoost", (charm_datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     TMVA::Reader* reader_s = new TMVA::Reader("!Color:!Silent");
 
@@ -61,10 +74,9 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
 
     reader_s->AddSpectator("eta_s", &eta);
     reader_s->AddSpectator("phi_s", &phi);
-    reader_s->AddSpectator("mass_s", &mass);
     reader_s->AddSpectator("label_s", &label);
     reader_s->AddSpectator("eventID_s", &eventID);
-    reader_s->BookMVA("GradBoost", "dataset_s_3var/weights/TMVAClassification_GradBoost.weights.xml");
+    reader_s->BookMVA("GradBoost", (strange_datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     //---------------------------------------------------------------------------------------------------------
     // Recuperação de TTrees de entrada 
@@ -77,7 +89,6 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
     signalTree_c->SetBranchAddress("pT_c", &pT);
     signalTree_c->SetBranchAddress("eta_c", &eta);
     signalTree_c->SetBranchAddress("phi_c", &phi);
-    signalTree_c->SetBranchAddress("mass_c", &mass);
     signalTree_c->SetBranchAddress("nConst_c", &nConst);
     signalTree_c->SetBranchAddress("nRho_c", &nRho);
     //signalTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
@@ -87,7 +98,6 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
     backgroundTree_c->SetBranchAddress("pT_c", &pT);
     backgroundTree_c->SetBranchAddress("eta_c", &eta);
     backgroundTree_c->SetBranchAddress("phi_c", &phi);
-    backgroundTree_c->SetBranchAddress("mass_c", &mass);
     backgroundTree_c->SetBranchAddress("nConst_c", &nConst);
     backgroundTree_c->SetBranchAddress("nRho_c", &nRho);
     //backgroundTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
@@ -130,6 +140,9 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
     TH2F* backgroundC_set_correlation = new TH2F("backgroundC_corr", "Correlation between charmed and strange scores over the known charmed background data", 100, -1, 1, 100, -1, 1);
 
     TH1F* h_massW = new TH1F("h_massW", "Invariant Mass of W;M_{cs} [GeV];Events", 140, 0, 140);
+
+    TH2F* charmSignal_charmScore_vs_strangeScore = new TH2F("charmSignal_c_vs_s", "Correlation between charmed and strange scores over the known charmed signal data", 100, -1, 1, 100, -1, 1);
+    TH2F* strangeSignal_charmScore_vs_strangeScore = new TH2F("strangeSignal_c_vs_s", "Correlation between charmed and strange scores over the known strange signal data", 100, -1, 1, 100, -1, 1);
 
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
@@ -200,7 +213,7 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
         }
 
         // Caso 3: ambos passam os cortes
-        /* 
+        /*
         else if (score_c >= t_c && score_s >= t_s) 
         {
             if (score_c > score_s)
@@ -247,6 +260,7 @@ void invariantMass_multiVariable_BTDReconstruction(const char* inputFileName_c, 
             }
         }
         */
+        
         //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
     }
     

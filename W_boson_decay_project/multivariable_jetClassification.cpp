@@ -168,9 +168,10 @@ JetVariables extractJetVariables(
     Parameters:
     - switch_string: either 'strange' or 'charm', designates the type of signal being analysed
     - mode_string: either 'training' or 'testing', designates whether the function is being used to filter data for model training or model testing
+    - contaminatingGluonMode: either 'include' or 'exclude', designates whether the output data shouls include or exclude the contaminating gluon soft jets
 */
 
-void multivariable_jetClassification(const char* fileName, std::string switch_string, std::string mode_string)
+void multivariable_jetClassification(const char* fileName, std::string switch_string, std::string mode_string, std::string contaminatingGluonMode)
 {
 
     gSystem->Load("libEG");
@@ -271,10 +272,18 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
 
     TFile *filteredDataFile = nullptr;
 
-    if (switch_string == "strange" && mode_string == "training") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_strange.root", "RECREATE");
+    if (switch_string == "strange" && mode_string == "training")
+    {
+        if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsIncluded_strange.root", "RECREATE");
+        if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsExcluded_strange.root", "RECREATE");
+    } 
     if (switch_string == "strange" && mode_string == "testing") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_strange.root", "RECREATE");
 
-    if (switch_string == "charm" && mode_string == "training") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_charm.root", "RECREATE");
+    if (switch_string == "charm" && mode_string == "training")
+    {
+        if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsIncluded_charm.root", "RECREATE");
+        if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsExcluded_charm.root", "RECREATE");
+    }
     if (switch_string == "charm" && mode_string == "testing") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_charm.root", "RECREATE");
 
     TTree *signalTree = new TTree(("SignalTree" + sfx).c_str(), ("TTree with signal data from " + short_sfx + " quark").c_str());
@@ -329,7 +338,7 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
             if ( abs(quarkPdg) == 4) charmPt = mq->qpT;
             //std::cout << charmPt << std::endl;
             if ( abs(quarkPdg) == 3) strangePt = mq->qpT;
-            //std::cout << strangePt << std::endl;                  // Check over that later (not a serious problem I suppose)
+            //std::cout << strangePt << std::endl;
 
         }
 
@@ -499,9 +508,8 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
                     break;
                 }
             }
-            if (hasSignalConstituent) // Signal data
+            if (hasSignalConstituent) // Data that got through the signal filters
             {
-                label = 1;
                 eventID = ni;
 
                 //Kinematics directly from PseudoJet
@@ -532,15 +540,34 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
 
                 pT_LeadConst = vars.leadingPt;
                 jetVerticesInvariantMasses = vars.vertices_masses;
-                
-                signal_pTDistribution->Fill(pT);
-                signal_nConstDistribution->Fill(nConst);
-                first_signal_nRho_Distribution->Fill(first_nRho);
-                second_signal_nRho_Distribution->Fill(second_nRho);
-                third_signal_nRho_Distribution->Fill(third_nRho);
 
-                signalTree->Fill();
-            } // On stand-by for adding an extra else in here (please, refer to the charm analogous macro with the full comments)
+                if (signal_pTRatio > 0.7)   // Indeed a signal jet
+                {
+                    label = 1;
+                    
+                    signal_pTDistribution->Fill(pT);
+                    signal_nConstDistribution->Fill(nConst);
+                    first_signal_nRho_Distribution->Fill(first_nRho);
+                    second_signal_nRho_Distribution->Fill(second_nRho);
+                    third_signal_nRho_Distribution->Fill(third_nRho);
+
+                    signalTree->Fill();
+                }
+                else if (contaminatingGluonMode == "include")
+                {
+                    label = 0;
+
+                    background_pTDistribution->Fill(pT);
+                    background_nConstDistribution->Fill(nConst);
+                    first_background_nRho_Distribution->Fill(first_nRho);
+                    second_background_nRho_Distribution->Fill(second_nRho);
+                    third_background_nRho_Distribution->Fill(third_nRho);
+
+                    backgroundTree->Fill();
+                }
+                // else if (contaminatingGluonMode == "exclude") do nothing, i.e., don't fill the background tree with this jet -> No coding needed (mode justified only for the file name)
+            }
+            
         }
         
         particles_fastjet.clear();
