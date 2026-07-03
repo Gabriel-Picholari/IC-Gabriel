@@ -248,6 +248,7 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
     //---------------------------------------------------------------------------------------------------------
 
     Float_t eventID, pT, label, nConst, eta, phi, nRho, first_nRho, second_nRho, third_nRho;
+    Int_t flavor; // 3 is strange and 4 charm
     std::vector<Float_t> jetVerticesInvariantMasses;
 
     std::string sfx;
@@ -291,6 +292,7 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
     signalTree->Branch(("eta" + sfx).c_str(), &eta);
     signalTree->Branch(("phi" + sfx).c_str(), &phi);
     signalTree->Branch(("label" + sfx).c_str(), &label);
+    signalTree->Branch(("flavor" + sfx).c_str(), &flavor);
     signalTree->Branch(("nConst" + sfx).c_str(), &nConst);
     signalTree->Branch(("nRho" + sfx).c_str(), &nRho);
     signalTree->Branch(("eventID" + sfx).c_str(), &eventID);
@@ -301,6 +303,7 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
     backgroundTree->Branch(("eta" + sfx).c_str(), &eta);
     backgroundTree->Branch(("phi" + sfx).c_str(), &phi);
     backgroundTree->Branch(("label" + sfx).c_str(), &label);
+    backgroundTree->Branch(("flavor" + sfx).c_str(), &flavor);
     backgroundTree->Branch(("nConst" + sfx).c_str(), &nConst);
     backgroundTree->Branch(("nRho" + sfx).c_str(), &nRho);
     backgroundTree->Branch(("eventID" + sfx).c_str(), &eventID);
@@ -428,6 +431,10 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
             Bool_t isSignalTagged;
             Bool_t isCharmTagged = tagResult.isCharmTagged;
             Bool_t isStrangeTagged = tagResult.isStrangeTagged;
+
+            flavor = 0; // Background flavor convention
+            if (isCharmTagged) flavor = 4;
+            else if (isStrangeTagged) flavor = 3;
 
             if (switch_string == "strange")
             {
