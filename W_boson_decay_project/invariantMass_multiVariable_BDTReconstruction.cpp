@@ -27,7 +27,7 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, /*const char* inputFileName_s, */, const std::string contaminatingGluonMode, float t_c = 0.7, float t_s = 0.5) 
+void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /*const char* inputFileName_s, */, const std::string contaminatingGluonMode, float t_c = 0.7, float t_s = 0.5) 
 {   
 
     std::string charm_datasetName;
@@ -48,21 +48,21 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
     // Criação dos objetos Readers para leitura de resultados referentes tanto ao c como ao s
     //---------------------------------------------------------------------------------------------------------
 
-    Float_t eventID, pT, eta, phi, mass, nConst, maxRho, nRho = 0;
-    Float_t score_c, score_s, score_bkg = 0;
-    Float_t label, score = 0;
+    Float_t eventID, pT, eta, phi, mass, nConst, maxRho, nRho;
+    Float_t score_c, score_s, score_bkg;
+    Float_t label, score;
+    Int_t flavor;
 
     TMVA::Reader* reader_c = new TMVA::Reader("!Color:!Silent");
 
     reader_c->AddVariable("pT_c", &pT);
     reader_c->AddVariable("nRho_c", &nRho);
     reader_c->AddVariable("nConst_c", &nConst);
-    //reader_c->AddVariable("maxRho_c", &maxRho); Discontinued
-
     reader_c->AddSpectator("eta_c", &eta);
     reader_c->AddSpectator("phi_c", &phi);
     reader_c->AddSpectator("label_c", &label);
     reader_c->AddSpectator("eventID_c", &eventID);
+    reader_c->AddSpectator("flavor_c", &flavor);
     reader_c->BookMVA("GradBoost", (charm_datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     TMVA::Reader* reader_s = new TMVA::Reader("!Color:!Silent");
@@ -70,12 +70,11 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
     reader_s->AddVariable("pT_s", &pT);
     reader_s->AddVariable("nRho_s", &nRho);
     reader_s->AddVariable("nConst_s", &nConst);
-    //reader_s->AddVariable("maxRho_s", &maxRho); Discontinued
-
     reader_s->AddSpectator("eta_s", &eta);
     reader_s->AddSpectator("phi_s", &phi);
     reader_s->AddSpectator("label_s", &label);
     reader_s->AddSpectator("eventID_s", &eventID);
+    reader_s->AddSpectator("flavor_s", &flavor);
     reader_s->BookMVA("GradBoost", (strange_datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     //---------------------------------------------------------------------------------------------------------
@@ -91,44 +90,18 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
     signalTree_c->SetBranchAddress("phi_c", &phi);
     signalTree_c->SetBranchAddress("nConst_c", &nConst);
     signalTree_c->SetBranchAddress("nRho_c", &nRho);
-    //signalTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
     signalTree_c->SetBranchAddress("label_c", &label);
     signalTree_c->SetBranchAddress("eventID_c", &eventID);
+    signalTree_c->SetBranchAddress("flavor_c", &flavor);
 
     backgroundTree_c->SetBranchAddress("pT_c", &pT);
     backgroundTree_c->SetBranchAddress("eta_c", &eta);
     backgroundTree_c->SetBranchAddress("phi_c", &phi);
     backgroundTree_c->SetBranchAddress("nConst_c", &nConst);
     backgroundTree_c->SetBranchAddress("nRho_c", &nRho);
-    //backgroundTree_c->SetBranchAddress("maxRho_c", &maxRho); Discontinued
     backgroundTree_c->SetBranchAddress("label_c", &label);
     backgroundTree_c->SetBranchAddress("eventID_c", &eventID);
-
-    /*
-    TFile* inputFile_s = TFile::Open(inputFileName_s, "READ");
-    TTree* signalTree_s = (TTree*)inputFile_s->Get("SignalTree_s");
-    TTree* backgroundTree_s = (TTree*)inputFile_s->Get("BackgroundTree_s");
-
-    signalTree_s->SetBranchAddress("pT_s", &pT);
-    signalTree_s->SetBranchAddress("eta_s", &eta);
-    signalTree_s->SetBranchAddress("phi_s", &phi);
-    signalTree_s->SetBranchAddress("mass_s", &mass);
-    signalTree_s->SetBranchAddress("nConst_s", &nConst);
-    signalTree_s->SetBranchAddress("nRho_s", &nRho);
-    //signalTree_s->SetBranchAddress("maxRho_s", &maxRho); Discontinued
-    signalTree_s->SetBranchAddress("label_s", &label);
-    signalTree_s->SetBranchAddress("eventID_s", &eventID);
-
-    backgroundTree_s->SetBranchAddress("pT_s", &pT);
-    backgroundTree_s->SetBranchAddress("eta_s", &eta);
-    backgroundTree_s->SetBranchAddress("phi_s", &phi);
-    backgroundTree_s->SetBranchAddress("mass_s", &mass);
-    backgroundTree_s->SetBranchAddress("nConst_s", &nConst);
-    backgroundTree_s->SetBranchAddress("nRho_s", &nRho);
-    //backgroundTree_s->SetBranchAddress("maxRho_s", &maxRho); Discontinued
-    backgroundTree_s->SetBranchAddress("label_s", &label);
-    backgroundTree_s->SetBranchAddress("eventID_s", &eventID);
-    */
+    backgroundTree_c->SetBranchAddress("flavor_c", &flavor);
 
     //---------------------------------------------------------------------------------------------------------
     // Histogramas
@@ -163,7 +136,7 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
         signalTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < t_c && score_s < t_s) continue;
+        //if (score_c < t_c && score_s < t_s) continue;
 
         // Caso 1: passou apenas no corte do charm
         if (score_c >= t_c && score_s < t_s) 
@@ -213,9 +186,12 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
         }
 
         // Caso 3: ambos passam os cortes
-        /*
+        
         else if (score_c >= t_c && score_s >= t_s) 
         {
+            // We know everything in this bloc is a true charm jet
+
+            /*
             if (score_c > score_s)
             {
                 TLorentzVector jet;
@@ -258,8 +234,11 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
                     jatos_s.insert({(Int_t)eventID, jet});
                 }
             }
+            */
+           //charmSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
         }
-        */
+        charmSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
+        
         
         //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
     }
@@ -272,7 +251,7 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
         backgroundTree_c->GetEntry(i);
         score_c = reader_c->EvaluateMVA("GradBoost");
         score_s = reader_s->EvaluateMVA("GradBoost");
-        if (score_c < t_c && score_s < t_s) continue;
+        //if (score_c < t_c && score_s < t_s) continue;
         
         // Caso 1: passou apenas no corte do charm
         if (score_c >= t_c && score_s < t_s) 
@@ -322,9 +301,10 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
         }
 
         // Caso 3: ambos passam os cortes
-        /* 
+         
         else if (score_c >= t_c && score_s >= t_s) 
         {
+            /*
             if (score_c > score_s)
             {
                 TLorentzVector jet;
@@ -367,8 +347,16 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
                     jatos_s.insert({(Int_t)eventID, jet});
                 }
             }
+            */
+
+ 
         }
-        */
+            if (flavor == 3)
+            {
+                // Then, among the background, we found a true strange jet
+                strangeSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
+            }
+        
         //std::cout << "Backgound for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
     }
 
@@ -613,7 +601,7 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
 
     TCanvas *c1 = new TCanvas("c1", "Reconstructed invariant mass distribution", 2500, 2500);
     c1->Divide(1, 1);
-
+    
     c1->cd(1);
     h_massW->SetTitle("Reconstructed jet's invariant mass spectrum");
     h_massW->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
@@ -621,6 +609,20 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c, 
     h_massW->DrawCopy();
 
     c1->SaveAs("InvariantMassDistribution_3var_BTD.png");
+
+    TCanvas *c2 = new TCanvas("c2", "Correlation between charmed and strange scores", 2500, 2500);
+    c2->Divide(2, 1);
+    c2->cd(1);
+    charmSignal_charmScore_vs_strangeScore->SetTitle("Correlation between charmed and strange scores over the known charmed signal data");
+    charmSignal_charmScore_vs_strangeScore->GetXaxis()->SetTitle("Charmed score");
+    charmSignal_charmScore_vs_strangeScore->GetYaxis()->SetTitle("Strange score");
+    charmSignal_charmScore_vs_strangeScore->DrawCopy();
+
+    c2->cd(2);
+    strangeSignal_charmScore_vs_strangeScore->SetTitle("Correlation between charmed and strange scores over the known strange signal data");
+    strangeSignal_charmScore_vs_strangeScore->GetXaxis()->SetTitle("Charmed score");
+    strangeSignal_charmScore_vs_strangeScore->GetYaxis()->SetTitle("Strange score");
+    strangeSignal_charmScore_vs_strangeScore->DrawCopy();
 
     inputFile_c->Close();
     //inputFile_s->Close();
