@@ -61,6 +61,7 @@ void modelTraining_multiVariable(const char *fileName, std::string switch_string
     loader.AddSpectator("phi" + sfx, "F");
     loader.AddSpectator("label" + sfx, "F");
     loader.AddSpectator("eventID" + sfx, "F");
+    loader.AddSpectator("flavor" + sfx, "I");
 
     // Trees de sinal e fundo
     loader.AddSignalTree(signalTree, 1.0);
