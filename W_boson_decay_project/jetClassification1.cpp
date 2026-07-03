@@ -414,7 +414,7 @@ void jetClassification1(const char* fileName)
                 good_c_jets.push_back(jet);
             }
 
-            if (hasCharmConstituent) 
+            if (hasCharmConstituent)
             {
                 primary_CharmRatioHist->Fill(charmRatio);
             }
