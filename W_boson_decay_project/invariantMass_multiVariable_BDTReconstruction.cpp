@@ -107,15 +107,13 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /
     // Histogramas
     //---------------------------------------------------------------------------------------------------------
 
-    TH2F* signalS_set_correlation = new TH2F("signalS_corr", "Correlation between charmed and strange scores over the known strange signal data", 100, -1, 1, 100, -1, 1);
-    TH2F* backgroundS_set_correlation = new TH2F("backgroundS_corr", "Correlation between charmed and strange scores over the known strange background data", 100, -1, 1, 100, -1, 1);
-    TH2F* signalC_set_correlation = new TH2F("signalC_corr", "Correlation between charmed and strange scores over the known charmed signal data", 100, -1, 1, 100, -1, 1);
-    TH2F* backgroundC_set_correlation = new TH2F("backgroundC_corr", "Correlation between charmed and strange scores over the known charmed background data", 100, -1, 1, 100, -1, 1);
-
     TH1F* h_massW = new TH1F("h_massW", "Invariant Mass of W;M_{cs} [GeV];Events", 140, 0, 140);
 
-    TH2F* charmSignal_charmScore_vs_strangeScore = new TH2F("charmSignal_c_vs_s", "Correlation between charmed and strange scores over the known charmed signal data", 100, -1, 1, 100, -1, 1);
-    TH2F* strangeSignal_charmScore_vs_strangeScore = new TH2F("strangeSignal_c_vs_s", "Correlation between charmed and strange scores over the known strange signal data", 100, -1, 1, 100, -1, 1);
+    TH2F* charmSignal_scoreCorrelation = new TH2F("charmSignal_c_vs_s", "Correlation between charmed and strange scores over the known charmed signal data", 100, -1, 1, 100, -1, 1);
+    TH2F* charmBackground_scoreCorrelation = new TH2F("charmBackground_c_vs_s", "Correlation between charmed and strange scores over the known charmed background data", 100, -1, 1, 100, -1, 1);
+
+    TH2F* charmSignal_scoreCorrelation_bothAboveThreshold = new TH2F("charmSignal_c_vs_s_bothAboveThreshold", "Correlation between charmed and strange scores over the known charmed signal data (both above threshold)", 100, -1, 1, 100, -1, 1);
+    TH2F* charmBackground_scoreCorrelation_bothAboveThreshold = new TH2F("charmBackground_c_vs_s_bothAboveThreshold", "Correlation between charmed and strange scores over the known charmed background data (both above threshold)", 100, -1, 1,   100, -1, 1);
 
     //---------------------------------------------------------------------------------------------------------
     // Aplicação do modelo aos dados externos
@@ -235,9 +233,9 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /
                 }
             }
             */
-           //charmSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
+            charmSignal_scoreCorrelation_bothAboveThreshold->Fill(score_c, score_s);
         }
-        charmSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
+        charmSignal_scoreCorrelation->Fill(score_c, score_s);
         
         
         //std::cout << "Signal for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
@@ -348,15 +346,15 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /
                 }
             }
             */
-
- 
+            if (flavor == 3) charmBackground_scoreCorrelation_bothAboveThreshold->Fill(score_c, score_s);
         }
-            if (flavor == 3)
-            {
-                // Then, among the background, we found a true strange jet
-                strangeSignal_charmScore_vs_strangeScore->Fill(score_c, score_s);
-            }
-        
+
+        if (flavor == 3)
+        {
+            // Then, among the background, we found a true strange jet
+            charmBackground_scoreCorrelation->Fill(score_c, score_s);
+        }
+    
         //std::cout << "Backgound for C - Score charm: " << score_c << ", Score S: " << score_s << std::endl;
     }
 
@@ -613,19 +611,40 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /
     TCanvas *c2 = new TCanvas("c2", "Correlation between charmed and strange scores", 2500, 2500);
     c2->Divide(2, 1);
     c2->cd(1);
-    charmSignal_charmScore_vs_strangeScore->SetTitle("Correlation between charmed and strange scores over the known charmed signal data");
-    charmSignal_charmScore_vs_strangeScore->GetXaxis()->SetTitle("Charmed score");
-    charmSignal_charmScore_vs_strangeScore->GetYaxis()->SetTitle("Strange score");
-    charmSignal_charmScore_vs_strangeScore->DrawCopy();
+    charmSignal_scoreCorrelation->SetTitle("Correlation between charmed and strange scores over the known charmed signal data");
+    charmSignal_scoreCorrelation->GetXaxis()->SetTitle("Charmed score");
+    charmSignal_scoreCorrelation->GetYaxis()->SetTitle("Strange score");
+    charmSignal_scoreCorrelation->DrawCopy();
 
     c2->cd(2);
-    strangeSignal_charmScore_vs_strangeScore->SetTitle("Correlation between charmed and strange scores over the known strange signal data");
-    strangeSignal_charmScore_vs_strangeScore->GetXaxis()->SetTitle("Charmed score");
-    strangeSignal_charmScore_vs_strangeScore->GetYaxis()->SetTitle("Strange score");
-    strangeSignal_charmScore_vs_strangeScore->DrawCopy();
+    charmBackground_scoreCorrelation->SetTitle("Correlation between charmed and strange scores over the known charmed background data (true strange jets only)");
+    charmBackground_scoreCorrelation->GetXaxis()->SetTitle("Charmed score");
+    charmBackground_scoreCorrelation->GetYaxis()->SetTitle("Strange score");
+    charmBackground_scoreCorrelation->DrawCopy();
+
+    TCanvas *c3 = new TCanvas("c3", "Correlation between charmed and strange scores for both scores above threshold", 2500, 2500);
+    c3->Divide(2, 1);
+    c3->cd(1);
+    charmSignal_scoreCorrelation_bothAboveThreshold->SetTitle("Correlation between charmed and strange scores over the known charmed signal data for both scores above threshold");
+    charmSignal_scoreCorrelation_bothAboveThreshold->GetXaxis()->SetTitle("Charmed score");
+    charmSignal_scoreCorrelation_bothAboveThreshold->GetYaxis()->SetTitle("Strange score");
+    charmSignal_scoreCorrelation_bothAboveThreshold->DrawCopy();
+
+    c3->cd(2);
+    charmBackground_scoreCorrelation_bothAboveThreshold->SetTitle("Correlation between charmed and strange scores over the known charmed background data for both scores above threshold");
+    charmBackground_scoreCorrelation_bothAboveThreshold->GetXaxis()->SetTitle("Charmed score");
+    charmBackground_scoreCorrelation_bothAboveThreshold->GetYaxis()->SetTitle("Strange score");
+    charmBackground_scoreCorrelation_bothAboveThreshold->DrawCopy();
+
+    TFile* outputFile = new TFile("InvariantMassDistribution_3var_BTD.root", "RECREATE");
+    h_massW->Write();
+    charmSignal_scoreCorrelation->Write();
+    charmBackground_scoreCorrelation->Write();
+    charmSignal_scoreCorrelation_bothAboveThreshold->Write();
+    charmBackground_scoreCorrelation_bothAboveThreshold->Write();
+    outputFile->Close();
 
     inputFile_c->Close();
-    //inputFile_s->Close();
     delete reader_c;
     delete reader_s;
 }
