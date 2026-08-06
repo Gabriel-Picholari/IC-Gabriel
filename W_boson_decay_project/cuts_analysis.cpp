@@ -93,7 +93,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     Int_t nConstCut = 15;
     Int_t nRhoCut = 2;
 
-    TH1F *strange_signal_pT = new TH1F("strange_signal_pT", "p_{T} distribution of strange jets; p_{T} [GeV/c]; Events", 100, 0, 100);
+    TH1F *strange_signal_pT = new TH1F("strange_signal_pT", "p_{T} distribution of strange jets; p_{T} [GeV/c]; Events", 100, 0, 80);
     TH1F *strange_signal_nConst = new TH1F("strange_signal_nConst", "Number of constituents distribution of strange jets; nConst; Events", 50, 0, 50);
     TH1F *strange_signal_nRho = new TH1F("strange_signal_nRho", "N_{#rho} distribution of strange jets; N_{#rho}; Events", 10, 0, 10);
     TH1F *strange_signal_jetVerticesInvariantMasses = new TH1F("strange_signal_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of strange jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
@@ -113,7 +113,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     TH1F *strange_signal_nRho_nRhoCut = new TH1F("strange_signal_nRho_nRhoCut", ("N_{#rho} distribution of strange jets (N_{#rho} > " + std::to_string(nRhoCut) + "); N_{#rho}; Events").c_str(), 10, 0, 10);
     TH1F *strange_signal_jetVerticesInvariantMasses_nRhoCut = new TH1F("strange_signal_jetVerticesInvariantMasses_nRhoCut", ("Jet vertices invariant masses distribution of strange jets (N_{#rho} > " + std::to_string(nRhoCut) + "); Jet vertices invariant mass (GeV/c^{2}); Events").c_str(), 100, 0, 5);
 
-    TH1F *strange_background_pT = new TH1F("strange_background_pT", "p_{T} distribution of non-strange jets; p_{T} [GeV/c]; Events", 100, 0, 100);
+    TH1F *strange_background_pT = new TH1F("strange_background_pT", "p_{T} distribution of non-strange jets; p_{T} [GeV/c]; Events", 100, 0, 80);
     TH1F *strange_background_nConst = new TH1F("strange_background_nConst", "Number of constituents distribution of non-strange jets; nConst; Events", 50, 0, 50);
     TH1F *strange_background_nRho = new TH1F("strange_background_nRho", "N_{#rho} distribution of non-strange jets; N_{#rho}; Events", 10, 0, 10);
     TH1F *strange_background_jetVerticesInvariantMasses = new TH1F("strange_background_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of non-strange jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
@@ -220,7 +220,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F *charm_signal_pT = new TH1F("charm_signal_pT", "p_{T} distribution of charm jets; p_{T} [GeV/c]; Events", 100, 0, 100);
+    TH1F *charm_signal_pT = new TH1F("charm_signal_pT", "p_{T} distribution of charm jets; p_{T} [GeV/c]; Events", 100, 0, 80);
     TH1F *charm_signal_nConst = new TH1F("charm_signal_nConst", "Number of constituents distribution of charm jets; nConst; Events", 50, 0, 50);
     TH1F *charm_signal_nRho = new TH1F("charm_signal_nRho", "N_{#rho} distribution of charm jets; N_{#rho}; Events", 10, 0, 10);
     TH1F *charm_signal_jetVerticesInvariantMasses = new TH1F("charm_signal_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of charm jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
@@ -240,7 +240,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     TH1F *charm_signal_nRho_nRhoCut = new TH1F("charm_signal_nRho_nRhoCut", ("N_{#rho} distribution of charm jets (N_{#rho} > " + std::to_string(nRhoCut) + "); N_{#rho}; Events").c_str(), 10, 0, 10);
     TH1F *charm_signal_jetVerticesInvariantMasses_nRhoCut = new TH1F("charm_signal_jetVerticesInvariantMasses_nRhoCut", ("Jet vertices invariant masses distribution of charm jets (N_{#rho} > " + std::to_string(nRhoCut) + "); Jet vertices invariant mass (GeV/c^{2}); Events").c_str(), 100, 0, 5);
 
-    TH1F *charm_background_pT = new TH1F("charm_background_pT", "p_{T} distribution of non-charm jets; p_{T} [GeV/c]; Events", 100, 0, 100);
+    TH1F *charm_background_pT = new TH1F("charm_background_pT", "p_{T} distribution of non-charm jets; p_{T} [GeV/c]; Events", 100, 0, 80);
     TH1F *charm_background_nConst = new TH1F("charm_background_nConst", "Number of constituents distribution of non-charm jets; nConst; Events", 50, 0, 50);
     TH1F *charm_background_nRho = new TH1F("charm_background_nRho", "N_{#rho} distribution of non-charm jets; N_{#rho}; Events", 10, 0, 10);
     TH1F *charm_background_jetVerticesInvariantMasses = new TH1F("charm_background_jetVerticesInvariantMasses", "Jet vertices invariant masses distribution of charm jets; Jet vertices invariant mass (GeV/c^{2}); Events", 100, 0, 5);
@@ -376,6 +376,13 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     TCanvas *c1 = new TCanvas("c1", "Transverse momentum strange variables distributions", 2500, 2500);
     c1->Divide(2, 2);
+    
+    // Configurações globais de estilo para limpar o visual
+    gStyle->SetTextFont(42);         // Fonte mais moderna (Helvetica)
+    gStyle->SetPadLeftMargin(0.12);
+    gStyle->SetPadRightMargin(0.05);
+    gStyle->SetPadBottomMargin(0.12);
+    gStyle->SetPadTopMargin(0.10);
 
     c1->cd(1);
     strange_background_pT->SetTitle("Strange jets: p_{T} distribution;p_{T} [GeV/c];Events");
@@ -461,9 +468,9 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     strange_signal_nConst->DrawCopy("same");
 
     TLegend *legend5 = new TLegend(0.6, 0.7, 0.9, 0.9);
-    legend2->AddEntry(strange_signal_nConst, "Strange signal jets", "l");
-    legend2->AddEntry(strange_background_nConst, "Strange background jets", "l");
-    legend2->Draw();
+    legend5->AddEntry(strange_signal_nConst, "Strange signal jets", "l");
+    legend5->AddEntry(strange_background_nConst, "Strange background jets", "l");
+    legend5->Draw();
 
     std::string title2 ="Strange jets: number of constituents distribution (p_{T} > " + oss.str() + " GeV/c);N_{const};Events";
 
@@ -583,10 +590,6 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend12->AddEntry(strange_signal_nRho_nRhoCut, "Strange signal jets", "l");
     legend12->AddEntry(strange_background_nRho_nRhoCut, "Strange background jets", "l");
     legend12->Draw();
-
-    //=====================================================================
-    // Charm jets canvases
-    //=====================================================================
 
     TCanvas *c4 = new TCanvas("c4", "Transverse momentum charm variables distributions", 2500, 2500);
     c4->Divide(2, 2);
@@ -774,7 +777,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend24->Draw();
 
     //=====================================================================
-
+    /*
     TCanvas *c7 = new TCanvas("c7", "Jet vertices invariant masses charm distributions", 2500, 2500);
     c7->Divide(1, 1);
 
@@ -790,8 +793,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend25->AddEntry(charm_signal_jetVerticesInvariantMasses, "Charm signal jets", "l");
     legend25->AddEntry(charm_background_jetVerticesInvariantMasses, "Charm background jets", "l");
     legend25->Draw();
-
-    /*
+    
     c7->cd(2);
     charm_background_jetVerticesInvariantMasses_pTCut->SetTitle(("Charm jets: jet vertices invariant masses distribution (p_{T} > " + std::to_string(pTCut) + " GeV/c);Jet vertices invariant mass (GeV/c^{2});Events").c_str());
     
@@ -832,4 +834,172 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend28->AddEntry(charm_background_jetVerticesInvariantMasses_nRhoCut, "Charm background jets", "l");
     legend28->Draw();
     */ // Not a discriminatory variable, cuts not applied
+
+    gStyle->SetOptStat(0);
+
+    TCanvas *poster_strange = new TCanvas("poster_strange", "Poster strange", 1800, 600);
+    poster_strange->Divide(3, 1);
+
+    poster_strange->cd(1);
+    strange_background_pT->SetTitle("Strange jets: p_{T} distribution;p_{T} [GeV/c];Events");
+    strange_background_pT->SetTitle("");
+    strange_background_pT->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+    strange_background_pT->GetYaxis()->SetTitle("Entries");
+    strange_background_pT->GetXaxis()->SetTitleSize(0.05);
+    strange_background_pT->GetYaxis()->SetTitleSize(0.05);
+    
+    strange_background_pT->GetYaxis()->SetRangeUser(std::min(strange_background_pT->GetMinimum(), strange_signal_pT->GetMinimum()) * 0.5, std::max(strange_background_pT->GetMaximum(), strange_signal_pT->GetMaximum()) * 1.3); // Aumentado para 1.3 pro teto não cortar a legenda
+    strange_background_pT->SetLineColor(kRed);
+    strange_background_pT->SetLineWidth(2);
+    strange_background_pT->DrawCopy(); 
+
+    strange_signal_pT->SetLineColor(kBlue);
+    strange_signal_pT->SetLineWidth(2);
+    strange_signal_pT->DrawCopy("same");
+
+    /*
+    TLegend *legend1_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend1_poster->SetBorderSize(0);
+    legend1_poster->SetFillStyle(0); // Fundo transparente
+    legend1_poster->SetTextSize(0.06);
+    legend1_poster->AddEntry(strange_signal_pT, "Strange signal jets", "l");
+    legend1_poster->AddEntry(strange_background_pT, "Strange background jets", "l");
+    legend1_poster->Draw();
+    */
+
+    poster_strange->cd(2);
+    strange_background_nConst->SetTitle("Strange jets: number of constituents distribution;N_{const};Events");
+    strange_background_nConst->SetTitle("");
+    strange_background_nConst->GetYaxis()->SetTitle("");
+    strange_background_nConst->GetXaxis()->SetTitle("N_{const}");
+    strange_background_nConst->GetXaxis()->SetTitleSize(0.05);
+    strange_background_nConst->GetYaxis()->SetTitleSize(0.05);
+
+    strange_background_nConst->GetYaxis()->SetRangeUser(std::min(strange_background_nConst->GetMinimum(), strange_signal_nConst->GetMinimum()) * 0.5, std::max(strange_background_nConst->GetMaximum(), strange_signal_nConst->GetMaximum()) * 1.3);
+    strange_background_nConst->SetLineColor(kRed);
+    strange_background_nConst->SetLineWidth(2);
+    strange_background_nConst->DrawCopy();
+
+    strange_signal_nConst->SetLineColor(kBlue);
+    strange_signal_nConst->SetLineWidth(2);
+    strange_signal_nConst->DrawCopy("same");
+
+    TLegend *legend2_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend2_poster->SetBorderSize(0);
+    legend2_poster->SetFillStyle(0);
+    legend2_poster->SetTextSize(0.05);
+    legend2_poster->AddEntry(strange_signal_nConst, "Strange signal jets", "l");
+    legend2_poster->AddEntry(strange_background_nConst, "Strange background jets", "l");
+    legend2_poster->Draw();
+
+    poster_strange->cd(3);
+    strange_background_nRho->SetTitle("Strange jets: N_{#rho} distribution;N_{#rho};Events");
+    strange_background_nRho->SetTitle("");
+    strange_background_nRho->GetYaxis()->SetTitle("");
+    strange_background_nRho->GetXaxis()->SetTitle("N_{#rho}");
+    strange_background_nRho->GetXaxis()->SetTitleSize(0.05);
+    strange_background_nRho->GetYaxis()->SetTitleSize(0.05);
+
+    strange_background_nRho->GetYaxis()->SetRangeUser(std::min(strange_background_nRho->GetMinimum(), strange_signal_nRho->GetMinimum()) * 0.5, std::max(strange_background_nRho->GetMaximum(), strange_signal_nRho->GetMaximum()) * 1.3);
+    strange_background_nRho->SetLineColor(kRed);
+    strange_background_nRho->SetLineWidth(2);
+    strange_background_nRho->DrawCopy();
+
+    strange_signal_nRho->SetLineColor(kBlue);
+    strange_signal_nRho->SetLineWidth(2);
+    strange_signal_nRho->DrawCopy("same");
+
+    /* 
+    TLegend *legend3_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend3_poster->SetBorderSize(0);
+    legend3_poster->SetFillStyle(0);
+    //legend3_poster->SetTextSize(0.06);
+    legend3_poster->AddEntry(strange_signal_nRho, "Strange signal jets", "l");
+    legend3_poster->AddEntry(strange_background_nRho, "Strange background jets", "l");
+    legend3_poster->Draw();
+    */
+
+
+    TCanvas *poster_charm = new TCanvas("poster_charm", "Poster charm", 1800, 600);
+    poster_charm->Divide(3, 1);
+
+    poster_charm->cd(1);
+    charm_background_pT->SetTitle("Charm jets: p_{T} distribution;p_{T} [GeV/c];Events");
+    charm_background_pT->SetTitle("");
+    charm_background_pT->GetYaxis()->SetTitle("Entries");
+    charm_background_pT->GetXaxis()->SetTitle("p_{T} [GeV/c]");
+    charm_background_pT->GetXaxis()->SetTitleSize(0.05);
+    charm_background_pT->GetYaxis()->SetTitleSize(0.05);
+
+    charm_background_pT->GetYaxis()->SetRangeUser(std::min(charm_background_pT->GetMinimum(), charm_signal_pT->GetMinimum()) * 0.5, std::max(charm_background_pT->GetMaximum(), charm_signal_pT->GetMaximum()) * 1.3);
+    charm_background_pT->SetLineColor(kRed);
+    charm_background_pT->SetLineWidth(2);
+    charm_background_pT->DrawCopy();
+
+    charm_signal_pT->SetLineColor(kBlue);
+    charm_signal_pT->SetLineWidth(2);
+    charm_signal_pT->DrawCopy("same");
+
+    /*
+    TLegend *legend4_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend4_poster->SetBorderSize(0);
+    legend4_poster->SetFillStyle(0);
+    legend4_poster->SetTextSize(0.04);
+    legend4_poster->AddEntry(charm_signal_pT, "Charm signal jets", "l");
+    legend4_poster->AddEntry(charm_background_pT, "Charm background jets", "l");
+    legend4_poster->Draw();
+    */
+
+    poster_charm->cd(2);
+    charm_background_nConst->SetTitle("Charm jets: number of constituents distribution;N_{const};Events");
+    charm_background_nConst->SetTitle("");
+    charm_background_nConst->GetYaxis()->SetTitle("");
+    charm_background_nConst->GetXaxis()->SetTitle("N_{const}");
+    charm_background_nConst->GetXaxis()->SetTitleSize(0.05);
+    charm_background_nConst->GetYaxis()->SetTitleSize(0.05);
+
+    charm_background_nConst->GetYaxis()->SetRangeUser(std::min(charm_background_nConst->GetMinimum(), charm_signal_nConst->GetMinimum()) * 0.5, std::max(charm_background_nConst->GetMaximum(), charm_signal_nConst->GetMaximum()) * 1.3);
+    charm_background_nConst->SetLineColor(kRed);
+    charm_background_nConst->SetLineWidth(2);
+    charm_background_nConst->DrawCopy();
+
+    charm_signal_nConst->SetLineColor(kBlue);
+    charm_signal_nConst->SetLineWidth(2);
+    charm_signal_nConst->DrawCopy("same");
+
+    TLegend *legend5_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend5_poster->SetBorderSize(0);
+    legend5_poster->SetFillStyle(0);
+    legend5_poster->SetTextSize(0.05);
+    legend5_poster->AddEntry(charm_signal_nConst, "Charm signal jets", "l");
+    legend5_poster->AddEntry(charm_background_nConst, "Charm background jets", "l");
+    legend5_poster->Draw();
+
+    poster_charm->cd(3);
+    charm_background_nRho->SetTitle("Charm jets: N_{#rho} distribution;N_{#rho};Events");
+    charm_background_nRho->SetTitle("");
+    charm_background_nRho->GetYaxis()->SetTitle("");
+    charm_background_nRho->GetXaxis()->SetTitle("N_{#rho}");
+    charm_background_nRho->GetXaxis()->SetTitleSize(0.05);
+    charm_background_nRho->GetYaxis()->SetTitleSize(0.05);
+
+    charm_background_nRho->GetYaxis()->SetRangeUser(std::min(charm_background_nRho->GetMinimum(), charm_signal_nRho->GetMinimum()) * 0.5, std::max(charm_background_nRho->GetMaximum(), charm_signal_nRho->GetMaximum()) * 1.3);
+    charm_background_nRho->SetLineColor(kRed);
+    charm_background_nRho->SetLineWidth(2);
+    charm_background_nRho->DrawCopy();
+
+    charm_signal_nRho->SetLineColor(kBlue);
+    charm_signal_nRho->SetLineWidth(2);
+    charm_signal_nRho->DrawCopy("same");
+
+    /*
+    TLegend *legend6_poster = new TLegend(0.55, 0.72, 0.92, 0.87);
+    legend6_poster->SetBorderSize(0);
+    legend6_poster->SetFillStyle(0);
+    legend6_poster->SetTextSize(0.04);
+    legend6_poster->AddEntry(charm_signal_nRho, "Charm signal jets", "l");
+    legend6_poster->AddEntry(charm_background_nRho, "Charm background jets", "l");
+    legend6_poster->Draw();
+    */
+
 }

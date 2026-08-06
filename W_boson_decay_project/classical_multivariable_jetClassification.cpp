@@ -376,7 +376,7 @@ void classical_multivariable_jetClassification(const char* fileName, std::string
             jetEta = jet.eta();
 
             Float_t absEta = TMath::Abs(jetEta);
-            if (absEta > 2) continue;
+            if (absEta > 1.3) continue;
 
             jetPhi = jet.phi();
             jetMass = jet.m();

@@ -9,7 +9,7 @@
 #include <vector>
 #include <TLine.h>
 
-void modelStatistics_multiVariable(const char* inputFileName, std::string switch_string, std::string contaminatingGluonMode, const float threshold = 0.7) 
+void modelStatistics_multiVariable(const char* inputFileName, std::string switch_string, std::string contaminatingGluonMode, const float threshold = 0.6) 
 {
     std::string sfx;
     std::string long_sfx;
@@ -49,7 +49,8 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
 
     TMVA::Reader* reader = new TMVA::Reader("!Color:!Silent");
 
-    Float_t pT, nConst, eta, phi, mass, label, eventID, score, nRho = 0;
+    Float_t pT, nConst, eta, phi, mass, label, eventID, score, nRho;
+    Int_t flavor;
 
     reader->AddVariable(("pT" + sfx).c_str(), &pT);
     reader->AddVariable(("nRho" + sfx).c_str(), &nRho);
@@ -59,6 +60,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     reader->AddSpectator(("phi" + sfx).c_str(), &phi);
     reader->AddSpectator(("label" + sfx).c_str(), &label);
     reader->AddSpectator(("eventID" + sfx).c_str(), &eventID);
+    reader->AddSpectator(("flavor" + sfx).c_str(), &flavor);
     reader->BookMVA("GradBoost", (datasetName + "/weights/TMVAClassification_GradBoost.weights.xml").c_str());
 
     //---------------------------------------------------------------------------------------------------------
@@ -76,6 +78,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     signalTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
     signalTree->SetBranchAddress(("label" + sfx).c_str(), &label);
     signalTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+    signalTree->SetBranchAddress(("flavor" + sfx).c_str(), &flavor);
 
     backgroundTree->SetBranchAddress(("pT" + sfx).c_str(), &pT);
     backgroundTree->SetBranchAddress(("eta" + sfx).c_str(), &eta);
@@ -84,6 +87,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     backgroundTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
     backgroundTree->SetBranchAddress(("label" + sfx).c_str(), &label);
     backgroundTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+    backgroundTree->SetBranchAddress(("flavor" + sfx).c_str(), &flavor);
 
     //---------------------------------------------------------------------------------------------------------
     // Analise de desempenho (threshold único)
@@ -168,17 +172,37 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
 // Plot original histograms
 //---------------------------------------------------------------------------------------------------------
 
+    h_background->Scale(h_signal->Integral() / h_background->Integral());
+
     TCanvas* c1 = new TCanvas("c1", ("GradBoost Score Distribution (" + uppercase_switch_string + ")").c_str(), 900, 700);
     c1->SetGrid();
 
     h_background->SetLineColor(kRed);
-    h_signal->SetLineColor(kGreen);
+    h_background->SetLineWidth(3);
+    h_background->SetMarkerColor(kRed);
+    h_background->SetMarkerStyle(4);   
+    h_background->SetMarkerSize(1);
+
+
+
+    h_signal->SetLineColor(kBlue);
+    h_signal->SetLineWidth(2);
 
     h_signal->SetTitle(("GradBoost Score Distribution for " + uppercase_switch_string + " Jets;Score;Entries").c_str());
     h_background->SetTitle(("GradBoost Score Distribution for " + uppercase_switch_string + " Jets;Score;Entries").c_str());
 
-    h_background->DrawCopy();
+    h_background->DrawCopy("E1P");
     h_signal->DrawCopy("same");
+
+    
+    TLegend* leg1 = new TLegend(0.15, 0.75, 0.38, 0.88);
+    leg1->SetBorderSize(0);
+    leg1->SetFillStyle(0);
+    leg1->SetTextSize(0.04);
+    leg1->AddEntry(h_signal, "Signal", "l");
+    leg1->AddEntry(h_background, "Background", "l");
+    leg1->Draw();
+    
 
     //c1->SaveAs(("GradBoost_Score_Distribution" + long_sfx + ".png").c_str());
 
@@ -236,32 +260,58 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
         vPur.push_back(pur);
     }
 
-    TH1F* hEff = new TH1F("hEff",("Efficiency vs Threshold (" + uppercase_switch_string + ");Threshold;Efficiency").c_str(), nSteps, tmin, tmax);
-    TH1F* hPur = new TH1F("hPur",("Purity vs Threshold (" + uppercase_switch_string + ");Threshold;Purity").c_str(), nSteps, tmin, tmax);
+    gStyle->SetOptStat(0);
 
-    for (int k=0; k<nSteps; ++k) {
-        float thr = tmin + (tmax-tmin)*k/(nSteps-1);
-        hEff->SetBinContent(k+1, vEff[k]);
-        hPur->SetBinContent(k+1, vPur[k]);
-    }
+    TCanvas* c2 = new TCanvas("c2", ("Efficiency and Purity vs Threshold (" + uppercase_switch_string + ")").c_str(), 1800, 600);
 
-    TCanvas* c2 = new TCanvas("c2", ("Efficiency and Purity vs Threshold (" + uppercase_switch_string + ")").c_str(), 2500, 2500);
     c2->SetGrid();
+    c2->SetLeftMargin(0.12);
+    c2->SetBottomMargin(0.12);
+    c2->SetRightMargin(0.05);
+    c2->SetTopMargin(0.08);
 
-    TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data());
-    gEff->SetTitle(("Efficiency and Purity vs Threshold for " + uppercase_switch_string + " Jets;Threshold;Value").c_str());
-    gEff->SetLineColor(kBlue);
-    gEff->SetLineWidth(2);
-    gEff->Draw("AL");
+    TGraph* gEff = new TGraph(nSteps, vx.data(), vEff.data()); gEff->SetTitle(("Efficiency and Purity vs Threshold for " + uppercase_switch_string + " Jets").c_str());
+
+    gEff->SetLineColor(kBlue+1);
+    gEff->SetMarkerColor(kBlue+1);
+    gEff->SetLineWidth(3);
+
+    gEff->GetXaxis()->SetTitle("Threshold");
+    gEff->GetYaxis()->SetTitle("Efficiency / Purity");
+    gEff->GetYaxis()->SetRangeUser(0.0,1.05);
+    gEff->GetXaxis()->SetRangeUser(-1,1);
+
+
+    gEff->GetXaxis()->SetTitleSize(0.05);
+    gEff->GetYaxis()->SetTitleSize(0.05);
+    gEff->GetXaxis()->SetLabelSize(0.04);
+    gEff->GetYaxis()->SetLabelSize(0.04);
+
+    gEff->Draw("ALP");
 
     TGraph* gPur = new TGraph(nSteps, vx.data(), vPur.data());
-    gPur->SetLineColor(kMagenta);
-    gPur->SetLineWidth(2);
-    gPur->Draw("L same");
+    gPur->SetLineColor(kMagenta+2);
+    gPur->SetLineWidth(3);
+    gPur->Draw("LP SAME");
 
-    TLine* l1 = new TLine(threshold,0,threshold,1);
+    // Threshold
+    TLine* l1 = new TLine(threshold,0,threshold,1.05);
     l1->SetLineStyle(2);
-    l1->Draw("same");
+    l1->SetLineWidth(3);
+    l1->SetLineColor(kGray+2);
+    l1->Draw();
+
+    // Legenda
+    TLegend* leg = new TLegend(0.15,0.72,0.38,0.88);
+    leg->SetBorderSize(0);
+    leg->SetFillStyle(0);
+    leg->AddEntry(gEff,"Efficiency","lp");
+    leg->AddEntry(gPur,"Purity","lp");
+    leg->AddEntry(l1,Form("Threshold = %.3f",threshold),"l");
+    leg->SetTextSize(0.05);
+    leg->Draw();
+
+    c2->Update();
 
     //c2->SaveAs(("Efficiency_Purity_vs_Threshold_" + long_sfx + ".png").c_str());
 
