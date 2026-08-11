@@ -27,7 +27,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TClonesArray *quarks = new TClonesArray("MyQuark");
   Float_t boson_pT, boson_eta, boson_phi, boson_energy, boson_eventID;
 
-  TFile *outfile = new TFile("wdecay2_seed_1_10K_hardQCD_all_off_etaLimitated.root", "RECREATE"); 
+  TFile *outfile = new TFile("wdecay2_seed_1000_10K_hardQCD_all_off_etaLimited.root", "RECREATE");
 
   TTree *ttree = new TTree("W decay TTree 2", "Fast_Jet TTree");
 
@@ -56,7 +56,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
   TPythia8 pythia8 = new TPythia8();
   pythia8.ReadString("HardQCD:all = off");
   pythia8.ReadString("Random:setSeed = on");
-  pythia8.ReadString("Random:seed = 1");
+  pythia8.ReadString("Random:seed = 1000");
 
   pythia8.ReadString("WeakSingleBoson:ffbar2W = on");
   
@@ -82,7 +82,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
     wPtFlag = 0;    // By default, we set the flag to 0 at the beginning of each event, that is, we assume the W boson pT is <= 10 GeV/c
 
     pythia8.GenerateEvent();
-    //if (eventN == 0) pythia8.EventListing();
+    if (eventN == 0) pythia8.EventListing();
     pythia8.ImportParticles(particles, "All");
 
 
@@ -102,6 +102,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       Int_t ist = part->GetStatusCode();
       Int_t partPdg = part->GetPdgCode();
 
+      
       if (!foundW && abs(partPdg) == 24)
       {
         TLorentzVector vec;
@@ -135,6 +136,8 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
           }
         }
       }
+      
+      
 
       if (ist > 0)
       {
@@ -254,7 +257,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
         }
       }
     }
-
+     
     if (!acceptEvent)
     {
       particles->Clear();
@@ -262,6 +265,7 @@ void wdecayTTree2(Int_t nev = 10000, Int_t ndeb = 1 /* Listing */ )
       quarks->Clear();
       continue;
     }
+    
 
     ttree->Fill();
 
