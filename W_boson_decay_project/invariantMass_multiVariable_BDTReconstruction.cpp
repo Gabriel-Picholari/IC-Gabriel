@@ -27,7 +27,7 @@ void printJets(const std::multimap<Int_t, TLorentzVector>& jatos, const std::str
     }
 }
 
-void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /*const char* inputFileName_s, */, const std::string contaminatingGluonMode, float t_c = 0.6, float t_s = 0.6) 
+void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /*const char* inputFileName_s, */, const std::string contaminatingGluonMode, float t_c = 0.6, float t_s = 0.65) 
 {   
 
     std::string charm_datasetName;
@@ -381,8 +381,8 @@ void invariantMass_multiVariable_BDTReconstruction(const char* inputFileName_c /
         }
     }
 
-    TF1* f = new TF1("f", /*"pol0(0)+gaus(1)"*/ "[0]+[1]*exp(-(x-[2])^2/(2*[3]))", 60, 100);
-    f->SetParameters(40.0, 120.0, 80.0, 5.0);
+    TF1* f = new TF1("f", /*"pol0(0)+gaus(1)"*/ "[0]+[1]*exp(-(x-[2])^2/(2*[3]))", 70, 90);
+    f->SetParameters(120.0, 220.0, 80.0, 7.0);
     h_massW->Fit(f, "ESR");
     
     //---------------------------------------------------------------------------------------------------------

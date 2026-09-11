@@ -53,45 +53,46 @@ struct JetTagResult
 {
     Bool_t isCharmTagged = false;
     Bool_t isStrangeTagged = false;
+    Int_t  nCharmConst = 0;
+    Int_t  nStrangeConst = 0;
 };
 
 JetTagResult classifyJet(
-    const fastjet::PseudoJet& jet, 
-    std::vector<fastjet::PseudoJet>& tagged_c_jets, 
-    std::vector<fastjet::PseudoJet>& tagged_s_jets, 
-    TLorentzVector& vec_c, 
+    const fastjet::PseudoJet& jet,
+    std::vector<fastjet::PseudoJet>& tagged_c_jets,
+    std::vector<fastjet::PseudoJet>& tagged_s_jets,
+    TLorentzVector& vec_c,
     TLorentzVector& vec_s
 )
 {
     JetTagResult result;
 
     TLorentzVector currentJet(jet.px(), jet.py(), jet.pz(), jet.E());
-
     if (currentJet.M() < 0) return result;
 
+    // Step one: count the number of constituents of each type
     for (const fastjet::PseudoJet &constituent : jet.constituents())
     {
         TString signalType = constituent.user_info<JetInfo>().getSignalType();
 
-        if (signalType == "charm" && !result.isCharmTagged)
-        {
-            tagged_c_jets.push_back(jet);
-            vec_c = currentJet;
-            result.isCharmTagged = true;
-        }
-
-        else if (signalType == "strange" && !result.isStrangeTagged)
-        {
-            tagged_s_jets.push_back(jet);
-            vec_s = currentJet;
-            result.isStrangeTagged = true;
-        }
-
-        if (result.isCharmTagged && result.isStrangeTagged)
-        {
-            break;
-        }
+        if (signalType == "charm")   result.nCharmConst++;
+        else if (signalType == "strange") result.nStrangeConst++;
     }
+
+    // Step two: classify the jet based on the counts
+    if (result.nCharmConst > result.nStrangeConst && result.nCharmConst > 0)
+    {
+        result.isCharmTagged = true;
+        tagged_c_jets.push_back(jet);
+        vec_c = currentJet;
+    }
+    else if (result.nStrangeConst > result.nCharmConst && result.nStrangeConst > 0)
+    {
+        result.isStrangeTagged = true;
+        tagged_s_jets.push_back(jet);
+        vec_s = currentJet;
+    }
+    // In case of a tie or if both counts are zero, the jet is not tagged as either type (ends up as background)
 
     return result;
 }
@@ -255,7 +256,7 @@ void gluonJets_inspection(const char* fileName)
             count++;
 
             jetPt = jet.pt();
-            if (jetPt < 5) continue; // Basic cut on jet pT
+            if (jetPt < 10) continue; // Basic cut on jet pT
 
             jetEta = jet.eta();
 

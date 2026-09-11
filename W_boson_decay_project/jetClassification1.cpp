@@ -68,6 +68,14 @@ fastjet::PseudoJet quenchedJet(const fastjet::PseudoJet &jet, double deltaE, dou
     return q;
 }
 
+struct JetTagResult
+{
+    Bool_t isCharmTagged = false;
+    Bool_t isStrangeTagged = false;
+    Int_t  nCharmConst = 0;
+    Int_t  nStrangeConst = 0;
+};
+
 class JetInfo : public fastjet::PseudoJet::UserInfoBase
 {
     public:
@@ -95,6 +103,46 @@ class JetInfo : public fastjet::PseudoJet::UserInfoBase
         Int_t finalParticleSecondMotherPdg;
         Int_t finalParticleThirdMotherPdg;
 };
+
+JetTagResult classifyJet(
+    const fastjet::PseudoJet& jet,
+    std::vector<fastjet::PseudoJet>& tagged_c_jets,
+    std::vector<fastjet::PseudoJet>& tagged_s_jets,
+    TLorentzVector& vec_c,
+    TLorentzVector& vec_s
+)
+{
+    JetTagResult result;
+
+    TLorentzVector currentJet(jet.px(), jet.py(), jet.pz(), jet.E());
+    if (currentJet.M() < 0) return result;
+
+    // Step one: count the number of constituents of each type
+    for (const fastjet::PseudoJet &constituent : jet.constituents())
+    {
+        TString signalType = constituent.user_info<JetInfo>().getSignalType();
+
+        if (signalType == "charm")   result.nCharmConst++;
+        else if (signalType == "strange") result.nStrangeConst++;
+    }
+
+    // Step two: classify the jet based on the counts
+    if (result.nCharmConst > result.nStrangeConst && result.nCharmConst > 0)
+    {
+        result.isCharmTagged = true;
+        tagged_c_jets.push_back(jet);
+        vec_c = currentJet;
+    }
+    else if (result.nStrangeConst > result.nCharmConst && result.nStrangeConst > 0)
+    {
+        result.isStrangeTagged = true;
+        tagged_s_jets.push_back(jet);
+        vec_s = currentJet;
+    }
+    // In case of a tie or if both counts are zero, the jet is not tagged as either type (ends up as background)
+
+    return result;
+}
 
 void jetClassification1(const char* fileName)
 {
@@ -126,7 +174,7 @@ void jetClassification1(const char* fileName)
     // Initialization of histograms
     //---------------------------------------------------------------------------------------------------------
 
-    TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 600, 0, 120);
+    TH1F *invariantMass = new TH1F("h1", "W^{+-} invariant mass spectrum [GeV/c^{2}]", 120, 0, 120);
     TH1F *primary_CharmRatioHist = new TH1F("primaryCharmRatio", "Charm: Ratio between tagged jets (with correct hadron) and quark p_{T}", 50, 0, 2);
     TH1F *secondary_CharmRatioHist = new TH1F("secondaryCharmRatio", "Charm: Ratio between tagged jets (whitout correct hadron) and quark p_{T}", 50, 0, 2);
 
@@ -311,7 +359,7 @@ void jetClassification1(const char* fileName)
             count++;
 
             jetPt = jet.pt();
-            if (jetPt < 5) continue; // Basic cut on jet pT
+            if (jetPt < 10) continue; // Basic cut on jet pT
 
             jetEta = jet.eta();
 
@@ -337,35 +385,7 @@ void jetClassification1(const char* fileName)
                 }
             }                 
 
-            //---------------------------------------------------------------------------------------------------------
-            // Jet classification block (based on constituents info)
-            //---------------------------------------------------------------------------------------------------------
-
-            TLorentzVector currentJet(jetPx, jetPy, jetPz, jetE);
-            if (currentJet.M() < 0) continue;
-            
-            Bool_t isCharmTagged = false;
-            Bool_t isStrangeTagged = false;
-
-            for (const fastjet::PseudoJet &constituent : jet.constituents())
-            {
-                TString signalType_jet = constituent.user_info<JetInfo>().getSignalType();
-
-                if (signalType_jet == "charm" && !isCharmTagged) // Then one of the final particles that is part of this jet has a distant mother in a c quark
-                {   
-                    tagged_c_jets.push_back(jet);
-                    vec_c = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
-                    //std::cout << "Added charm jet with mass: " << currentJet.M() << std::endl;
-                    isCharmTagged = true;
-                }
-                else if (signalType_jet == "strange" && !isStrangeTagged) // Then it's a strange jet
-                {
-                    tagged_s_jets.push_back(jet);
-                    vec_s = TLorentzVector(jetPx, jetPy, jetPz, jetE); // Just to check consistency in the number of entries (will be reconsidered)
-                    //std::cout << "Added strange jet with mass: " << currentJet.M() << std::endl;
-                    isStrangeTagged = true;
-                }
-            }
+            JetTagResult tagResult = classifyJet(jet, tagged_c_jets, tagged_s_jets, vec_c, vec_s);
 
         } // End of individual jet creation
 
@@ -877,14 +897,17 @@ void jetClassification1(const char* fileName)
 
     TH1F* second_ratio_smaller10_same = (TH1F*) second_F_sc_l10_same_norm->Clone("second_ratio_smaller10_same");
     second_ratio_smaller10_same->Divide(observable_F_sc_l10_norm);
+
+    TF1* f = new TF1("f", /*"pol0(0)+gaus(1)"*/ "[0]+[1]*exp(-(x-[2])^2/(2*[3]))", 60, 100);
+    f->SetParameters(40.0, 120.0, 80.0, 5.0);
+    invariantMass->Fit(f, "ESR");
     
     //---------------------------------------------------------------------------------------------------------
     // Plotting histograms
     //---------------------------------------------------------------------------------------------------------
 
-    
     // Configurações globais de estilo (coloque antes de renderizar os Canvas)
-    gStyle->SetOptStat(0);           // Desativa caixas de estatísticas para limpar o visual
+    //gStyle->SetOptStat(0);           // Desativa caixas de estatísticas para limpar o visual
     gStyle->SetTextFont(42);          // Fonte Helvetica estável
     gStyle->SetPadLeftMargin(0.13);   // Espaço para os títulos do eixo Y
     gStyle->SetPadRightMargin(0.05);  // Margem direita limpa
@@ -900,34 +923,42 @@ void jetClassification1(const char* fileName)
     invariantMass->SetLineWidth(2);
     invariantMass->DrawCopy();
 
-    TCanvas *c2 = new TCanvas("c2", "Charm", 800, 800);
-    c2->Divide(1, 1);
-    c2->cd(1);
-    primary_CharmRatioHist->SetTitle("Distribution of charm jet-to-quark p_{T} ratio with a 5 GeV/c jet p_{T} cut");
-    primary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
-    primary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
-    primary_CharmRatioHist->SetLineColor(kGreen+2); // Um verde ligeiramente mais escuro para melhor contraste
-    primary_CharmRatioHist->SetLineWidth(2);
-    primary_CharmRatioHist->DrawCopy();
+    f->Draw("same");
 
+    TLegend *leg = new TLegend(0.60, 0.70, 0.88, 0.88);
+    leg->AddEntry(f, "Fit: p_{0}+p_{1}#kern[0.1]{exp}#left[#frac{-(x-p_{2})^{2}}{2p_{3}^{2}}#right]", "l");
+    leg->SetTextSize(0.04);
+    leg->Draw();
+
+    TCanvas *c2 = new TCanvas("c2", "Charm", 800, 800);
+    c2->Divide(2, 1);
+    c2->cd(1);
+    secondary_CharmRatioHist->SetTitle("Distribution of charm jet-to-quark p_{T} ratio with a 5 GeV/c jet p_{T} cut");
+    secondary_CharmRatioHist->GetXaxis()->SetTitle("Ratio");
+    secondary_CharmRatioHist->GetYaxis()->SetTitle("Frequency");
     secondary_CharmRatioHist->SetLineColor(kRed);
     secondary_CharmRatioHist->SetLineWidth(2);
-    secondary_CharmRatioHist->DrawCopy("same");
+    secondary_CharmRatioHist->GetYaxis()->SetRangeUser(std::min(primary_StrangeRatioHist->GetMinimum(), secondary_StrangeRatioHist->GetMinimum()) * 1.3, std::max(primary_StrangeRatioHist->GetMaximum(), secondary_StrangeRatioHist->GetMaximum()) * 1.3);
+    secondary_CharmRatioHist->DrawCopy();
 
-    TCanvas *c3 = new TCanvas("c3", "Strange", 800, 800);
-    c3->Divide(1, 1);
-    c3->cd(1);
+    primary_CharmRatioHist->SetLineColor(kGreen+2);
+    primary_CharmRatioHist->SetLineWidth(2);
+    primary_CharmRatioHist->DrawCopy("same");
+
+    c2->cd(2);
     primary_StrangeRatioHist->SetTitle("Distribution of strange jet-to-quark p_{T} ratio with a 5 GeV/c jet p_{T} cut");
     primary_StrangeRatioHist->GetXaxis()->SetTitle("Ratio");
-    primary_StrangeRatioHist->GetYaxis()->SetTitle("Frequency");
+    primary_StrangeRatioHist->GetYaxis()->SetTitle("");
     primary_StrangeRatioHist->SetLineColor(kGreen+2);
     primary_StrangeRatioHist->SetLineWidth(2);
+    primary_StrangeRatioHist->GetYaxis()->SetRangeUser(std::min(primary_StrangeRatioHist->GetMinimum(), secondary_StrangeRatioHist->GetMinimum()) * 1.3, std::max(primary_StrangeRatioHist->GetMaximum(), secondary_StrangeRatioHist->GetMaximum()) * 1.3);
     primary_StrangeRatioHist->DrawCopy();
 
     secondary_StrangeRatioHist->SetLineColor(kRed);
     secondary_StrangeRatioHist->SetLineWidth(2);
     secondary_StrangeRatioHist->DrawCopy("same");
-
+    
+    /*
     TCanvas *c4 = new TCanvas("c4", "Missing particles PDG", 1400, 600);
     c4->Divide(2, 1);
 
@@ -1274,6 +1305,7 @@ void jetClassification1(const char* fileName)
     legend_strange->AddEntry(null_b_strange_energyDistribution_afterQuenching_diff, "Strange jets (after quenching)", "l");
     legend_strange->AddEntry(non_null_b_strange_energyDistribution_afterQuenching_diff, "Strange jets (after quenching, non-null b)", "l");
     legend_strange->Draw();
+    */
 
     TFile *second_outputFile = new TFile("modified2_histogramas_jetR_07_fullList.root", "RECREATE");
     invariantMass->Write();

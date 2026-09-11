@@ -9,7 +9,7 @@
 #include <vector>
 #include <TLine.h>
 
-void modelStatistics_multiVariable(const char* inputFileName, std::string switch_string, std::string contaminatingGluonMode, const float threshold = 0.6) 
+void modelStatistics_multiVariable(const char* inputFileName, std::string switch_string, std::string contaminatingGluonMode, const float threshold = 0.60) 
 {
     std::string sfx;
     std::string long_sfx;
@@ -189,6 +189,8 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     h_signal->SetLineWidth(2);
 
     h_signal->SetTitle(("GradBoost Score Distribution for " + uppercase_switch_string + " Jets;Score;Entries").c_str());
+    h_background->GetXaxis()->SetTitleSize(0.05);
+    h_background->GetYaxis()->SetTitleSize(0.05);
     h_background->SetTitle(("GradBoost Score Distribution for " + uppercase_switch_string + " Jets;Score;Entries").c_str());
 
     h_background->DrawCopy("E1P");
@@ -198,7 +200,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     TLegend* leg1 = new TLegend(0.15, 0.75, 0.38, 0.88);
     leg1->SetBorderSize(0);
     leg1->SetFillStyle(0);
-    leg1->SetTextSize(0.04);
+    leg1->SetTextSize(0.06);
     leg1->AddEntry(h_signal, "Signal", "l");
     leg1->AddEntry(h_background, "Background", "l");
     leg1->Draw();
@@ -282,8 +284,8 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     gEff->GetXaxis()->SetRangeUser(-1,1);
 
 
-    gEff->GetXaxis()->SetTitleSize(0.05);
-    gEff->GetYaxis()->SetTitleSize(0.05);
+    gEff->GetXaxis()->SetTitleSize(0.06);
+    gEff->GetYaxis()->SetTitleSize(0.06);
     gEff->GetXaxis()->SetLabelSize(0.04);
     gEff->GetYaxis()->SetLabelSize(0.04);
 
@@ -308,7 +310,7 @@ void modelStatistics_multiVariable(const char* inputFileName, std::string switch
     leg->AddEntry(gEff,"Efficiency","lp");
     leg->AddEntry(gPur,"Purity","lp");
     leg->AddEntry(l1,Form("Threshold = %.3f",threshold),"l");
-    leg->SetTextSize(0.05);
+    leg->SetTextSize(0.06);
     leg->Draw();
 
     c2->Update();

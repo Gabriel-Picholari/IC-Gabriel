@@ -374,7 +374,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     // Strange jets canvases
     //=====================================================================
 
-    TCanvas *c1 = new TCanvas("c1", "Transverse momentum strange variables distributions", 2500, 2500);
+    TCanvas *c1 = new TCanvas("c1", "Transverse momentum strange variables distributions", 2500, 1800);
     c1->Divide(2, 2);
     
     // Configurações globais de estilo para limpar o visual
@@ -383,6 +383,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     gStyle->SetPadRightMargin(0.05);
     gStyle->SetPadBottomMargin(0.12);
     gStyle->SetPadTopMargin(0.10);
+    gStyle->SetTitleSize(0.05);
 
     c1->cd(1);
     strange_background_pT->SetTitle("Strange jets: p_{T} distribution;p_{T} [GeV/c];Events");
@@ -453,7 +454,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend4->AddEntry(strange_background_pT_nRhoCut, "Strange background jets", "l");
     legend4->Draw();
 
-    TCanvas *c2 = new TCanvas("c2", "Number of constituents strange variables distributions", 2500, 2500);
+    TCanvas *c2 = new TCanvas("c2", "Number of constituents strange variables distributions", 2500, 1800);
     c2->Divide(2,2);
 
     c2->cd(1);
@@ -522,7 +523,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend8->AddEntry(strange_background_nConst_nRhoCut, "Strange background jets", "l");
     legend8->Draw();
     
-    TCanvas *c3 = new TCanvas("c3", "N_{#rho} strange variables distributions", 2500, 2500);
+    TCanvas *c3 = new TCanvas("c3", "N_{#rho} strange variables distributions", 2500, 1800);
     c3->Divide(2,2);
 
     c3->cd(1);
@@ -591,7 +592,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     legend12->AddEntry(strange_background_nRho_nRhoCut, "Strange background jets", "l");
     legend12->Draw();
 
-    TCanvas *c4 = new TCanvas("c4", "Transverse momentum charm variables distributions", 2500, 2500);
+    TCanvas *c4 = new TCanvas("c4", "Transverse momentum charm variables distributions", 2500, 1800);
     c4->Divide(2, 2);
 
     c4->cd(1);
@@ -717,7 +718,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     //=====================================================================
 
-    TCanvas *c6 = new TCanvas("c6", "N_{#rho} charm variables distributions", 2500, 2500);
+    TCanvas *c6 = new TCanvas("c6", "N_{#rho} charm variables distributions", 2500, 1800);
     c6->Divide(2, 2);
 
     c6->cd(1);
@@ -837,7 +838,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
 
     gStyle->SetOptStat(0);
 
-    TCanvas *poster_strange = new TCanvas("poster_strange", "Poster strange", 1800, 600);
+    TCanvas *poster_strange = new TCanvas("poster_strange", "Poster strange", 2500, 800);
     poster_strange->Divide(3, 1);
 
     poster_strange->cd(1);
@@ -920,7 +921,7 @@ void cuts_analysis(const char* charm_file, const char* strange_file)
     */
 
 
-    TCanvas *poster_charm = new TCanvas("poster_charm", "Poster charm", 1800, 600);
+    TCanvas *poster_charm = new TCanvas("poster_charm", "Poster charm", 2500, 800);
     poster_charm->Divide(3, 1);
 
     poster_charm->cd(1);

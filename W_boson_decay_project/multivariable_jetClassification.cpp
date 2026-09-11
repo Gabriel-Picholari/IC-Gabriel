@@ -64,45 +64,46 @@ struct JetTagResult
 {
     Bool_t isCharmTagged = false;
     Bool_t isStrangeTagged = false;
+    Int_t  nCharmConst = 0;
+    Int_t  nStrangeConst = 0;
 };
 
 JetTagResult classifyJet(
-    const fastjet::PseudoJet& jet, 
-    std::vector<fastjet::PseudoJet>& tagged_c_jets, 
-    std::vector<fastjet::PseudoJet>& tagged_s_jets, 
-    TLorentzVector& vec_c, 
+    const fastjet::PseudoJet& jet,
+    std::vector<fastjet::PseudoJet>& tagged_c_jets,
+    std::vector<fastjet::PseudoJet>& tagged_s_jets,
+    TLorentzVector& vec_c,
     TLorentzVector& vec_s
 )
 {
     JetTagResult result;
 
     TLorentzVector currentJet(jet.px(), jet.py(), jet.pz(), jet.E());
-
     if (currentJet.M() < 0) return result;
 
+    // Step one: count the number of constituents of each type
     for (const fastjet::PseudoJet &constituent : jet.constituents())
     {
         TString signalType = constituent.user_info<JetInfo>().getSignalType();
 
-        if (signalType == "charm" && !result.isCharmTagged)
-        {
-            tagged_c_jets.push_back(jet);
-            vec_c = currentJet;
-            result.isCharmTagged = true;
-        }
-
-        else if (signalType == "strange" && !result.isStrangeTagged)
-        {
-            tagged_s_jets.push_back(jet);
-            vec_s = currentJet;
-            result.isStrangeTagged = true;
-        }
-
-        if (result.isCharmTagged && result.isStrangeTagged)
-        {
-            break;
-        }
+        if (signalType == "charm")   result.nCharmConst++;
+        else if (signalType == "strange") result.nStrangeConst++;
     }
+
+    // Step two: classify the jet based on the counts
+    if (result.nCharmConst > result.nStrangeConst && result.nCharmConst > 0)
+    {
+        result.isCharmTagged = true;
+        tagged_c_jets.push_back(jet);
+        vec_c = currentJet;
+    }
+    else if (result.nStrangeConst > result.nCharmConst && result.nStrangeConst > 0)
+    {
+        result.isStrangeTagged = true;
+        tagged_s_jets.push_back(jet);
+        vec_s = currentJet;
+    }
+    // In case of a tie or if both counts are zero, the jet is not tagged as either type (ends up as background)
 
     return result;
 }
@@ -278,14 +279,21 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
         if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsIncluded_strange.root", "RECREATE");
         if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsExcluded_strange.root", "RECREATE");
     } 
-    if (switch_string == "strange" && mode_string == "testing") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_strange.root", "RECREATE");
-
+    if (switch_string == "strange" && mode_string == "testing")
+    {
+        if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_gluonJetsIncluded_strange.root", "RECREATE");
+        if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_gluonJetsExcluded_strange.root", "RECREATE");
+    }
     if (switch_string == "charm" && mode_string == "training")
     {
         if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsIncluded_charm.root", "RECREATE");
         if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTraining_gluonJetsExcluded_charm.root", "RECREATE");
     }
-    if (switch_string == "charm" && mode_string == "testing") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_charm.root", "RECREATE");
+    if (switch_string == "charm" && mode_string == "testing")
+    {
+        if (contaminatingGluonMode == "include") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_gluonJetsIncluded_charm.root", "RECREATE");
+        if (contaminatingGluonMode == "exclude") filteredDataFile = new TFile("multivariable_filteredOutput_modelTesting_gluonJetsExcluded_charm.root", "RECREATE");
+    }
 
     TTree *signalTree = new TTree(("SignalTree" + sfx).c_str(), ("TTree with signal data from " + short_sfx + " quark").c_str());
     signalTree->Branch(("pT" + sfx).c_str(), &pT);
@@ -386,12 +394,12 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
             count++;
 
             jetPt = jet.pt();
-            if (jetPt < 5) continue;
+            if (jetPt < 10) continue;
 
             jetEta = jet.eta();
 
             Float_t absEta = TMath::Abs(jetEta);
-            if (absEta > 2) continue;
+            if (absEta > 1.3) continue;
 
             jetPhi = jet.phi();
             jetMass = jet.m();
@@ -548,7 +556,7 @@ void multivariable_jetClassification(const char* fileName, std::string switch_st
                 pT_LeadConst = vars.leadingPt;
                 jetVerticesInvariantMasses = vars.vertices_masses;
 
-                if (signal_pTRatio > 0.7)   // Indeed a signal jet
+                if (signal_pTRatio > 0.8)   // Indeed a signal jet
                 {
                     label = 1;
                     
