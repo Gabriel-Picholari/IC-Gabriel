@@ -240,3 +240,549 @@ void invariantMass_classicalReconstruction(const char* fileName)
 
     file->Close();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//===========================================================================================================================================================================
+// Cuts definition:
+// 3D grid search over pT, N_const and N_rho thresholds, determining the cut combination
+// that maximizes purity subject to a minimum efficiency requirement.
+//===========================================================================================================================================================================
+
+#include <string>
+#include <vector>
+#include <iostream>
+#include "TFile.h"
+#include "TTree.h"
+#include "TSystem.h"
+#include "TH2F.h"
+#include "TGraph.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+
+void cuts_definition(const char* strange_file, std::string switch_string)
+{
+    gSystem->Load("libEG");
+    gSystem->Load("libEGPythia8");
+
+    //---------------------------------------------------------------------------------------------------------
+    // Data loading
+    //---------------------------------------------------------------------------------------------------------
+
+    Float_t pT, nConst, nRho, eventID;
+    TTree *signalTree;
+    TTree *backgroundTree;
+
+    std::string sfx;
+
+    if (switch_string == "strange")
+    {
+        sfx = "_s";
+    }
+    else if (switch_string == "charm")
+    {
+        sfx = "_c";
+    }
+
+    TFile *file = TFile::Open(strange_file, "READ");
+
+    signalTree = dynamic_cast<TTree *>(file->Get(("SignalTree" + sfx).c_str()));
+    signalTree->SetBranchAddress(("pT" + sfx).c_str(), &pT);
+    signalTree->SetBranchAddress(("nConst" + sfx).c_str(), &nConst);
+    signalTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
+    signalTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+
+    backgroundTree = dynamic_cast<TTree *>(file->Get(("BackgroundTree" + sfx).c_str()));
+    backgroundTree->SetBranchAddress(("pT" + sfx).c_str(), &pT);
+    backgroundTree->SetBranchAddress(("nConst" + sfx).c_str(), &nConst);
+    backgroundTree->SetBranchAddress(("nRho" + sfx).c_str(), &nRho);
+    backgroundTree->SetBranchAddress(("eventID" + sfx).c_str(), &eventID);
+
+    Long64_t ne_signal = signalTree->GetEntries();
+    Long64_t ne_background = backgroundTree->GetEntries();
+
+    std::vector<Float_t> signal_pT, signal_nConst, signal_nRho;
+    for (Long64_t i = 0; i < ne_signal; i++)
+    {
+        signalTree->GetEntry(i);
+        signal_pT.push_back(pT);
+        signal_nConst.push_back(nConst);
+        signal_nRho.push_back(nRho);
+    }
+
+    std::vector<Float_t> background_pT, background_nConst, background_nRho;
+    for (Long64_t i = 0; i < ne_background; i++)
+    {
+        backgroundTree->GetEntry(i);
+        background_pT.push_back(pT);
+        background_nConst.push_back(nConst);
+        background_nRho.push_back(nRho);
+    }
+
+    //---------------------------------------------------------------------------------------------------------
+    // Grid definition
+    //---------------------------------------------------------------------------------------------------------
+
+    Float_t pT_min = 10, pT_max = 40, pT_step = 0.1;
+    Float_t nConst_min = 0, nConst_max = 30, nConst_step = 1;
+    Float_t nRho_min = 0, nRho_max = 10, nRho_step = 1;
+
+    Int_t n_pT = (Int_t)((pT_max - pT_min) / pT_step) + 1;
+    Int_t n_nConst = (Int_t)((nConst_max - nConst_min) / nConst_step) + 1;
+    Int_t n_nRho = (Int_t)((nRho_max - nRho_min) / nRho_step) + 1;
+
+    std::vector<std::vector<std::vector<Float_t>>> purityGrid(n_pT, std::vector<std::vector<Float_t>>(n_nConst, std::vector<Float_t>(n_nRho, 0)));
+    std::vector<std::vector<std::vector<Float_t>>> efficiencyGrid(n_pT, std::vector<std::vector<Float_t>>(n_nConst, std::vector<Float_t>(n_nRho, 0)));
+
+    Float_t bestPurity = -1, bestEfficiency = 0;
+    Float_t best_pT_thr = 0, best_nConst_thr = 0, best_nRho_thr = 0;
+    Int_t best_i_pT = 0, best_i_nConst = 0, best_i_nRho = 0;
+
+    Float_t minEfficiency;
+
+    if (switch_string == "strange")
+    {
+        minEfficiency = 0.4;
+    }
+    else if (switch_string == "charm")
+    {
+        minEfficiency = 0.6;
+    }
+
+    //---------------------------------------------------------------------------------------------------------
+    // 3D grid scan
+    //---------------------------------------------------------------------------------------------------------
+
+    for (Int_t i_pT = 0; i_pT < n_pT; i_pT++)
+    {
+        Float_t pT_thr = pT_min + i_pT * pT_step;
+
+        for (Int_t i_nConst = 0; i_nConst < n_nConst; i_nConst++)
+        {
+            Float_t nConst_thr = nConst_min + i_nConst * nConst_step;
+
+            for (Int_t i_nRho = 0; i_nRho < n_nRho; i_nRho++)
+            {
+                Float_t nRho_thr = nRho_min + i_nRho * nRho_step;
+
+                Int_t TP = 0, FN = 0, FP = 0, TN = 0;
+
+                for (Long64_t i = 0; i < (Long64_t)signal_pT.size(); i++)
+                {
+                    if (signal_pT[i] >= pT_thr && signal_nConst[i] >= nConst_thr && signal_nRho[i] >= nRho_thr)
+                        TP++;
+                    else
+                        FN++;
+                }
+
+                for (Long64_t i = 0; i < (Long64_t)background_pT.size(); i++)
+                {
+                    if (background_pT[i] >= pT_thr && background_nConst[i] >= nConst_thr && background_nRho[i] >= nRho_thr)
+                        FP++;
+                    else
+                        TN++;
+                }
+
+                // For each combination of cuts, we calculate both the purity and the efficiency
+
+                Float_t purity = (TP + FP > 0) ? (Float_t)TP / (TP + FP) : 0;
+                Float_t efficiency = (TP + FN > 0) ? (Float_t)TP / (TP + FN) : 0;
+
+                purityGrid[i_pT][i_nConst][i_nRho] = purity;
+                efficiencyGrid[i_pT][i_nConst][i_nRho] = efficiency;
+
+                // Keep the highest purity among combinations satisfying the minimum efficiency
+
+                // For strange jets, the best purity (and I say this based on the previous ML analysis) could happen to be at a lower minimim efficiency than 0.5, the one we used for chamed jets
+                // Thus, let me abuse once again the switch string to set a lower minimum for strange jets
+
+                if (efficiency >= minEfficiency && purity > bestPurity)
+                {
+                    bestPurity = purity;
+                    bestEfficiency = efficiency;
+                    best_pT_thr = pT_thr;
+                    best_nConst_thr = nConst_thr;
+                    best_nRho_thr = nRho_thr;
+                    best_i_pT = i_pT;
+                    best_i_nConst = i_nConst;
+                    best_i_nRho = i_nRho;
+                }
+            }
+        }
+    }
+
+    std::cout << "Best cut combination (" << switch_string << " jets):" << std::endl;
+    std::cout << "pT >= " << best_pT_thr << " GeV/c, nConst >= " << best_nConst_thr << ", nRho >= " << best_nRho_thr << std::endl;
+    std::cout << "Purity = " << bestPurity << ", Efficiency = " << bestEfficiency << std::endl;
+
+    //======================================================================================
+    // 1D scans: varying one cut while keeping the other two at their optimal values
+    //======================================================================================
+
+    //--------------------------------------------------------------------------------------
+    // pT scan: N_const and N_rho fixed at their optimal values
+    //--------------------------------------------------------------------------------------
+
+    TH1F *pT_cut_purity = new TH1F("pT_cut_purity", "", n_pT, pT_min, pT_max);
+    TH1F *pT_cut_efficiency = new TH1F("pT_cut_efficiency", "", n_pT, pT_min, pT_max);
+
+    for (Int_t i_pT = 0; i_pT < n_pT; i_pT++)
+    {
+        Float_t pT_thr = pT_min + i_pT * pT_step;
+
+        pT_cut_purity->SetBinContent(i_pT, purityGrid[i_pT][best_i_nConst][best_i_nRho]);
+        pT_cut_efficiency->SetBinContent(i_pT, efficiencyGrid[i_pT][best_i_nConst][best_i_nRho]);
+    }
+
+    //--------------------------------------------------------------------------------------
+    // N_const scan: pT and N_rho fixed at their optimal values
+    //--------------------------------------------------------------------------------------
+
+    TH1F *nConst_cut_purity = new TH1F("nConst_cut_purity", "", n_nConst, nConst_min, nConst_max);
+    TH1F *nConst_cut_efficiency = new TH1F("nConst_cut_efficiency", "", n_nConst, nConst_min, nConst_max);
+
+    for (Int_t i_nConst = 0; i_nConst < n_nConst; i_nConst++)
+    {
+        Float_t nConst_thr = nConst_min + i_nConst * nConst_step;
+
+        nConst_cut_purity->SetBinContent(i_nConst, purityGrid[best_i_pT][i_nConst][best_i_nRho]);
+        nConst_cut_efficiency->SetBinContent(i_nConst, efficiencyGrid[best_i_pT][i_nConst][best_i_nRho]);
+    }
+
+    //--------------------------------------------------------------------------------------
+    // N_rho scan: pT and N_const fixed at their optimal values
+    //--------------------------------------------------------------------------------------
+
+    TH1F *nRho_cut_purity = new TH1F("nRho_cut_purity", "", n_nRho, nRho_min, nRho_max);
+    TH1F *nRho_cut_efficiency = new TH1F("nRho_cut_efficiency", "", n_nRho, nRho_min, nRho_max);
+
+    for (Int_t i_nRho = 0; i_nRho < n_nRho; i_nRho++)
+    {
+        Float_t nRho_thr = nRho_min + i_nRho * nRho_step;
+
+        nRho_cut_purity->SetBinContent(i_nRho, purityGrid[best_i_pT][best_i_nConst][i_nRho]);
+        nRho_cut_efficiency->SetBinContent(i_nRho, efficiencyGrid[best_i_pT][best_i_nConst][i_nRho]);
+    }
+
+    //======================================================================================
+    // Canvases
+    //======================================================================================
+
+    gStyle->SetOptStat(0);
+    gStyle->SetTextFont(42);
+    gStyle->SetOptStat(0);
+    gStyle->SetTitleSize(0.04);
+    gStyle->SetTitleSize(0.04, "XY");
+    gStyle->SetTextSize(0.04);
+
+    //--------------------------------------------------------------------------------------
+    // pT scan
+    //--------------------------------------------------------------------------------------
+
+    TCanvas *c1 = new TCanvas("c1", "Purity and efficiency", 2500, 1800);
+    c1->Divide(1,1);
+
+    c1->cd(1);
+    pT_cut_efficiency->SetTitle(("p_{T} scan (" + switch_string + " jets)").c_str());
+    pT_cut_efficiency->SetTitleSize(0.04);
+    pT_cut_efficiency->GetXaxis()->SetTitleSize(0.04);
+    pT_cut_efficiency->GetYaxis()->SetTitleSize(0.04);
+    pT_cut_efficiency->GetXaxis()->SetTitle("p_{T} threshold [GeV/c]");
+    pT_cut_efficiency->GetYaxis()->SetTitle("Purity and Efficiency");
+    pT_cut_efficiency->SetLineColor(kRed);
+    pT_cut_efficiency->SetLineWidth(2);
+    pT_cut_efficiency->GetYaxis()->SetRangeUser(std::min(pT_cut_efficiency->GetMinimum(), pT_cut_purity->GetMinimum()), std::max(pT_cut_efficiency->GetMaximum(), pT_cut_purity->GetMaximum())*1.2);
+    
+    Float_t pT_ymin = std::min(pT_cut_efficiency->GetMinimum(), pT_cut_purity->GetMinimum());
+    Float_t pT_ymax = std::max(pT_cut_efficiency->GetMaximum(), pT_cut_purity->GetMaximum()) * 1.2;
+    pT_cut_efficiency->GetYaxis()->SetRangeUser(pT_ymin, pT_ymax);
+    
+    pT_cut_efficiency->DrawCopy("HIST");
+
+    TLine *pT_optimal_line = new TLine(best_pT_thr, pT_ymin, best_pT_thr, pT_ymax);
+    pT_optimal_line->SetLineColor(kBlack);
+    pT_optimal_line->SetLineStyle(2);
+    pT_optimal_line->SetLineWidth(3);
+    pT_optimal_line->Draw("SAME");
+
+    pT_cut_purity->SetLineColor(kBlue);
+    pT_cut_purity->SetLineWidth(2);
+    pT_cut_purity->DrawCopy("HIST SAME");
+
+    TLegend *legend1 = new TLegend(0.60, 0.70, 0.90, 0.90);
+    legend1->AddEntry(pT_cut_purity, Form("Purity (N_{const} cut = %.0f, N_{#rho} cut = %.0f)", best_nConst_thr, best_nRho_thr), "l");
+    legend1->AddEntry(pT_cut_efficiency, Form("Efficiency (N_{const} cut = %.0f, N_{#rho} cut = %.0f)", best_nConst_thr, best_nRho_thr), "l");
+    legend1->AddEntry(pT_optimal_line, Form("Optimal p_{T} cut = %.1f GeV/c", best_pT_thr), "l");
+    legend1->Draw();
+
+    TCanvas *c2 = new TCanvas("c2", "Purity and efficiency", 2500, 1800);
+    c2->Divide(1,1);
+
+    c2->cd(1);
+    nConst_cut_efficiency->SetTitle(("N_{const} scan (" + switch_string + " jets)").c_str());
+    nConst_cut_efficiency->GetXaxis()->SetTitle("N_{const} threshold");
+    nConst_cut_efficiency->GetYaxis()->SetTitle("Purity and Efficiency");
+    nConst_cut_efficiency->SetTitleSize(0.04);
+    nConst_cut_efficiency->GetXaxis()->SetTitleSize(0.04);
+    nConst_cut_efficiency->GetYaxis()->SetTitleSize(0.04);
+    nConst_cut_efficiency->SetLineColor(kRed);
+    nConst_cut_efficiency->SetLineWidth(2);
+    nConst_cut_efficiency->GetYaxis()->SetRangeUser(std::min(nConst_cut_efficiency->GetMinimum(), nConst_cut_purity->GetMinimum()), std::max(nConst_cut_efficiency->GetMaximum(), nConst_cut_purity->GetMaximum())*1.2);
+
+    Float_t nConst_ymin = std::min(nConst_cut_efficiency->GetMinimum(), nConst_cut_purity->GetMinimum());
+    Float_t nConst_ymax = std::max(nConst_cut_efficiency->GetMaximum(), nConst_cut_purity->GetMaximum()) * 1.2;
+    nConst_cut_efficiency->GetYaxis()->SetRangeUser(nConst_ymin, nConst_ymax);
+
+    nConst_cut_efficiency->DrawCopy("HIST");
+
+    TLine *nConst_optimal_line = new TLine(best_nConst_thr, nConst_ymin, best_nConst_thr, nConst_ymax);
+    nConst_optimal_line->SetLineColor(kBlack);
+    nConst_optimal_line->SetLineStyle(2);
+    nConst_optimal_line->SetLineWidth(3);
+    nConst_optimal_line->Draw("SAME");
+
+    nConst_cut_purity->SetLineColor(kBlue);
+    nConst_cut_purity->SetLineWidth(2);
+    nConst_cut_purity->DrawCopy("HIST SAME");
+
+    TLegend *legend2 = new TLegend(0.60, 0.70, 0.90, 0.90);
+    legend2->AddEntry(nConst_cut_purity, Form("Purity (p_{T} cut = %.1f, N_{#rho} cut = %.0f)", best_pT_thr, best_nRho_thr), "l");
+    legend2->AddEntry(nConst_cut_efficiency, Form("Efficiency (p_{T} cut = %.1f, N_{#rho} cut = %.0f)", best_pT_thr, best_nRho_thr), "l");
+    legend2->AddEntry(nConst_optimal_line, Form("Optimal N_{const} cut = %.0f", best_nConst_thr), "l"); 
+    legend2->Draw();
+
+    TCanvas *c3 = new TCanvas("c3", "Purity and efficiency", 2500, 1800);
+    c3->Divide(1,1);
+
+    c3->cd(1);
+    nRho_cut_efficiency->SetTitle(("N_{#rho} scan (" + switch_string + " jets)").c_str());
+    nRho_cut_efficiency->GetXaxis()->SetTitle("N_{#rho} threshold");
+    nRho_cut_efficiency->GetYaxis()->SetTitle("Purity and Efficiency");
+    nRho_cut_efficiency->SetTitleSize(0.04);
+    nRho_cut_efficiency->GetXaxis()->SetTitleSize(0.04);
+    nRho_cut_efficiency->GetYaxis()->SetTitleSize(0.04);
+    nRho_cut_efficiency->SetLineColor(kRed);
+    nRho_cut_efficiency->SetLineWidth(2);
+    nRho_cut_efficiency->GetYaxis()->SetRangeUser(std::min(nRho_cut_efficiency->GetMinimum(), nRho_cut_purity->GetMinimum()), std::max(nRho_cut_efficiency->GetMaximum(), nRho_cut_purity->GetMaximum())*1.2);
+    
+    Float_t nRho_ymin = std::min(nRho_cut_efficiency->GetMinimum(), nRho_cut_purity->GetMinimum());
+    Float_t nRho_ymax = std::max(nRho_cut_efficiency->GetMaximum(), nRho_cut_purity->GetMaximum()) * 1.2;
+    nRho_cut_efficiency->GetYaxis()->SetRangeUser(nRho_ymin, nRho_ymax);
+    
+    nRho_cut_efficiency->DrawCopy("HIST");
+
+    TLine *nRho_optimal_line = new TLine(best_nRho_thr, nRho_ymin, best_nRho_thr, nRho_ymax);
+    nRho_optimal_line->SetLineColor(kBlack);
+    nRho_optimal_line->SetLineStyle(2);
+    nRho_optimal_line->SetLineWidth(3);
+    nRho_optimal_line->Draw("SAME");
+
+    nRho_cut_purity->SetLineColor(kBlue);
+    nRho_cut_purity->SetLineWidth(2);
+    nRho_cut_purity->DrawCopy("HIST SAME");
+
+    TLegend *legend3 = new TLegend(0.60, 0.70, 0.90, 0.90);
+    legend3->AddEntry(nRho_cut_purity, Form("Purity (p_{T} cut = %.1f, N_{const} cut = %.0f)", best_pT_thr, best_nConst_thr), "l");
+    legend3->AddEntry(nRho_cut_efficiency, Form("Efficiency (p_{T} cut = %.1f, N_{const} cut = %.0f)", best_pT_thr, best_nConst_thr), "l");
+    legend3->AddEntry(nRho_optimal_line, Form("Optimal N_{#rho} cut = %.0f", best_nRho_thr), "l");
+    legend3->Draw();
+
+    /*
+    // ============================================================
+    // Face fixing pT = pT optimal
+    // ============================================================
+
+    TH2F* purity_face = new TH2F("purity_face", Form("Purity level curve at p_{T} >= %.1f GeV/c (%s jets); N_{const} cut; N_{#rho} cut", best_pT_thr, switch_string.c_str()), n_nConst, nConst_min, nConst_max, n_nRho, nRho_min, nRho_max);
+
+    TH2F* efficiency_face = new TH2F("efficiency_face", Form("Efficiency level curve at p_{T} >= %.1f GeV/c (%s jets); N_{const} cut; N_{#rho} cut", best_pT_thr, switch_string.c_str()), n_nConst, nConst_min, nConst_max, n_nRho, nRho_min, nRho_max);
+
+    gStyle->SetTextFont(42);
+    gStyle->SetOptStat(0);
+    gStyle->SetTitleSize(0.04);
+    gStyle->SetTitleSize(0.04, "XY");
+    gStyle->SetTextSize(0.04);
+
+    for (Int_t i_nConst = 0; i_nConst < n_nConst; i_nConst++)
+    {
+        Float_t nConst_thr = nConst_min + i_nConst * nConst_step;
+
+        for (Int_t i_nRho = 0; i_nRho < n_nRho; i_nRho++)
+        {
+            Float_t nRho_thr = nRho_min + i_nRho * nRho_step;
+
+            purity_face->Fill(nConst_thr, nRho_thr, purityGrid[best_i_pT][i_nConst][i_nRho]);
+            efficiency_face->Fill(nConst_thr, nRho_thr, efficiencyGrid[best_i_pT][i_nConst][i_nRho]);
+        }
+    }
+
+    // ============================================================
+    // Face fixing N_const = N_const optimal
+    // ============================================================
+
+    TH2F* purity_face_nConst = new TH2F("purity_face_nConst", Form("Purity level curve at N_{const} >= %.0f (%s jets); p_{T} cut; N_{#rho} cut", best_nConst_thr, switch_string.c_str()), n_pT, pT_min, pT_max, n_nRho, nRho_min, nRho_max);
+
+    TH2F* efficiency_face_nConst = new TH2F("efficiency_face_nConst", Form("Efficiency level curve at N_{const} >= %.0f (%s jets); p_{T} cut; N_{#rho} cut", best_nConst_thr, switch_string.c_str()), n_pT, pT_min, pT_max, n_nRho, nRho_min, nRho_max);
+
+    for (Int_t i_pT = 0; i_pT < n_pT; i_pT++)
+    {
+        Float_t pT_thr = pT_min + i_pT * pT_step;
+
+        for (Int_t i_nRho = 0; i_nRho < n_nRho; i_nRho++)
+        {
+            Float_t nRho_thr = nRho_min + i_nRho * nRho_step;
+
+            purity_face_nConst->Fill(
+                pT_thr, nRho_thr,
+                purityGrid[i_pT][best_i_nConst][i_nRho]);
+
+            efficiency_face_nConst->Fill(
+                pT_thr, nRho_thr,
+                efficiencyGrid[i_pT][best_i_nConst][i_nRho]);
+        }
+    }
+
+    // ============================================================
+    // Face fixing N_rho = N_rho optimal
+    // ============================================================
+
+    TH2F* purity_face_nRho = new TH2F("purity_face_nRho", Form("Purity level curve at N_{#rho} >= %.0f (%s jets); p_{T} cut; N_{const} cut", best_nRho_thr, switch_string.c_str()), n_pT, pT_min, pT_max, n_nConst, nConst_min, nConst_max);
+
+    TH2F* efficiency_face_nRho = new TH2F("efficiency_face_nRho", Form("Efficiency level curve at N_{#rho} >= %.0f (%s jets); p_{T} cut; N_{const} cut", best_nRho_thr, switch_string.c_str()), n_pT, pT_min, pT_max, n_nConst, nConst_min, nConst_max);
+
+    for (Int_t i_pT = 0; i_pT < n_pT; i_pT++)
+    {
+        Float_t pT_thr = pT_min + i_pT * pT_step;
+
+        for (Int_t i_nConst = 0; i_nConst < n_nConst; i_nConst++)
+        {
+            Float_t nConst_thr = nConst_min + i_nConst * nConst_step;
+
+            purity_face_nRho->Fill(
+                pT_thr, nConst_thr,
+                purityGrid[i_pT][i_nConst][best_i_nRho]);
+
+            efficiency_face_nRho->Fill(
+                pT_thr, nConst_thr,
+                efficiencyGrid[i_pT][i_nConst][best_i_nRho]);
+        }
+    }
+    
+
+    // ============================================================
+    // Canvas com as seis faces
+    // ============================================================
+
+    TCanvas *c = new TCanvas("c", "Purity and Efficiency level curves", 1800, 1000);
+    c->Divide(3, 2);
+
+    // ------------------------------------------------------------
+    // Linha 1: Efficiency
+    // ------------------------------------------------------------
+
+    c->cd(1);
+    efficiency_face->SetStats(0);
+    efficiency_face->SetTitleSize(0.04);
+    efficiency_face->GetXaxis()->SetTitle("N_{const} cut");
+    efficiency_face->GetYaxis()->SetTitle("N_{#rho} cut");
+    efficiency_face->Draw("CONT4Z");
+
+    c->cd(2);
+    efficiency_face_nConst->SetStats(0);
+    efficiency_face_nConst->SetTitleSize(0.04);
+    efficiency_face_nConst->GetXaxis()->SetTitle("p_{T} cut");
+    efficiency_face_nConst->GetYaxis()->SetTitle("N_{#rho} cut");
+    efficiency_face_nConst->Draw("CONT4Z");
+
+    c->cd(3);
+    efficiency_face_nRho->SetStats(0);
+    efficiency_face_nRho->SetTitleSize(0.04);
+    efficiency_face_nRho->GetXaxis()->SetTitle("p_{T} cut");
+    efficiency_face_nRho->GetYaxis()->SetTitle("N_{const} cut");
+    efficiency_face_nRho->Draw("CONT4Z");
+
+    // ------------------------------------------------------------
+    // Linha 2: Purity
+    // ------------------------------------------------------------
+
+    c->cd(4);
+    purity_face->SetStats(0);
+    purity_face->SetTitleSize(0.04);
+    purity_face->GetXaxis()->SetTitle("N_{const} cut");
+    purity_face->GetYaxis()->SetTitle("N_{#rho} cut");
+    purity_face->Draw("CONT4Z");
+
+    c->cd(5);
+    purity_face_nConst->SetStats(0);
+    purity_face_nConst->SetTitleSize(0.04);
+    purity_face_nConst->GetXaxis()->SetTitle("p_{T} cut");
+    purity_face_nConst->GetYaxis()->SetTitle("N_{#rho} cut");
+    purity_face_nConst->Draw("CONT4Z");
+
+    c->cd(6);
+    purity_face_nRho->SetStats(0);
+    purity_face_nRho->SetTitleSize(0.04);
+    purity_face_nRho->GetXaxis()->SetTitle("p_{T} cut");
+    purity_face_nRho->GetYaxis()->SetTitle("N_{const} cut");
+    purity_face_nRho->Draw("CONT4Z");
+    */
+
+    //======================================================================================
+    // Purity vs efficiency scatter for every combination passing the minimum efficiency
+    //======================================================================================
+
+    Bool_t makeParetoGraph = true;
+
+    if (makeParetoGraph)
+    {
+        std::vector<Float_t> paretoPurity, paretoEfficiency;
+
+        for (Int_t i_pT = 0; i_pT < n_pT; i_pT++)
+        {
+            for (Int_t i_nConst = 0; i_nConst < n_nConst; i_nConst++)
+            {
+                for (Int_t i_nRho = 0; i_nRho < n_nRho; i_nRho++)
+                {
+                    if (efficiencyGrid[i_pT][i_nConst][i_nRho] >= minEfficiency)
+                    {
+                        paretoPurity.push_back(purityGrid[i_pT][i_nConst][i_nRho]);
+                        paretoEfficiency.push_back(efficiencyGrid[i_pT][i_nConst][i_nRho]);
+                    }
+                }
+            }
+        }
+
+        TGraph *paretoGraph = new TGraph((Int_t)paretoPurity.size());
+        for (Int_t i = 0; i < (Int_t)paretoPurity.size(); i++)
+            paretoGraph->SetPoint(i, paretoEfficiency[i], paretoPurity[i]);
+
+        TGraph *bestPoint = new TGraph(1);
+        bestPoint->SetPoint(0, bestEfficiency, bestPurity);
+        bestPoint->SetMarkerStyle(29);
+        bestPoint->SetMarkerColor(kRed);
+        bestPoint->SetMarkerSize(2);
+
+        TCanvas *c7 = new TCanvas("c7", "Purity vs Efficiency", 900, 800);
+        paretoGraph->SetTitle(Form("Purity vs Efficiency (%s jets); Efficiency; Purity", switch_string.c_str()));
+        paretoGraph->SetMarkerStyle(20);
+        paretoGraph->SetMarkerColor(kBlue);
+        paretoGraph->Draw("AP");
+        bestPoint->Draw("P SAME");
+
+        TLegend *legend = new TLegend(0.15, 0.15, 0.45, 0.3);
+        legend->AddEntry(paretoGraph, "Combinations passing efficiency cut", "p");
+        legend->AddEntry(bestPoint, "Best purity point", "p");
+        legend->Draw();
+    }
+}
