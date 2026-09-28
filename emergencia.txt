@@ -1,0 +1,242 @@
+#include <cmath>
+#include <string>
+#include "TH1.h"
+#include "TH1F.h"
+#include "TH1D.h"
+#include "TMath.h"
+#include "MyJet.h"
+#include "TFile.h"
+#include <iostream>
+#include "TSystem.h"
+#include "MyQuark.h"
+#include "TCanvas.h"
+#include <algorithm>
+#include "TPythia8.h"
+#include "TRandom3.h"
+#include "TParticle.h"
+#include <unordered_set>
+#include "TClonesArray.h"
+#include <TLorentzVector.h>
+#include "fastjet/PseudoJet.hh"
+#include "fastjet/ClusterSequence.hh"
+#include "TF1.h"
+#include "TLegend.h"
+#include "TStyle.h"
+
+void MakeInvariantMassHist(const std::vector<fastjet::PseudoJet> &charm_jets, const std::vector<fastjet::PseudoJet> &strange_jets, TH1F* invariantMass)
+{
+    for (const fastjet::PseudoJet &charm_jet : charm_jets)
+    {
+        TLorentzVector vc(charm_jet.px(), charm_jet.py(), charm_jet.pz(), charm_jet.E());
+
+        for (const fastjet::PseudoJet &strange_jet : strange_jets)
+        {
+            TLorentzVector vs(strange_jet.px(), strange_jet.py(), strange_jet.pz(), strange_jet.E());
+
+            TLorentzVector vW = vc + vs;
+            invariantMass->Fill(vW.M());
+        }
+    }
+}
+
+class JetInfo : public fastjet::PseudoJet::UserInfoBase
+{
+    public:
+        JetInfo(const Float_t& vx, const Float_t& vy, const Float_t& vz) : fpVx(vx), fpVy(vy), fpVz(vz) {}
+
+        void setVx(Float_t vx) { fpVx = vx; }
+        Float_t getVx() const { return fpVx; }
+
+        void setVy(Float_t vy) { fpVy = vy; }
+        Float_t getVy() const { return fpVy; }
+
+        void setVz(Float_t vz) { fpVz = vz; }
+        Float_t getVz() const { return fpVz; }
+
+    private:
+        Float_t fpVx;
+        Float_t fpVy;
+        Float_t fpVz;
+};
+
+void invariantMass_classicalReconstruction(const char* fileName)
+{
+    gSystem->Load("libEG");
+    gSystem->Load("libEGPythia8");
+
+    //---------------------------------------------------------------------------------------------------------
+    // Initialization of variables
+    //---------------------------------------------------------------------------------------------------------
+
+    Float_t fpPt, fpEta, fpPhi, fpE, fpPx, fpPy, fpPz;
+    Float_t jetPt, jetEta, jetNConst;
+    Float_t vertex_x, vertex_y, vertex_z;
+
+
+    //---------------------------------------------------------------------------------------------------------
+    // Initialization of histograms
+    //---------------------------------------------------------------------------------------------------------
+
+    TH1F *combined_cuts_invariantMass = new TH1F("combined_cuts_invariant_mass", "W^{+-} invariant mass spectrum with combined best cuts [GeV/c^{2}]", 100, 0, 120);
+
+    //---------------------------------------------------------------------------------------------------------
+    // Initializations and FastJet configurations:
+    //---------------------------------------------------------------------------------------------------------
+
+    Float_t jetR = 0.7;
+
+    fastjet::JetDefinition jet_def(fastjet::antikt_algorithm, jetR);
+
+    std::vector<fastjet::PseudoJet> particles_fastjet;
+    std::vector<fastjet::PseudoJet> jets;
+
+    //---------------------------------------------------------------------------------------------------------
+    // Initialization of the .root file and TTrees
+    //---------------------------------------------------------------------------------------------------------
+
+    TFile *file = TFile::Open(fileName, "READ");
+    TTree *ttree = dynamic_cast<TTree *>(file->Get("W decay TTree 2"));
+
+    TClonesArray *jets_array = new TClonesArray("MyJet");
+    TClonesArray *quarks = new TClonesArray("MyQuark");
+
+    ttree->SetBranchAddress("jets_array", &jets_array);
+    ttree->SetBranchAddress("quarks", &quarks);
+
+    Long64_t ne = ttree->GetEntries();
+
+    const Float_t charm_pTCut = 23.5;   const Int_t charm_NConsCut = 5, charm_NRhoCut = 2;
+    const Float_t strange_pTCut = 35.1; const Int_t strange_NConsCut = 4, strange_NRhoCut = 0;
+
+    Long64_t n_charm = 0, n_strange = 0, n_ambiguous = 0, n_rejected = 0;
+
+    //---------------------------------------------------------------------------------------------------------
+    // Event loop equivalent
+    //---------------------------------------------------------------------------------------------------------
+
+    for (Long64_t ni = 0; ni < ne; ni++)
+    {
+        ttree->GetEntry(ni);
+
+        std::vector<fastjet::PseudoJet> charm_jets;
+        std::vector<fastjet::PseudoJet> strange_jets;
+
+
+        //---------------------------------------------------------------------------------------------------------
+        // Particle loop equivalent
+        //---------------------------------------------------------------------------------------------------------
+
+        for (Int_t nj = 0; nj < jets_array->GetEntries(); nj++)
+        {
+            MyJet *fp = static_cast<MyJet *>(jets_array->At(nj));
+
+            fpPx = fp->fPx;
+            fpPy = fp->fPy;
+            fpPz = fp->fPz;
+            fpE = fp->fE;
+            vertex_x = fp->fVx;
+            vertex_y = fp->fVy;
+            vertex_z = fp->fVz;
+
+            fastjet::PseudoJet particle(fpPx, fpPy, fpPz, fpE);
+
+            JetInfo* jetInfo = new JetInfo(vertex_x, vertex_y, vertex_z);
+            particle.set_user_info(jetInfo);
+
+            particles_fastjet.push_back(particle);
+        }
+
+        fastjet::ClusterSequence clusterSeq(particles_fastjet, jet_def);
+        jets = clusterSeq.inclusive_jets();
+
+        for (const fastjet::PseudoJet& jet : jets)
+        {
+            //---------------------------------------------------------------------------------------------------------
+            // Collecting jet's general information
+            //---------------------------------------------------------------------------------------------------------
+
+            jetPt = jet.pt();
+            if (jetPt < 10) continue;
+
+            jetEta = jet.eta();
+
+            Float_t absEta = TMath::Abs(jetEta);
+            if (absEta > 1.3) continue;
+
+            jetNConst = jet.constituents().size();
+
+            Int_t nRho = 0;
+            Float_t rhoLowerBound = 0.01;
+            Float_t rhoUpperBound = 2;
+
+            for (const fastjet::PseudoJet &constituent : jet.constituents())
+            {
+                Float_t vx = constituent.user_info<JetInfo>().getVx();
+                Float_t vy = constituent.user_info<JetInfo>().getVy();
+
+                Double_t Rho = TMath::Sqrt(pow(vx, 2) + pow(vy, 2));
+
+                if (Rho >= rhoLowerBound && Rho < rhoUpperBound)
+                {
+                    nRho++;
+                }
+            }
+
+            bool passC = (jetPt > charm_pTCut   && jetNConst > charm_NConsCut   && nRho > charm_NRhoCut);
+            bool passS = (jetPt > strange_pTCut && jetNConst > strange_NConsCut && nRho > strange_NRhoCut);
+
+            if (passC && !passS)      { charm_jets.push_back(jet);   n_charm++; }
+            else if (passS && !passC) { strange_jets.push_back(jet); n_strange++; }
+            else if (passC && passS)  { n_ambiguous++; }
+            else                      { n_rejected++; }
+        }
+
+        //---------------------------------------------------------------------------------------------------------
+        // Invariant mass reconstruction
+        //---------------------------------------------------------------------------------------------------------
+
+        MakeInvariantMassHist(charm_jets, strange_jets, combined_cuts_invariantMass);
+
+        particles_fastjet.clear();
+        jets.clear();
+        jets_array->Clear();
+        quarks->Clear();
+    }
+
+    Long64_t n_pass_any = n_charm + n_strange + n_ambiguous;   // jatos únicos que passam em pelo menos um corte
+    Double_t ambiguous_pct = (n_pass_any > 0) ? 100.0 * n_ambiguous / n_pass_any : 0.0;
+
+    std::cout   << "Charm inequivoco:  " << n_charm << "\n"
+                << "Strange inequivoco:" << n_strange << "\n"
+                << "Ambiguos:          " << n_ambiguous << "\n"
+                << "Ambiguos / (passam em algum corte): " << ambiguous_pct << "%" << std::endl;
+
+    //---------------------------------------------------------------------------------------------------------
+    // Plotting histograms
+    //---------------------------------------------------------------------------------------------------------
+
+    gStyle->SetTextFont(42);
+
+    TF1 *f1 = new TF1("f1","[0]+[1]*exp(-(x-[2])^2/(2*[3]))", 50, 110);
+    f1->SetParameters(30.0, 70.0, 80.0, 7.0);
+    combined_cuts_invariantMass->Fit(f1, "ESR");
+
+    TCanvas *c1 = new TCanvas("c1", "Invariant mass distribution with combined cuts", 2500, 2500);
+    c1->Divide(1, 1);
+
+    c1->cd(1);
+    combined_cuts_invariantMass->SetTitle("Boson W^{#pm} classical cuts invariant mass spectrum");
+    combined_cuts_invariantMass->SetTitleSize(0.04);
+    combined_cuts_invariantMass->GetXaxis()->SetTitle("Mass [GeV/c^{2}]");
+    combined_cuts_invariantMass->GetYaxis()->SetTitle("Frequency");
+    combined_cuts_invariantMass->SetTitleSize(0.04, "XY");
+    combined_cuts_invariantMass->SetLineWidth(2);
+    combined_cuts_invariantMass->DrawCopy();
+
+    TLegend *leg1 = new TLegend(0.60, 0.70, 0.88, 0.88);
+    leg1->AddEntry(f1, "Fit: p_{0}+p_{1}#kern[0.1]{exp}#left[#frac{-(x-p_{2})^{2}}{2p_{3}^{2}}#right]", "l");
+    leg1->SetTextSize(0.04);
+    leg1->Draw();
+
+    file->Close();
+}
